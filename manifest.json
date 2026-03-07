@@ -7,16 +7,14 @@
   "background_color": "#050507",
   "icons": [
     {
-      "src": "https://api.dicebear.com/7.x/notionists-neutral/svg?seed=party-icon-2&backgroundColor=050507&shapeColor=00e5ff&shapeColor2=ff9f43&size=512",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "https://via.placeholder.com/192x192/050507/00e5ff?text=AP",
+      "sizes": "192x192",
+      "type": "image/png"
     },
     {
-      "src": "https://api.dicebear.com/7.x/notionists-neutral/svg?seed=party-icon-2&backgroundColor=050507&shapeColor=00e5ff&shapeColor2=ff9f43&size=192",
-      "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "https://via.placeholder.com/512x512/050507/00e5ff?text=AP",
+      "sizes": "512x512",
+      "type": "image/png"
     }
   ]
 }
