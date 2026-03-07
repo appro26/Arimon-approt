@@ -57,7 +57,6 @@ db.ref('gameState').on('value', (snap) => {
     updateIdentityUI();
     renderLeaderboard();
     
-    // REAALIAIKAINEN ADMIN-PÄIVITYS:
     if(document.getElementById('adminPanel').style.display === 'block') {
         renderAdminPlayerList();
     }
@@ -65,7 +64,6 @@ db.ref('gameState').on('value', (snap) => {
     const live = data.activeTask;
     const taskBox = document.getElementById('liveTask');
     
-    // ÄÄNIEFIEKTI JA ANIMAATIO UUDELLE TEHTÄVÄLLE
     if(!isTaskActive && live) {
         playTaskSound();
         document.getElementById('liveTaskName').classList.add('flash-effect');
@@ -99,7 +97,6 @@ db.ref('gameState').on('value', (snap) => {
             vBtn.innerText = isMePart ? "OLET MUKANA! ✓" : "MUKANA TEHTÄVÄSSÄ!";
         }
         
-        // KORJAUS: Päivitetään GM:n osallistujalista reaaliajassa aina kun data muuttuu
         if(isGM) {
             renderGMVolunteers(results, isLocked);
         }
@@ -188,12 +185,19 @@ function claimIdentity() {
     });
 }
 
+// KORJATTU: Pelaaja voi nyt lisätä ja poistaa itsensä ilmoittautumisesta
 function volunteer() {
     const p = allPlayers.find(x => x.name === myName);
     if(!myName || (p && p.cooldown)) return;
-    db.ref('gameState/participants').transaction(l => {
-        l = l || []; if(!l.find(r => r.name === myName)) l.push({ name: myName, win: true });
-        return l;
+    db.ref('gameState/participants').transaction(list => {
+        list = list || []; 
+        const idx = list.findIndex(r => r.name === myName);
+        if(idx > -1) {
+            list.splice(idx, 1); // Poistetaan, jos on jo listalla
+        } else {
+            list.push({ name: myName, win: true }); // Lisätään, jos ei ole listalla
+        }
+        return list;
     });
 }
 
@@ -265,12 +269,24 @@ function renderAdminPlayerList() {
     });
 }
 
+// KORJATTU: Piirtää listan aina puhtaalta pöydältä ja asettaa oikeat värit heti
 function renderGMVolunteers(results, isLocked) {
-    const grid = document.getElementById('volunteerGrid'); grid.innerHTML = '';
+    const grid = document.getElementById('volunteerGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    
     allPlayers.forEach(p => {
         const isInc = results.some(r => r.name === p.name);
-        grid.innerHTML += `<button class="btn ${isInc?'btn-primary':'btn-secondary'} ${p.cooldown?'on-cooldown':''}" style="margin:0; font-size:0.6rem;" onclick="toggleParticipant('${p.name}')" ${isLocked?'disabled':''}>${p.name}</button>`;
+        const btn = document.createElement('button');
+        btn.className = `btn ${isInc ? 'btn-primary' : 'btn-secondary'} ${p.cooldown ? 'on-cooldown' : ''}`;
+        btn.style.margin = '0';
+        btn.style.fontSize = '0.6rem';
+        btn.innerText = p.name;
+        btn.disabled = isLocked;
+        btn.onclick = () => toggleParticipant(p.name);
+        grid.appendChild(btn);
     });
+    
     document.getElementById('btnLock').style.display = isLocked ? 'none' : 'block';
     document.getElementById('btnFinish').style.display = isLocked ? 'block' : 'none';
     const sArea = document.getElementById('scoringArea'); sArea.innerHTML = isLocked ? '<h3>Pisteytys</h3>' : '';
