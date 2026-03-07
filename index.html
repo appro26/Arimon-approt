@@ -10,58 +10,12 @@
     <meta name="theme-color" content="#050507">
     
     <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="style.css">
 
     <title>Appro Playbook: Stealth GM</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #050507; --surface: #101014; --surface-light: #18181f;
-            --accent: #00e5ff; --accent-glow: rgba(0, 229, 255, 0.3);
-            --gm-accent: #ff9f43; --gm-glow: rgba(255, 159, 67, 0.3);
-            --success: #00ff88; --danger: #ff4757;
-            --text: #ffffff; --muted: #a0a0ab; --radius: 16px;
-        }
-        * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .container { width: 100%; max-width: 460px; padding-top: 60px; padding-bottom: 30px; }
-        
-        .role-switcher { position: fixed; top: 10px; left: 10px; right: 10px; height: 50px; display: flex; z-index: 1000; background: rgba(16, 16, 20, 0.8); backdrop-filter: blur(10px); border-radius: 25px; border: 1px solid rgba(255,255,255,0.1); padding: 5px; }
-        .role-btn { flex: 1; border: none; color: var(--muted); background: transparent; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; cursor: pointer; border-radius: 20px; transition: 0.3s; }
-        .role-btn.player.active { background: var(--accent); color: #000; box-shadow: 0 0 15px var(--accent-glow); }
-        .role-btn.gm.active { background: var(--gm-accent); color: #000; box-shadow: 0 0 15px var(--gm-glow); }
-
-        .card { background: var(--surface); border-radius: var(--radius); padding: 20px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.03); animation: slideIn 0.4s ease-out; position: relative; }
-        .card h2 { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; margin: 0 0 15px 0; letter-spacing: 1.5px; }
-        .gm-mode .card { border-left: 3px solid var(--gm-accent); }
-        
-        .btn { font-family: inherit; border-radius: 12px; border: none; font-weight: 800; padding: 16px; text-transform: uppercase; cursor: pointer; transition: 0.2s; width: 100%; margin-bottom: 10px; }
-        .btn-primary { background: var(--accent); color: #000; box-shadow: 0 4px 15px var(--accent-glow); }
-        .btn-gm { background: var(--gm-accent); color: #000; box-shadow: 0 4px 159, 67, 0.3); }
-        .btn-gm { background: var(--gm-accent); color: #000; box-shadow: 0 4px 15px var(--gm-glow); }
-        .btn-secondary { background: var(--surface-light); color: var(--text); border: 1px solid rgba(255,255,255,0.05); }
-        .btn-success { background: var(--success); color: #000; }
-        .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); font-size: 0.7rem; padding: 8px; }
-
-        .player-row { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: var(--surface-light); border-radius: 12px; margin-bottom: 8px; border: 1px solid transparent; }
-        .player-row.me { border-color: var(--accent); }
-        .xp-badge { background: #000; color: var(--accent); font-weight: 900; padding: 5px 12px; border-radius: 15px; font-size: 0.75rem; border: 1px solid var(--accent); }
-        .cooldown-text { font-size: 0.6rem; color: var(--danger); font-weight: 700; }
-
-        .task-box { text-align: center; border: 2px solid var(--accent); box-shadow: 0 0 25px var(--accent-glow); }
-        #liveTaskName { font-size: 1.8rem; font-weight: 900; margin: 10px 0; color: var(--accent); }
-        #instructionBox { background: rgba(0, 229, 255, 0.1); padding: 15px; border-radius: 12px; margin-top: 15px; border: 1px dashed var(--accent); text-align: left; }
-
-        input, textarea { background: var(--surface-light); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 14px; border-radius: 10px; width: 100%; margin-bottom: 10px; font-family: inherit; }
-        
-        @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .gm-only, .player-only { display: none; }
-        .gm-mode .gm-only { display: block; }
-        .player-mode .player-only { display: block; }
-        #taskLibraryEditor { max-height: 300px; overflow-y: auto; padding: 10px; background: #000; border-radius: 10px; }
-        .on-cooldown { border: 1px solid var(--danger) !important; }
-    </style>
 </head>
 <body class="player-mode">
 
@@ -122,9 +76,18 @@
                 <button class="btn btn-primary" style="width:60px; margin:0;" onclick="adminAddPlayer()">+</button>
             </div>
             <hr style="border:0; border-top:1px solid #333; margin:20px 0;">
+            
+            <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                <h4 style="margin-top:0; font-size:0.8rem; color:var(--gm-accent);">LISÄÄ UUSI TEHTÄVÄ</h4>
+                <input type="text" id="newTaskName" placeholder="Tehtävän nimi...">
+                <textarea id="newTaskDesc" placeholder="Tehtävän kuvaus..."></textarea>
+                <input type="number" id="newTaskPoints" placeholder="Pisteet (XP)" value="2">
+                <button class="btn btn-success" style="padding:10px; font-size:0.7rem;" onclick="adminCreateTask()">+ LISÄÄ TEHTÄVÄPANKKIIN</button>
+            </div>
+
             <h3>Tehtäväpankki</h3>
             <div id="taskLibraryEditor"></div>
-            <button class="btn btn-danger" onclick="resetGame()">SERVER WIPE</button>
+            <button class="btn btn-danger" onclick="resetGame()">SERVER WIPE (VAIN PISTEET)</button>
         </div>
     </div>
 
@@ -134,233 +97,8 @@
     </div>
 </div>
 
+<script src="script.js"></script>
 <script>
-    const firebaseConfig = { databaseURL: "https://approplaybook-default-rtdb.europe-west1.firebasedatabase.app/" };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
-    let myName = localStorage.getItem('appro_name') || null;
-    let currentResetId = localStorage.getItem('appro_reset_id') || null;
-    let allPlayers = [];
-    let currentTasks = [];
-    let isTaskActive = false;
-    let localSpyEnabled = false; // Vain tämän selaimen GM:lle
-
-    const playbook = [
-        { id: 0, n: "Keittiömestarin Battle Royale", p: 3, d: "Nopeuskisa tyhjentämisessä." },
-        { id: 1, n: "Supply Drop", p: 2, d: "Tarjoa sankarille juoma." },
-        { id: 2, n: "Lore-selostus", p: 2, d: "30s puhe historiasta." },
-        { id: 3, n: "Root-tason Admin", p: 2, d: "Sankari pitää kiitospuheen yhdelle." },
-        { id: 4, n: "Blue Zone", p: 1, d: "Yhteisajo! Kaikki juovat." },
-        { id: 5, n: "Skini-vaihto", p: 2, d: "Vaihda asuste kaverin kanssa." },
-        { id: 6, n: "Vesijäähdytys", p: 1, d: "Kaikki juovat lasin vettä." },
-        { id: 7, n: "Season Reset", p: 2, d: "Seuraava synttärisankari saa pisteet." },
-        { id: 8, n: "Makustelu-makro", p: 1, d: "Uusi kippistysrutiini." },
-        { id: 9, n: "Trivia-haaste", p: 2, d: "Kysymys sankarista." },
-        { id: 10, n: "AFK-vartti", p: 1, d: "15 min ilman puhelimia." },
-        { id: 11, n: "Ryhmä-emote", p: 1, d: "Yhteiskuva tietyssä asennossa." },
-        { id: 12, n: "Dev-blogi", p: 1, d: "Kirjoita tervehdys sankarille." },
-        { id: 13, n: "Lokalisointitesti", p: 1, d: "Tilaa juoma murteella." },
-        { id: 14, n: "RNG-Loot", p: 2, d: "Yksi onnekas saa pisteet." },
-        { id: 15, n: "Meta-analyysi", p: 2, d: "30s analyysi koodista." },
-        { id: 16, n: "Protokolla-kamppailu", p: 3, d: "KPS-turnaus." },
-        { id: 17, n: "Coaching-rangaistus", p: 2, d: "Sankari antaa haasteen." },
-        { id: 18, n: "Käyttäjätestaus", p: 2, d: "Sankari tenttaa vierasta." },
-        { id: 19, n: "Experimental Build", p: 2, d: "Tilaa baarimikon yllätys." },
-        { id: 20, n: "Bug Bounty", p: 2, d: "Etsi esine joka muistuttaa kiekkoa." },
-        { id: 21, n: "Red Zone", p: 1, d: "Juomat alle 3 minuutissa." },
-        { id: 22, n: "Fore-huuto", p: 2, d: "Huuda kovaa FORE!" },
-        { id: 23, n: "Legacy-tuki", p: 2, d: "Kysy tuntemattomalta elämänohje." },
-        { id: 24, n: "Loot-kraten haku", p: 2, d: "Hae pöytään vettä/snacksia." },
-        { id: 25, n: "Antsautus", p: 2, d: "Juotava heikommalla kädellä." },
-        { id: 26, n: "Ping-testi", p: 1, d: "PING -> PONG." },
-        { id: 27, n: "Keittiön suositus", p: 2, d: "Keksi uusi drinkki." },
-        { id: 28, n: "Caddy-palvelu", p: 2, d: "Huolehdi sankarin tavaroista." },
-        { id: 29, n: "Final Circle", p: 1, d: "Viimeinen kuva ja tuuletus." }
-    ];
-
-    db.ref('gameState').on('value', (snap) => {
-        const data = snap.val();
-        if(!data) return;
-
-        if (currentResetId && data.resetId !== currentResetId) { localStorage.clear(); location.reload(); return; }
-        if (!currentResetId) { currentResetId = data.resetId; localStorage.setItem('appro_reset_id', data.resetId); }
-
-        allPlayers = data.players || [];
-        currentTasks = data.tasks || [];
-        updateIdentityUI();
-        renderLeaderboard();
-
-        const live = data.activeTask;
-        isTaskActive = !!live;
-        if(live) {
-            document.getElementById('liveTask').style.display = 'block';
-            const results = data.participants || [];
-            const isLocked = !!data.locked;
-            const isGM = document.body.className.includes('gm');
-            const isMePart = results.some(r => r.name === myName);
-            
-            document.getElementById('liveTaskName').innerText = live.n;
-            document.getElementById('liveTaskPoints').innerText = live.p + " XP";
-            document.getElementById('liveTaskDesc').innerText = live.d;
-
-            const shouldSeeSpecs = (isLocked && (isMePart || isGM)) || (isGM && localSpyEnabled);
-            document.getElementById('instructionBox').style.display = shouldSeeSpecs ? 'block' : 'none';
-
-            document.getElementById('taskPhaseTitle').innerText = isLocked ? "VAIHE: SUORITUS" : "VAIHE: ILMOITTAUTUMINEN";
-            document.getElementById('joinAction').style.display = isLocked ? 'none' : 'block';
-
-            const vBtn = document.getElementById('btnVolu');
-            const cWarn = document.getElementById('cooldownWarning');
-            const myD = allPlayers.find(p => p.name === myName);
-            if(myD && myD.cooldown && !isMePart) {
-                vBtn.style.display = 'none'; cWarn.style.display = 'block';
-            } else {
-                vBtn.style.display = 'block'; cWarn.style.display = 'none';
-                vBtn.className = isMePart ? "btn btn-success" : "btn btn-primary";
-                vBtn.innerText = isMePart ? "OLET MUKANA! ✓" : "MUKANA TEHTÄVÄSSÄ!";
-            }
-            if(isGM) renderGMVolunteers(results, isLocked);
-        } else { 
-            document.getElementById('liveTask').style.display = 'none'; 
-            localSpyEnabled = false; 
-            updateSpyBtnText();
-        }
-    });
-
-    function toggleGMSpyLocal() {
-        if (!document.body.className.includes('gm')) return;
-        localSpyEnabled = !localSpyEnabled;
-        updateSpyBtnText();
-        const box = document.getElementById('instructionBox');
-        if (localSpyEnabled) {
-            box.style.display = 'block';
-        } else {
-            db.ref('gameState/locked').once('value', s => {
-                if (!s.val()) box.style.display = 'none';
-            });
-        }
-    }
-
-    function updateSpyBtnText() {
-        const btn = document.getElementById('btnGMSpy');
-        if (btn) btn.innerText = localSpyEnabled ? "PIILOTA SPEKSIT" : "KATSO SPEKSIT";
-    }
-
-    function claimIdentity() {
-        const n = document.getElementById('playerNameInput').value.trim();
-        if(!n) return; myName = n; localStorage.setItem('appro_name', n);
-        db.ref('gameState/players').transaction(p => {
-            p = p || []; if(!p.find(x => x.name === n)) p.push({ name: n, score: 0, cooldown: false });
-            return p;
-        });
-    }
-
-    function adminAddPlayer() {
-        const n = document.getElementById('adminNewPlayerName').value.trim();
-        if(!n) return;
-        db.ref('gameState/players').transaction(p => {
-            p = p || []; if(!p.find(x => x.name === n)) p.push({ name: n, score: 0, cooldown: false });
-            return p;
-        });
-        document.getElementById('adminNewPlayerName').value = '';
-    }
-
-    function volunteer() {
-        const p = allPlayers.find(x => x.name === myName);
-        if(!myName || (p && p.cooldown)) return;
-        db.ref('gameState/participants').transaction(l => {
-            l = l || []; if(!l.find(r => r.name === myName)) l.push({ name: myName, win: true });
-            return l;
-        });
-    }
-
-    function renderGMVolunteers(results, isLocked) {
-        const grid = document.getElementById('volunteerGrid'); grid.innerHTML = '';
-        allPlayers.forEach(p => {
-            const isInc = results.some(r => r.name === p.name);
-            grid.innerHTML += `<button class="btn ${isInc?'btn-primary':'btn-secondary'} ${p.cooldown?'on-cooldown':''}" 
-                style="margin:0; font-size:0.6rem;" onclick="toggleParticipant('${p.name}')" ${isLocked?'disabled':''}>
-                ${p.name}${p.cooldown?' (J)':''}
-            </button>`;
-        });
-        document.getElementById('btnLock').style.display = isLocked ? 'none' : 'block';
-        document.getElementById('btnFinish').style.display = isLocked ? 'block' : 'none';
-        const sArea = document.getElementById('scoringArea'); sArea.innerHTML = isLocked ? '<h3>Pisteytys</h3>' : '';
-        if(isLocked) {
-            results.forEach((r, i) => {
-                sArea.innerHTML += `<div class="player-row" style="padding:10px;"><span>${r.name}</span>
-                <button class="btn" style="width:70px; margin:0; padding:8px; background:${r.win?'var(--success)':'var(--danger)'}" 
-                onclick='toggleWin(${i})'>${r.win?'WIN':'FAIL'}</button></div>`;
-            });
-        }
-    }
-
-    function toggleParticipant(name) {
-        db.ref('gameState/participants').transaction(list => {
-            list = list || []; const idx = list.findIndex(r => r.name === name);
-            if(idx > -1) list.splice(idx, 1); else list.push({ name: name, win: true });
-            return list;
-        });
-    }
-
-    function drawRandom() {
-        const count = parseInt(document.getElementById('drawCount').value) || 1;
-        db.ref('gameState/participants').once('value', s => {
-            let list = s.val() || [];
-            if(list.length <= count) return;
-            let shuffled = list.sort(() => 0.5 - Math.random());
-            db.ref('gameState/participants').set(shuffled.slice(0, count));
-        });
-    }
-
-    function renderLeaderboard() {
-        const list = document.getElementById('playerList'); list.innerHTML = '';
-        [...allPlayers].sort((a,b) => b.score - a.score).forEach(p => {
-            list.innerHTML += `<div class="player-row ${p.name === myName?'me':''}">
-                <span>${p.name} ${p.cooldown ? '<span class="cooldown-text">[J]</span>' : ''}</span>
-                <span class="xp-badge">${p.score} XP</span>
-            </div>`;
-        });
-    }
-
-    function renderAdminPlayerList() {
-        const list = document.getElementById('adminPlayerList'); list.innerHTML = '';
-        allPlayers.forEach((p, i) => {
-            list.innerHTML += `<div class="player-row" style="padding:10px;"><span>${p.name} (${p.score})</span>
-                <div style="display:flex; gap:5px;">
-                    <button class="btn btn-secondary" style="width:35px; padding:5px; margin:0;" onclick="adjustScore(${i}, 1)">+</button>
-                    <button class="btn btn-secondary" style="width:35px; padding:5px; margin:0;" onclick="adjustScore(${i}, -1)">-</button>
-                    <button class="btn btn-danger" style="width:35px; padding:5px; margin:0;" onclick="removePlayer(${i})">X</button>
-                </div></div>`;
-        });
-    }
-
-    function renderTaskLibrary() {
-        const lib = document.getElementById('taskLibraryEditor'); lib.innerHTML = '';
-        currentTasks.forEach((t, i) => {
-            lib.innerHTML += `<div style="border-bottom:1px solid #333; padding:10px 0;">
-                <input type="text" value="${t.n}" onchange="updateTaskInLib(${i}, 'n', this.value)">
-                <textarea onchange="updateTaskInLib(${i}, 'd', this.value)">${t.d}</textarea>
-                <input type="number" value="${t.p}" onchange="updateTaskInLib(${i}, 'p', parseInt(this.value))" style="width:80px;">
-            </div>`;
-        });
-    }
-
-    function updateTaskInLib(idx, field, val) { currentTasks[idx][field] = val; db.ref('gameState/tasks').set(currentTasks); }
-    function adjustScore(idx, amt) { db.ref('gameState/players/' + idx + '/score').transaction(s => (s || 0) + amt); }
-    function removePlayer(idx) { if(confirm("Poista pelaaja?")) { allPlayers.splice(idx, 1); db.ref('gameState/players').set(allPlayers); } }
-    function toggleWin(i) { db.ref('gameState/participants/' + i + '/win').transaction(w => !w); }
-    function lockParticipants() { db.ref('gameState/locked').set(true); localSpyEnabled = false; updateSpyBtnText(); }
-    function setRole(r) { document.body.className = r + '-mode'; document.getElementById('btnPlayer').classList.toggle('active', r==='player'); document.getElementById('btnGM').classList.toggle('active', r==='gm'); }
-    function toggleAdminPanel() { const p = document.getElementById('adminPanel'); p.style.display = p.style.display === 'none' ? 'block' : 'none'; if(p.style.display === 'block') { renderAdminPlayerList(); renderTaskLibrary(); } }
-    function confirmRandomize() { if(isTaskActive && !confirm("Arvotaanko uusi?")) return; localSpyEnabled = false; updateSpyBtnText(); const t = currentTasks[Math.floor(Math.random()*currentTasks.length)]; db.ref('gameState').update({ activeTask: t, participants: null, locked: false }); }
-    function showScoring() { db.ref('gameState').once('value', snap => { const d = snap.val(); const res = d.participants || []; const updated = allPlayers.map(p => { p.cooldown = false; const part = res.find(r => r.name === p.name); if(part) { if(part.win) p.score += d.activeTask.p; p.cooldown = true; } return p; }); db.ref('gameState').update({ players: updated, activeTask: null, participants: null, locked: false }); }); }
-    function updateIdentityUI() { document.getElementById('identityCard').style.display = myName ? 'none' : 'block'; document.getElementById('idTag').innerText = myName ? "SOTURI: " + myName : "KIRJAUDU SISÄÄN"; }
-    function initGame() { db.ref('gameState').set({ players: [], tasks: playbook, activeTask: null, resetId: Date.now().toString() }); }
-    function resetGame() { if(confirm("Wipe server?")) initGame(); }
-</script>
-    <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js')
       .then(reg => console.log('Service Worker rekisteröity!', reg))
@@ -369,5 +107,3 @@
 </script>  
 </body>
 </html>
-
-
