@@ -360,6 +360,14 @@
     function initGame() { db.ref('gameState').set({ players: [], tasks: playbook, activeTask: null, resetId: Date.now().toString() }); }
     function resetGame() { if(confirm("Wipe server?")) initGame(); }
 </script>
+    <script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js')
+      .then(reg => console.log('Service Worker rekisteröity!', reg))
+      .catch(err => console.error('Service Worker virhe:', err));
+  }
+</script>  
 </body>
 </html>
+
 
