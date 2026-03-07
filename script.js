@@ -9,7 +9,6 @@ let currentTasks = [];
 let isTaskActive = false;
 let localSpyEnabled = false;
 
-// Alkuperäinen tehtävälista (käytetään vain jos tietokanta on tyhjä)
 const initialPlaybook = [
     { id: 0, n: "Keittiömestarin Battle Royale", p: 3, d: "Nopeuskisa tyhjentämisessä." },
     { id: 1, n: "Supply Drop", p: 2, d: "Tarjoa sankarille juoma." },
@@ -46,7 +45,6 @@ const initialPlaybook = [
 db.ref('gameState').on('value', (snap) => {
     const data = snap.val();
     if(!data) {
-        // Jos tietokanta on tyhjä, alustetaan se
         db.ref('gameState').set({ tasks: initialPlaybook, players: [], resetId: Date.now().toString() });
         return;
     }
@@ -58,11 +56,25 @@ db.ref('gameState').on('value', (snap) => {
     currentTasks = data.tasks || [];
     updateIdentityUI();
     renderLeaderboard();
+    
+    // REAALIAIKAINEN ADMIN-PÄIVITYS:
+    if(document.getElementById('adminPanel').style.display === 'block') {
+        renderAdminPlayerList();
+    }
 
     const live = data.activeTask;
+    const taskBox = document.getElementById('liveTask');
+    
+    // ÄÄNIEFIEKTI JA ANIMAATIO UUDELLE TEHTÄVÄLLE
+    if(!isTaskActive && live) {
+        playTaskSound();
+        document.getElementById('liveTaskName').classList.add('flash-effect');
+        setTimeout(() => document.getElementById('liveTaskName').classList.remove('flash-effect'), 1000);
+    }
+
     isTaskActive = !!live;
     if(live) {
-        document.getElementById('liveTask').style.display = 'block';
+        taskBox.style.display = 'block';
         const results = data.participants || [];
         const isLocked = !!data.locked;
         const isGM = document.body.className.includes('gm');
@@ -74,7 +86,6 @@ db.ref('gameState').on('value', (snap) => {
 
         const shouldSeeSpecs = (isLocked && (isMePart || isGM)) || (isGM && localSpyEnabled);
         document.getElementById('instructionBox').style.display = shouldSeeSpecs ? 'block' : 'none';
-
         document.getElementById('taskPhaseTitle').innerText = isLocked ? "VAIHE: SUORITUS" : "VAIHE: ILMOITTAUTUMINEN";
         document.getElementById('joinAction').style.display = isLocked ? 'none' : 'block';
 
@@ -89,9 +100,43 @@ db.ref('gameState').on('value', (snap) => {
         }
         if(isGM) renderGMVolunteers(results, isLocked);
     } else { 
-        document.getElementById('liveTask').style.display = 'none'; 
+        taskBox.style.display = 'none'; 
     }
 });
+
+function playTaskSound() {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.1);
+    } catch(e) { console.log("Audio not supported"); }
+}
+
+function adminAddPlayer() {
+    const n = document.getElementById('adminNewPlayerName').value.trim();
+    if(!n) return;
+    db.ref('gameState/players').transaction(p => {
+        p = p || []; if(!p.find(x => x.name === n)) p.push({ name: n, score: 0, cooldown: false });
+        return p;
+    });
+    document.getElementById('adminNewPlayerName').value = ''; // Tyhjennetään kenttä heti
+}
+
+function resetCooldowns() {
+    if(!confirm("Nollataanko kaikkien jäähyt?")) return;
+    const updated = allPlayers.map(p => { p.cooldown = false; return p; });
+    db.ref('gameState/players').set(updated);
+}
+
+// LISÄÄ TÄMÄ NAPPI index.html:ään adminPlayerListin yläpuolelle tai alapuolelle:
+// <button class="btn btn-secondary" onclick="resetCooldowns()">VAPAUTA KAIKKI JÄÄHYLTÄ</button>
 
 function adminCreateTask() {
     const name = document.getElementById('newTaskName').value.trim();
@@ -125,28 +170,14 @@ function renderTaskLibrary() {
     });
 }
 
-function updateTaskInLib(idx, field, val) { 
-    db.ref(`gameState/tasks/${idx}/${field}`).set(val); 
-}
-
-function removeTask(idx) {
-    if(!confirm("Poistetaanko tehtävä pysyvästi?")) return;
-    currentTasks.splice(idx, 1);
-    db.ref('gameState/tasks').set(currentTasks);
-}
+function updateTaskInLib(idx, field, val) { db.ref(`gameState/tasks/${idx}/${field}`).set(val); }
+function removeTask(idx) { if(!confirm("Poistetaanko tehtävä pysyvästi?")) return; currentTasks.splice(idx, 1); db.ref('gameState/tasks').set(currentTasks); }
 
 function resetGame() {
     if(!confirm("HUOM: Tämä nollaa vain pelaajat ja pisteet. Tehtäväpankki säilyy. Jatka?")) return;
-    db.ref('gameState').update({
-        players: [],
-        activeTask: null,
-        participants: null,
-        locked: false,
-        resetId: Date.now().toString()
-    });
+    db.ref('gameState').update({ players: [], activeTask: null, participants: null, locked: false, resetId: Date.now().toString() });
 }
 
-// Kaikki muut aikaisemmat funktiot (volunteers, scoring, jne.) säilytetty ja siistitty:
 function claimIdentity() {
     const n = document.getElementById('playerNameInput').value.trim();
     if(!n) return; myName = n; localStorage.setItem('appro_name', n);
@@ -155,14 +186,7 @@ function claimIdentity() {
         return p;
     });
 }
-function adminAddPlayer() {
-    const n = document.getElementById('adminNewPlayerName').value.trim();
-    if(!n) return;
-    db.ref('gameState/players').transaction(p => {
-        p = p || []; if(!p.find(x => x.name === n)) p.push({ name: n, score: 0, cooldown: false });
-        return p;
-    });
-}
+
 function volunteer() {
     const p = allPlayers.find(x => x.name === myName);
     if(!myName || (p && p.cooldown)) return;
@@ -171,6 +195,7 @@ function volunteer() {
         return l;
     });
 }
+
 function toggleParticipant(name) {
     db.ref('gameState/participants').transaction(list => {
         list = list || []; const idx = list.findIndex(r => r.name === name);
@@ -178,6 +203,7 @@ function toggleParticipant(name) {
         return list;
     });
 }
+
 function drawRandom() {
     const count = parseInt(document.getElementById('drawCount').value) || 1;
     db.ref('gameState/participants').once('value', s => {
@@ -187,8 +213,10 @@ function drawRandom() {
         db.ref('gameState/participants').set(shuffled.slice(0, count));
     });
 }
+
 function lockParticipants() { db.ref('gameState/locked').set(true); localSpyEnabled = false; updateSpyBtnText(); }
 function toggleWin(i) { db.ref('gameState/participants/' + i + '/win').transaction(w => !w); }
+
 function showScoring() { 
     db.ref('gameState').once('value', snap => { 
         const d = snap.val(); 
@@ -202,26 +230,40 @@ function showScoring() {
         db.ref('gameState').update({ players: updated, activeTask: null, participants: null, locked: false }); 
     }); 
 }
+
 function toggleGMSpyLocal() { localSpyEnabled = !localSpyEnabled; updateSpyBtnText(); document.getElementById('instructionBox').style.display = localSpyEnabled ? 'block' : 'none'; }
 function updateSpyBtnText() { const btn = document.getElementById('btnGMSpy'); if(btn) btn.innerText = localSpyEnabled ? "PIILOTA SPEKSIT" : "KATSO SPEKSIT"; }
 function setRole(r) { document.body.className = r + '-mode'; document.getElementById('btnPlayer').classList.toggle('active', r==='player'); document.getElementById('btnGM').classList.toggle('active', r==='gm'); }
-function toggleAdminPanel() { const p = document.getElementById('adminPanel'); p.style.display = p.style.display === 'none' ? 'block' : 'none'; if(p.style.display === 'block') { renderAdminPlayerList(); renderTaskLibrary(); } }
-function confirmRandomize() { const t = currentTasks[Math.floor(Math.random()*currentTasks.length)]; db.ref('gameState').update({ activeTask: t, participants: null, locked: false }); }
+
+function toggleAdminPanel() { 
+    const p = document.getElementById('adminPanel'); 
+    p.style.display = p.style.display === 'none' ? 'block' : 'none'; 
+    if(p.style.display === 'block') { renderAdminPlayerList(); renderTaskLibrary(); } 
+}
+
+function confirmRandomize() { 
+    const t = currentTasks[Math.floor(Math.random()*currentTasks.length)]; 
+    db.ref('gameState').update({ activeTask: t, participants: null, locked: false }); 
+}
+
 function adjustScore(idx, amt) { db.ref('gameState/players/' + idx + '/score').transaction(s => (s || 0) + amt); }
 function removePlayer(idx) { if(confirm("Poista pelaaja?")) { allPlayers.splice(idx, 1); db.ref('gameState/players').set(allPlayers); } }
 function updateIdentityUI() { document.getElementById('identityCard').style.display = myName ? 'none' : 'block'; document.getElementById('idTag').innerText = myName ? "SOTURI: " + myName : "KIRJAUDU SISÄÄN"; }
+
 function renderLeaderboard() {
     const list = document.getElementById('playerList'); list.innerHTML = '';
     [...allPlayers].sort((a,b) => b.score - a.score).forEach(p => {
         list.innerHTML += `<div class="player-row ${p.name === myName?'me':''}"><span>${p.name}${p.cooldown?' [J]':''}</span><span class="xp-badge">${p.score} XP</span></div>`;
     });
 }
+
 function renderAdminPlayerList() {
     const list = document.getElementById('adminPlayerList'); list.innerHTML = '';
     allPlayers.forEach((p, i) => {
         list.innerHTML += `<div class="player-row" style="padding:10px;"><span>${p.name} (${p.score})</span><div style="display:flex; gap:5px;"><button class="btn btn-secondary" style="width:35px; padding:5px; margin:0;" onclick="adjustScore(${i}, 1)">+</button><button class="btn btn-secondary" style="width:35px; padding:5px; margin:0;" onclick="adjustScore(${i}, -1)">-</button><button class="btn btn-danger" style="width:35px; padding:5px; margin:0;" onclick="removePlayer(${i})">X</button></div></div>`;
     });
 }
+
 function renderGMVolunteers(results, isLocked) {
     const grid = document.getElementById('volunteerGrid'); grid.innerHTML = '';
     allPlayers.forEach(p => {
