@@ -1,8 +1,7 @@
 self.addEventListener('install', (e) => {
-  console.log('Service Worker asennettu');
+  console.log('Service Worker: Asennettu');
 });
 
-self.addEventListener('fetch', (event) => {
-  // Tämä tyhjä kuuntelija riittää Androidille sovellustunnistukseen
-  event.respondWith(fetch(event.request));
+self.addEventListener('fetch', (e) => {
+  e.respondWith(fetch(e.request));
 });
