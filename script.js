@@ -98,7 +98,11 @@ db.ref('gameState').on('value', (snap) => {
             vBtn.className = isMePart ? "btn btn-success" : "btn btn-primary";
             vBtn.innerText = isMePart ? "OLET MUKANA! ✓" : "MUKANA TEHTÄVÄSSÄ!";
         }
-        if(isGM) renderGMVolunteers(results, isLocked);
+        
+        // KORJAUS: Päivitetään GM:n osallistujalista reaaliajassa aina kun data muuttuu
+        if(isGM) {
+            renderGMVolunteers(results, isLocked);
+        }
     } else { 
         taskBox.style.display = 'none'; 
     }
@@ -126,7 +130,7 @@ function adminAddPlayer() {
         p = p || []; if(!p.find(x => x.name === n)) p.push({ name: n, score: 0, cooldown: false });
         return p;
     });
-    document.getElementById('adminNewPlayerName').value = ''; // Tyhjennetään kenttä heti
+    document.getElementById('adminNewPlayerName').value = ''; 
 }
 
 function resetCooldowns() {
@@ -134,9 +138,6 @@ function resetCooldowns() {
     const updated = allPlayers.map(p => { p.cooldown = false; return p; });
     db.ref('gameState/players').set(updated);
 }
-
-// LISÄÄ TÄMÄ NAPPI index.html:ään adminPlayerListin yläpuolelle tai alapuolelle:
-// <button class="btn btn-secondary" onclick="resetCooldowns()">VAPAUTA KAIKKI JÄÄHYLTÄ</button>
 
 function adminCreateTask() {
     const name = document.getElementById('newTaskName').value.trim();
