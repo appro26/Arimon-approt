@@ -1,17 +1,16 @@
 {
   "short_name": "Playbook",
   "name": "Appro Playbook",
+  "display": "standalone",
+  "start_url": "./index.html",
+  "theme_color": "#050507",
+  "background_color": "#050507",
   "icons": [
     {
-      "src": "icon.png",
-      "sizes": "192x192 512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "https://api.dicebear.com/7.x/initials/png?seed=AP&backgroundColor=050507&fontColor=00e5ff",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
     }
-  ],
-  "start_url": "./index.html",
-  "display": "standalone",
-  "orientation": "portrait",
-  "theme_color": "#050507",
-  "background_color": "#050507"
+  ]
 }
