@@ -94,9 +94,11 @@ db.ref('gameState').on('value', (snap) => {
         } else {
             vBtn.style.display = 'block'; document.getElementById('cooldownWarning').style.display = 'none';
             vBtn.className = isMePart ? "btn btn-success" : "btn btn-primary";
-            vBtn.innerText = isMePart ? "OLET MUKANA! ✓" : "MUKANA TEHTÄVÄSSÄ!";
+            // KORJAUS: Muutettu napin teksti
+            vBtn.innerText = isMePart ? "OLET MUKANA! ✓" : "OSALLISTUTKO?";
         }
         
+        // KORJAUS: GM-näkymä päivittyy aina kun Firebasesta tulee uutta tietoa
         if(isGM) {
             renderGMVolunteers(results, isLocked);
         }
@@ -185,7 +187,6 @@ function claimIdentity() {
     });
 }
 
-// KORJATTU: Pelaaja voi nyt lisätä ja poistaa itsensä ilmoittautumisesta
 function volunteer() {
     const p = allPlayers.find(x => x.name === myName);
     if(!myName || (p && p.cooldown)) return;
@@ -193,9 +194,9 @@ function volunteer() {
         list = list || []; 
         const idx = list.findIndex(r => r.name === myName);
         if(idx > -1) {
-            list.splice(idx, 1); // Poistetaan, jos on jo listalla
+            list.splice(idx, 1);
         } else {
-            list.push({ name: myName, win: true }); // Lisätään, jos ei ole listalla
+            list.push({ name: myName, win: true });
         }
         return list;
     });
@@ -269,7 +270,6 @@ function renderAdminPlayerList() {
     });
 }
 
-// KORJATTU: Piirtää listan aina puhtaalta pöydältä ja asettaa oikeat värit heti
 function renderGMVolunteers(results, isLocked) {
     const grid = document.getElementById('volunteerGrid');
     if (!grid) return;
