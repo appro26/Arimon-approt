@@ -31,3 +31,5 @@ input, textarea { background: var(--surface-light); border: 1px solid rgba(255,2
 .player-mode .player-only { display: block; }
 #taskLibraryEditor { max-height: 300px; overflow-y: auto; padding: 10px; background: #000; border-radius: 10px; }
 @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes flash { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+.flash-effect { animation: flash 0.2s ease-in-out 3; }
