@@ -1,22 +1,17 @@
 {
-  "name": "Appro Playbook 2.2",
   "short_name": "Playbook",
-  "start_url": "./index.html",
-  "display": "standalone",
-  "background_color": "#050507",
-  "theme-color": "#050507",
+  "name": "Appro Playbook",
   "icons": [
     {
-      "src": "https://i.imgur.com/8N4N5fK.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "https://i.imgur.com/z0J6rR5.png",
-      "sizes": "512x512",
-      "type": "image/png",
+      "src": "icon.png",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#050507",
+  "background_color": "#050507"
 }
