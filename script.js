@@ -13,37 +13,41 @@ let lastMyScore = null;
 const APP_NAME = "Arimon Approt";
 document.title = APP_NAME;
 
+// UUSI OPTIMOITU TEHTÄVÄLISTA (Korvattu kokonaan)
+// n=nimi, d=kuvaus, s=suorittajien määrä, p=pisteet, m=miinus käytössä, b=sankarin pisteet
 const initialPlaybook = [
-    { id: 0, n: "Keittiömestarin Battle Royale", p: 3, d: "Nopeuskisa tyhjentämisessä.", m: false, b: false },
-    { id: 1, n: "Supply Drop", p: 2, d: "Tarjoa sankarille juoma.", m: false, b: true },
-    { id: 2, n: "Lore-selostus", p: 2, d: "30s puhe historiasta.", m: false, b: false },
-    { id: 3, n: "Root-tason Admin", p: 2, d: "Sankari pitää kiitospuheen yhdelle.", m: false, b: true },
-    { id: 4, n: "Blue Zone", p: 1, d: "Yhteisajo! Kaikki juovat.", m: false, b: false },
-    { id: 5, n: "Skini-vaihto", p: 2, d: "Vaihda asuste kaverin kanssa.", m: false, b: false },
-    { id: 6, n: "Vesijäähdytys", p: 1, d: "Kaikki juovat lasin vettä.", m: false, b: false },
-    { id: 7, n: "Season Reset", p: 2, d: "Seuraava synttärisankari saa pisteet.", m: false, b: false },
-    { id: 8, n: "Makustelu-makro", p: 1, d: "Uusi kippistysrutiini.", m: false, b: false },
-    { id: 9, n: "Trivia-haaste", p: 2, d: "KYSYMYS SANKARISTA.", m: false, b: true },
-    { id: 10, n: "AFK-vartti", p: 1, d: "15 min ilman puhelimia.", m: false, b: false },
-    { id: 11, n: "Ryhmä-emote", p: 1, d: "Yhteiskuva tietyssä asennossa.", m: false, b: false },
-    { id: 12, n: "Dev-blogi", p: 1, d: "Kirjoita tervehdys sankarille.", m: false, b: true },
-    { id: 13, n: "Lokalisointitesti", p: 1, d: "Tilaa juoma murteella.", m: false, b: false },
-    { id: 14, n: "RNG-Loot", p: 2, d: "Yksi onnekas saa pisteet.", m: false, b: false },
-    { id: 15, n: "Meta-analyysi", p: 2, d: "30s analyysi koodista.", m: false, b: false },
-    { id: 16, n: "Protokolla-kamppailu", p: 3, d: "KPS-turnaus.", m: false, b: false },
-    { id: 17, n: "Coaching-rangaistus", p: 2, d: "Sankari antaa haasteen.", m: false, b: true },
-    { id: 18, n: "Käyttäjätestaus", p: 2, d: "Sankari tenttaa vierasta.", m: false, b: true },
-    { id: 19, n: "Experimental Build", p: 2, d: "Tilaa baarimikon yllätys.", m: false, b: false },
-    { id: 20, n: "Bug Bounty", p: 2, d: "Etsi esine joka muistuttaa kiekkoa.", m: false, b: false },
-    { id: 21, n: "Red Zone", p: 1, d: "Juomat alle 3 minuutissa.", m: false, b: false },
-    { id: 22, n: "Fore-huuto", p: 2, d: "Huuda kovaa FORE!", m: false, b: false },
-    { id: 23, n: "Legacy-tuki", p: 2, d: "Kysy tuntemattomalta elämänohje.", m: false, b: false },
-    { id: 24, n: "Loot-kraten haku", p: 2, d: "Hae pöytään vettä/snacksia.", m: false, b: false },
-    { id: 25, n: "Antsautus", p: 2, d: "Juotava heikommalla kädellä.", m: false, b: false },
-    { id: 26, n: "Ping-testi", p: 1, d: "PING -> PONG.", m: false, b: false },
-    { id: 27, n: "Keittiön suositus", p: 2, d: "Keksi uusi drinkki.", m: false, b: false },
-    { id: 28, n: "Caddy-palvelu", p: 2, d: "Huolehdi sankarin tavaroista.", m: false, b: true },
-    { id: 29, n: "Final Circle", p: 1, d: "Viimeinen kuva ja tuuletus.", m: false, b: false }
+    { id: 1, n: "Mise en place", d: "Varmista, että kaikilla pöytäseurueen jäsenillä on lasissa juotavaa (myös vettä). Jos jollain on tyhjää, täytä se.", s: 2, p: 2, m: true, b: 0 },
+    { id: 2, n: "Uudelleenkäynnistys (Reboot)", d: "Kaikkien suorittajien on juotava lasi vettä yhdeltä istumalta 'järjestelmän vakauttamiseksi'.", s: 3, p: 1, m: false, b: 0 },
+    { id: 3, n: "Holari-yritys", d: "Heitä lasinalunen tyhjään tuoppiin tai lasiin 2 metrin etäisyydeltä. Kolme yritystä.", s: 2, p: 2, m: true, b: 0 },
+    { id: 4, n: "Air Drop saapuu", d: "Tilaa synttärisankarille juoma (mieto tai alkoholiton käy).", s: 1, p: 3, m: false, b: 1 },
+    { id: 5, n: "Gordon Ramsay -palautekierros", d: "Kehu nykyisen baarin miljöötä tai juomavalikoimaa yhdelle tuntemattomalle asiakkaalle 'ammattilaisen otteella'.", s: 1, p: 2, m: true, b: 0 },
+    { id: 6, n: "Tikettijärjestelmän ruuhka", d: "Kuuntele synttärisankarin yksi valitsema muisto menneisyydestä keskeyttämättä. Lopuksi analysoi 'ratkaisu'.", s: 2, p: 1, m: false, b: 1 },
+    { id: 7, n: "Spotterin rooli", d: "Seuraa synttärisankarin lasia 5 minuutin ajan. Jos hän aikoo laskea sen pöydälle ilman alusta, estä se tai aseta alunen alle.", s: 1, p: 2, m: true, b: 0 },
+    { id: 8, n: "Level 3 -kypärä", d: "Pidä mukanasi jotain outoa esinettä (esim. tyhjä tölkki tai pilli) seuraavaan baariin asti hukkaamatta sitä.", s: 2, p: 2, m: true, b: 0 },
+    { id: 9, n: "Uunilohi palaa pohjaan", d: "Suorittajien on poistuttava välittömästi ulos 'tuulettumaan' 2 minuutiksi ilman puhelimia.", s: 4, p: 1, m: true, b: 0 },
+    { id: 10, n: "BIOS-päivitys", d: "Kerro synttärisankarille yksi asia, jota hän ei vielä tiennyt sinusta (IT-salaisuus).", s: 1, p: 1, m: false, b: 0 },
+    { id: 11, n: "Caddy-palvelu", d: "Kanna synttärisankarin takkia tai laukkua seuraavaan siirtymään (tai baarin sisällä siirtyessä).", s: 1, p: 2, m: false, b: 1 },
+    { id: 12, n: "Pochinki Loot", d: "Hae koko seurueelle nippu ilmaisia servettejä tai pillejä tiskiltä ja jaa ne tasaisesti.", s: 1, p: 1, m: true, b: 0 },
+    { id: 13, n: "Sous-chefin suositus", d: "Valitse synttärisankarille seuraava juoma listalta (hän maksaa itse, jos tehtävä ei vaadi ostamista).", s: 1, p: 1, m: false, b: 1 },
+    { id: 14, n: "Palomuuri (Firewall)", d: "Seiso synttärisankarin ja muiden asiakkaiden välissä 'suojana' 3 minuutin ajan.", s: 2, p: 2, m: true, b: 0 },
+    { id: 15, n: "OB-linja (Out of Bounds)", d: "Käy koskettamassa baarin kaukaisinta seinää ja palaa takaisin sanomatta sanaakaan matkalla.", s: 3, p: 1, m: true, b: 0 },
+    { id: 16, n: "Red Zone", d: "Kukaan suorittajista ei saa käyttää sanaa 'joo' tai 'ei' seuraavan 5 minuutin aikana.", s: 5, p: 2, m: true, b: 0 },
+    { id: 17, n: "Lautasliina-origami", d: "Taittele lautasliinasta jokin tunnistettava hahmo tai esine ja lahjoita se sankarille.", s: 1, p: 1, m: true, b: 0 },
+    { id: 18, n: "Ping-testi", d: "Heitä yläfemma kaikkien muiden seurueen jäsenten kanssa mahdollisimman nopeasti (alle 10 sekuntia).", s: 1, p: 1, m: true, b: 0 },
+    { id: 19, n: "Mandatory-kierto", d: "Ennen kuin istut alas, sinun on kierrettävä valittu pöytä tai tuoli myötäpäivään ympäri.", s: 4, p: 1, m: true, b: 0 },
+    { id: 20, n: "Pan Melee Only", d: "Pitele kädessäsi paistinpannua muistuttavaa esinettä (esim. lautanen tai pyöreä alunen) koko seuraavan puheen ajan.", s: 1, p: 1, m: false, b: 0 },
+    { id: 21, n: "Keittiömestarin tervehdys", d: "Tarjoa sankarille pieni suolainen välipala (pähkinöitä, sipsejä tms. baarista).", s: 1, p: 3, m: false, b: 1 },
+    { id: 22, n: "Etätuki-istunto", d: "Selitä synttärisankarille mahdollisimman monimutkaisesti, miten jokin arkipäiväinen esine (esim. kynä) toimii.", s: 1, p: 1, m: false, b: 0 },
+    { id: 23, n: "Putterin tarkkuus", d: "Liu'uta kolikko pöytää pitkin mahdollisimman lähelle reunaa tippumatta. Kolme yritystä.", s: 2, p: 2, m: true, b: 0 },
+    { id: 24, n: "Med Kit -huolto", d: "Käy ostamassa sankarille jotain nesteyttävää tai särkylääkettä 'valmiiksi' kaappiin/laukkuun.", s: 1, p: 3, m: false, b: 1 },
+    { id: 25, n: "Jälkiruokalista", d: "Lue ääneen keksitty 'ylistyspuhe' synttärisankarille käyttäen mahdollisimman monta ruoka-aiheista sanaa.", s: 1, p: 2, m: false, b: 1 },
+    { id: 26, n: "Käyttäjävirhe (User Error)", d: "Sano 'Olen pahoillani, kyseessä oli käyttäjävirhe' aina kun joku seurueesta tekee jotain kömpelöä seuraavan 10 min aikana.", s: 1, p: 2, m: true, b: 0 },
+    { id: 27, n: "Fore!", d: "Huuda 'FORE!' (kohtuullisella volyymilla) aina kun joku seurueesta nousee seisomaan. Kesto 5 minuuttia.", s: 2, p: 1, m: true, b: 0 },
+    { id: 28, n: "Blue Zone -siirtymä", d: "Seuraavaan baariin siirryttäessä suorittajien on kuljettava viimeisenä ja varmistettava, ettei ketään jää jälkeen.", s: 2, p: 1, m: true, b: 0 },
+    { id: 29, n: "Raaka-aineanalyysi", d: "Tunnista sokkona (silmät kiinni) mitä juomaa sankarisi lasissa on hajun perusteella.", s: 1, p: 2, m: true, b: 0 },
+    { id: 30, n: "Pilvipalvelun varmuuskopio", d: "Ota yhteisselfie koko porukasta (tai mahdollisimman monesta) ja varmista, että se on 'tallessa'.", s: 1, p: 1, m: false, b: 1 },
+    { id: 31, n: "Tree Kick -epäonni", d: "Matki puuta (seiso yhdellä jalalla kädet sivuilla) 30 sekuntia kesken keskustelun.", s: 2, p: 2, m: true, b: 0 },
+    { id: 32, n: "Winner Winner Chicken Dinner", d: "Tilaa sankarille (ja itsellesi jos haluat) pientä syötävää, kuten kanansiipiä tai vastaavaa.", s: 1, p: 3, m: false, b: 1 }
 ];
 
 db.ref('gameState').on('value', (snap) => {
@@ -78,7 +82,7 @@ db.ref('gameState').on('value', (snap) => {
 
     updateIdentityUI();
     renderLeaderboard(config.useCooldowns, heroId);
-    updateDrawCountSelect();
+    updateDrawCountSelect(data.activeTask?.s); // Päivitetty: lukee tehtävän suorittajamäärän
     updateManualTaskSelect();
     
     if(document.getElementById('adminPanel').style.display === 'block') {
@@ -165,8 +169,6 @@ function setRole(r) {
     document.getElementById('btnPlayer').classList.toggle('active', r === 'player');
     document.getElementById('btnGM').classList.toggle('active', r === 'gm');
 }
-
-
 
 function drawRandom() {
     const count = parseInt(document.getElementById('drawCount').value) || 1;
@@ -305,7 +307,8 @@ function showScoring() {
                 if(d.config?.useCooldowns) p.cooldown = true; 
             } else {
                 p.cooldown = false;
-                if(task.b && idx === heroId) earned += task.p;
+                // Sankarin pisteet (b-kenttä) lisätään sankarille jos hän ei itse ollut suorittamassa
+                if(task.b && idx === heroId) earned += task.b;
             }
             p.score = Math.max(0, (p.score || 0) + earned);
             return p; 
@@ -326,16 +329,16 @@ function showXPAnimation(points) {
     setTimeout(() => { pop.style.display = 'none'; }, 1800);
 }
 
-function updateDrawCountSelect() {
+function updateDrawCountSelect(suggestedCount) {
     const sel = document.getElementById('drawCount');
     if (!sel) return;
-    const currentVal = sel.value;
+    const currentVal = suggestedCount || sel.value || 1;
     sel.innerHTML = '';
-    for (let i = 1; i <= (allPlayers.length || 1); i++) {
+    for (let i = 1; i <= Math.max(allPlayers.length, 1); i++) {
         const opt = document.createElement('option');
         opt.value = i; opt.innerText = i; sel.appendChild(opt);
     }
-    sel.value = currentVal || 1;
+    sel.value = currentVal;
 }
 
 function updateManualTaskSelect() {
@@ -365,10 +368,11 @@ function adminCreateTask() {
     const n = document.getElementById('newTaskName').value.trim();
     const d = document.getElementById('newTaskDesc').value.trim();
     const p = parseInt(document.getElementById('newTaskPoints').value) || 2;
+    const s = parseInt(document.getElementById('newTaskPlayers')?.value) || 1; // Lisätty suorittajamäärä
     const m = document.getElementById('newTaskMinus')?.checked || false;
-    const b = document.getElementById('newTaskBday')?.checked || false;
+    const b = parseInt(document.getElementById('newTaskBday')?.value) || 0; // Sankarin pisteet
     if (!n || !d) return alert("Täytä nimi ja ohjeet!");
-    const newTask = { id: Date.now(), n, d, p, m, b };
+    const newTask = { id: Date.now(), n, d, p, s, m, b };
     db.ref('gameState/tasks').once('value', s => {
         let list = s.val() || []; list.push(newTask);
         db.ref('gameState/tasks').set(list).then(() => {
@@ -388,10 +392,11 @@ function renderTaskLibrary() {
         div.innerHTML = `
             <input type="text" value="${t.n}" onchange="updateTaskInLib(${i}, 'n', this.value)">
             <textarea onchange="updateTaskInLib(${i}, 'd', this.value)">${t.d}</textarea>
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-                <input type="number" value="${t.p}" onchange="updateTaskInLib(${i}, 'p', parseInt(this.value))" style="width:45px; margin:0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:5px;">
+                <label style="font-size:0.6rem;">Pist: <input type="number" value="${t.p}" onchange="updateTaskInLib(${i}, 'p', parseInt(this.value))" style="width:35px;"></label>
+                <label style="font-size:0.6rem;">Kpl: <input type="number" value="${t.s||1}" onchange="updateTaskInLib(${i}, 's', parseInt(this.value))" style="width:35px;"></label>
                 <label style="font-size:0.6rem;"><input type="checkbox" ${t.m?'checked':''} onchange="updateTaskInLib(${i}, 'm', this.checked)"> Miinus</label>
-                <label style="font-size:0.6rem; color:var(--gm-accent);"><input type="checkbox" ${t.b?'checked':''} onchange="updateTaskInLib(${i}, 'b', this.checked)"> 🎂</label>
+                <label style="font-size:0.6rem; color:var(--gm-accent);">🎂 <input type="number" value="${t.b||0}" onchange="updateTaskInLib(${i}, 'b', parseInt(this.value))" style="width:35px;"></label>
                 <button class="btn btn-danger" style="width:auto; padding:5px; margin:0;" onclick="removeTask(${i})">X</button>
             </div>`;
         lib.appendChild(div);
@@ -460,14 +465,13 @@ function updateIdentityUI() {
     if(tag) tag.innerText = myName ? "PROFIILI: " + myName : "KIRJAUDU SISÄÄN"; 
 }
 
+// GM-roolin vaihto pitkällä painalluksella
 const gmBtn = document.getElementById('btnGM');
 let holdTimer;
-const HOLD_TIME = 1500; // 1.5 sekuntia
+const HOLD_TIME = 1500;
 
 if (gmBtn) {
-    // Estetään nopea klikkaus kokonaan (ei salasanoja/ilmoituksia)
     gmBtn.onclick = (e) => { e.preventDefault(); };
-
     gmBtn.addEventListener('touchstart', (e) => {
         holdTimer = setTimeout(() => {
             setRole('gm');
@@ -475,12 +479,7 @@ if (gmBtn) {
         }, HOLD_TIME);
     });
     gmBtn.addEventListener('touchend', () => clearTimeout(holdTimer));
-
-    gmBtn.addEventListener('mousedown', () => {
-        holdTimer = setTimeout(() => {
-            setRole('gm');
-        }, HOLD_TIME);
-    });
+    gmBtn.addEventListener('mousedown', () => { holdTimer = setTimeout(() => { setRole('gm'); }, HOLD_TIME); });
     gmBtn.addEventListener('mouseup', () => clearTimeout(holdTimer));
     gmBtn.addEventListener('mouseleave', () => clearTimeout(holdTimer));
 }
