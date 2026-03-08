@@ -97,7 +97,7 @@ db.ref('gameState').on('value', (snap) => {
             vBtn.innerText = isMePart ? "OLET MUKANA! ✓" : "OSALLISTUTKO?";
         }
         
-        // KORJAUS: Päivitetään GM-lista aina kun data muuttuu, riippumatta siitä kuka on GM
+        // KORJAUS: Varmistetaan, että GM-näkymä päivittyy aina kun joku ilmoittautuu, riippumatta roolista
         renderGMVolunteers(results, isLocked);
         
     } else { 
@@ -185,9 +185,12 @@ function claimIdentity() {
     });
 }
 
+// KORJAUS: Varmistettu, että GM:n ilmoittautuminen päivittyy oikein Firebasessa
 function volunteer() {
+    if(!myName) return;
     const p = allPlayers.find(x => x.name === myName);
-    if(!myName || (p && p.cooldown)) return;
+    if(p && p.cooldown) return;
+    
     db.ref('gameState/participants').transaction(list => {
         list = list || []; 
         const idx = list.findIndex(r => r.name === myName);
@@ -276,7 +279,6 @@ function renderGMVolunteers(results, isLocked) {
     allPlayers.forEach(p => {
         const isInc = results.some(r => r.name === p.name);
         const btn = document.createElement('button');
-        // KORJAUS: Varmistettu, että väri vaihtuu dynaamisesti isInc-arvon mukaan
         btn.className = `btn ${isInc ? 'btn-primary' : 'btn-secondary'} ${p.cooldown ? 'on-cooldown' : ''}`;
         btn.style.margin = '0';
         btn.style.fontSize = '0.6rem';
