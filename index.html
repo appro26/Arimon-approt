@@ -17,7 +17,6 @@
     </div>
 
     <div class="container">
-
         <div id="identityCard" class="card" style="display:none;">
             <h2>Tunnistautuminen</h2>
             <input type="text" id="playerNameInput" placeholder="Syötä nimesi...">
@@ -55,8 +54,7 @@
                         <select id="drawCount" style="flex:1; margin:0;"></select>
                         <button id="btnDraw" class="btn btn-gm" style="flex:2; margin:0;" onclick="drawRandom()">ARVO PELAAJAT</button>
                     </div>
-                    
-                    <button id="btnLockManual" class="btn btn-success" style="margin:0; font-size:0.75rem; padding:12px;" onclick="lockParticipants()">VALITSE KÄSIN / LUKITSE</button>
+                    <button id="btnLockManual" class="btn btn-success" style="margin:0; font-size:0.75rem; padding:12px;" onclick="lockParticipants()">LUKITSE VALINNAT</button>
                 </div>
 
                 <div id="scoringArea"></div>
@@ -101,15 +99,15 @@
                 </div>
 
                 <h2 style="margin-top:20px;">Muokkaa pakkaa</h2>
-                <div class="admin-row" style="flex-direction:column; align-items:stretch;">
+                <div class="admin-row-stack">
                     <input type="text" id="newTaskName" placeholder="Tehtävän nimi">
                     <textarea id="newTaskDesc" placeholder="Kuvaus/Ohjeet"></textarea>
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <input type="number" id="newTaskPoints" value="2" style="width:60px; margin:0;">
-                        <label style="font-size:0.7rem; display:flex; align-items:center; gap:4px;">
-                            <input type="checkbox" id="newTaskMinus"> Miinus-FAIL
-                        </label>
-                        <button class="btn btn-success" style="margin:0; flex:1;" onclick="adminCreateTask()">LISÄÄ PAKKAAN</button>
+                    <div class="admin-task-controls">
+                        <div class="point-input-group">
+                            <input type="number" id="newTaskPoints" value="2">
+                            <label class="minus-label"><input type="checkbox" id="newTaskMinus"> <span>Pistemiinus</span></label>
+                        </div>
+                        <button class="btn btn-success" onclick="adminCreateTask()">LISÄÄ PAKKAAN</button>
                     </div>
                 </div>
                 <div id="taskLibraryEditor" style="max-height:300px; overflow-y:auto; margin-top:10px;"></div>
@@ -117,7 +115,6 @@
                 <button class="btn btn-danger" style="margin-top:30px;" onclick="resetGame()">NOLLAA KOKO PELI</button>
             </div>
         </div>
-
     </div>
 
     <div id="xpPopUp" class="xp-popup">+2 XP</div>
