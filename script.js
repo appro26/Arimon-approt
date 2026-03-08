@@ -168,12 +168,6 @@ db.ref('gameState').on('value', (snap) => {
     }
 });
 
-function setRole(r) {
-    if (r === 'gm') {
-        const pass = prompt("Syötä GM-salasana:");
-        if (pass !== "3030") {
-            alert("Väärä salasana!");
-            return;
         }
     }
     document.body.className = r + '-mode';
@@ -477,3 +471,27 @@ function toggleAdminPanel() { const p = document.getElementById('adminPanel'); p
 function adjustScore(idx, amt) { db.ref('gameState/players/' + idx + '/score').transaction(s => Math.max(0, (s || 0) + amt)); }
 function removePlayer(idx) { if(confirm("Poista?")) { allPlayers.splice(idx, 1); db.ref('gameState/players').set(allPlayers); } }
 function updateIdentityUI() { document.getElementById('identityCard').style.display = myName ? 'none' : 'block'; document.getElementById('idTag').innerText = myName ? "PROFIILI: " + myName : "KIRJAUDU SISÄÄN"; }
+// --- PRO-KIKKA: Pitkä painallus avaa GM-tilan ---
+const gmBtn = document.getElementById('btnGM');
+let holdTimer;
+
+if (gmBtn) {
+    // Mobiililaitteet
+    gmBtn.addEventListener('touchstart', (e) => {
+        holdTimer = setTimeout(() => {
+            setRole('gm');
+            if ("vibrate" in navigator) navigator.vibrate(60); // Pieni värinä kuittauksena
+        }, 2000); // 2 sekunnin viive
+    });
+
+    gmBtn.addEventListener('touchend', () => clearTimeout(holdTimer));
+
+    // Tietokoneen hiiri (testausta varten)
+    gmBtn.addEventListener('mousedown', () => {
+        holdTimer = setTimeout(() => {
+            setRole('gm');
+        }, 2000);
+    });
+    
+    gmBtn.addEventListener('mouseup', () => clearTimeout(holdTimer));
+}
