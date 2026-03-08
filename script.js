@@ -7,14 +7,14 @@ const db = firebase.database();
 let myName = localStorage.getItem('appro_name') || null;
 let currentResetId = localStorage.getItem('appro_reset_id') || null;
 let allPlayers = [];
-let taskLibrary = []; // Entinen currentTasks, selkeyden vuoksi nimetty uudelleen
-let localSpyState = {}; // Tallentaa GM:n "Katso speksit" tilan tehtäväkohtaisesti
+let taskLibrary = [];
+let localSpyState = {}; 
 let lastMyScore = null;
 
 const APP_NAME = "Arimon Approt";
 document.title = APP_NAME;
 
-// --- TEHTÄVÄPAKKA (Lisätty 'r' = recommended players) ---
+// --- TEHTÄVÄPAKKA ---
 const defaultTasks = [
     { id: 1, n: "Mise en place", d: "Varmista, että kaikilla seurueen jäsenillä on lasissa juotavaa (myös vettä). Jos jollain on tyhjää, täytä se.", p: 2, m: 1, b: false, r: 1 },
     { id: 2, n: "Uudelleenkäynnistys (Reboot)", d: "Kaikkien suorittajien on juotava lasi vettä yhdeltä istumalta 'järjestelmän vakauttamiseksi'.", p: 1, m: 2, b: false, r: 2 },
@@ -45,7 +45,7 @@ const defaultTasks = [
     { id: 27, n: "Fore!", d: "Huuda 'FORE!' aina kun joku seurueesta nousee seisomaan. Kesto 5 minuuttia.", p: 1, m: 1, b: false, r: 1 },
     { id: 28, n: "Blue Zone -siirtymä", d: "Baaria vaihdettaessa kulje viimeisenä ja varmista, ettei ketään jää jälkeen.", p: 1, m: 1, b: false, r: 1 },
     { id: 29, n: "Raaka-aineanalyysi", d: "Tunnista sokkona (silmät kiinni) mitä juomaa sankarisi lasissa on hajun perusteella.", p: 2, m: 1, b: false, r: 1 },
-    { id: 30, n: "Varmuuskopio", d: "Ota yhteisselfie koko porukasta ja varmista, että se on tallessa.", p: 1, m: 1, b: true, r: 1 },
+    { id: 30, n: "Varmuuskopio", d: "Ota yhteisselfie koko porukasta ja varmista, ettei ketään jää jälkeen.", p: 1, m: 1, b: true, r: 1 },
     { id: 31, n: "Tree Kick -epäonni", d: "Matki puuta (seiso yhdellä jalalla) 30 sekuntia kesken keskustelun.", p: 2, m: 1, b: false, r: 1 },
     { id: 32, n: "Winner Winner Dinner", d: "Tilaa sankarille pientä syötävää, kuten kanansiipiä tai vastaavaa.", p: 3, m: 1, b: true, r: 1 }
 ];
@@ -58,7 +58,7 @@ window.resetGame = function() {
             players: [],
             tasks: defaultTasks,
             usedTaskIds: [],
-            activeTasks: {}, // Muutettu objektiksi multi-taskia varten
+            activeTasks: {},
             resetId: newResetId,
             config: { useCooldowns: true, excludeUsedTasks: true, bdayHero: null }
         }).then(() => { localStorage.clear(); location.reload(); });
@@ -78,7 +78,6 @@ db.ref('gameState').on('value', (snap) => {
     const config = data.config || {};
     const heroId = config.bdayHero;
 
-    // XP animaatio
     const me = allPlayers.find(p => p.name === myName);
     if (me) {
         if (lastMyScore !== null && me.score !== lastMyScore) { showXPAnimation(me.score - lastMyScore); }
@@ -89,46 +88,60 @@ db.ref('gameState').on('value', (snap) => {
     renderLeaderboard(config.useCooldowns, heroId);
     updateManualTaskSelect();
     
-    // Admin-paneeli
     if(document.getElementById('adminPanel').style.display === 'block') {
         renderAdminPlayerList(heroId);
         renderTaskLibrary();
     }
 
-    // Renderoi aktiiviset tehtävät
     renderActiveTasks(data.activeTasks || {}, config);
 });
 
-// --- RENDERÖINTI: AKTIIVISET TEHTÄVÄT (MULTI-TASK) ---
+// --- RENDERÖINTI: AKTIIVISET TEHTÄVÄT (KORJATTU VÄLÄHDYS JA NÄKYVYYS) ---
 function renderActiveTasks(tasksObj, config) {
     const container = document.getElementById('activeTasksContainer');
-    container.innerHTML = '';
     const isGM = document.body.className.includes('gm');
+    
+    // 1. Poistetaan kortit, joita ei ole enää datassa
+    const existingIds = Array.from(container.querySelectorAll('.active-task-item')).map(el => el.getAttribute('data-task-id'));
+    const currentIds = Object.keys(tasksObj);
+    existingIds.forEach(id => {
+        if (!currentIds.includes(id)) {
+            const elToRemove = container.querySelector(`[data-task-id="${id}"]`);
+            if (elToRemove) elToRemove.remove();
+        }
+    });
 
-    Object.keys(tasksObj).forEach(taskId => {
+    // 2. Päivitetään tai lisätään kortit
+    currentIds.forEach(taskId => {
         const taskData = tasksObj[taskId];
         const isLocked = !!taskData.locked;
         const results = taskData.participants || [];
         const isMePart = results.some(r => r.name === myName && r.win);
         
-        const card = document.createElement('div');
-        card.className = 'card task-box active-task-item';
+        let card = container.querySelector(`[data-task-id="${taskId}"]`);
         
-        // Rakennetaan tehtäväkortin sisältö
+        // Jos korttia ei ole, luodaan se (estää välähdyksen, kun koko container.innerHTML ei tyhjene)
+        if (!card) {
+            card = document.createElement('div');
+            card.className = 'card task-box active-task-item';
+            card.setAttribute('data-task-id', taskId);
+            container.appendChild(card);
+        }
+
+        // Rakennetaan sisältömuuttujaan
         let html = `
             <h2>${isLocked ? 'VAIHE: SUORITUS' : 'VAIHE: ILMOITTAUTUMINEN'}</h2>
             <h1>${taskData.n}</h1>
             <div class="xp-badge" style="display:inline-block; margin-bottom:15px;">${taskData.p} XP</div>
         `;
 
-        // Kuvauslogiikka: Näytä jos lukittu JA (olen mukana TAI GM TAI vaklaa)
+        // KUVAUKSEN NÄKYVYYS (KORJAUS 3)
+        // Näytetään kuvaus vain jos: On lukittu JA (olen mukana TAI GM TAI vaklaa)
         const showDesc = isLocked && (isMePart || isGM || localSpyState[taskId]);
-        const gmPeeking = !isLocked && (isGM || localSpyState[taskId]);
+        const gmPeeking = !isLocked && (isGM && localSpyState[taskId]); // GM näkee ennen lukitusta vain Speksit-napista
 
-        if (showDesc) {
+        if (showDesc || gmPeeking) {
             html += `<div class="instruction-card"><strong style="color:var(--accent);">OHJEET:</strong><p style="margin-top:5px; font-size:0.9rem;">${taskData.d}</p></div>`;
-        } else if (gmPeeking) {
-            html += `<p class="task-description" style="opacity:1.0">${taskData.d}</p>`;
         } else {
             html += `<p class="task-description" style="opacity:0.5">Tehtävä paljastetaan valituille pelaajille...</p>`;
         }
@@ -137,7 +150,6 @@ function renderActiveTasks(tasksObj, config) {
             html += `<div class="not-selected-banner">ET OSALLISTU TÄHÄN TEHTÄVÄÄN</div>`;
         }
 
-        // Ilmoittautuminen (pelaajille)
         if (!isLocked) {
             const myD = allPlayers.find(p => p.name === myName);
             const onCD = config.useCooldowns && myD && myD.cooldown;
@@ -152,10 +164,10 @@ function renderActiveTasks(tasksObj, config) {
             html += `</div>`;
         }
 
-        // GM Työkalut
+        // GM TYÖKALUT (KORJAUS 1: Varmistetaan CSS-luokka gm-only)
         if (isGM) {
             html += `
-                <div class="gm-only" style="margin-top:20px; border-top:1px solid #333; padding-top:15px; display:block;">
+                <div class="gm-only-active-panel" style="margin-top:20px; border-top:1px solid #333; padding-top:15px; display:block;">
                     <div class="volunteer-selector-grid" id="grid-${taskId}"></div>
                     <div class="admin-row-stack">
                         <div style="display:flex; gap:10px;">
@@ -173,17 +185,18 @@ function renderActiveTasks(tasksObj, config) {
             `;
         }
 
-        card.innerHTML = html;
-        container.appendChild(card);
+        // Päivitetään kortin sisältö vain jos se on muuttunut (vähentää välkettä entisestään)
+        if (card.innerHTML !== html) {
+            card.innerHTML = html;
+        }
 
-        // Täytetään GM-gridit ja selectit jälkikäteen
+        // Täytetään dynaamiset elementit
         if (isGM) {
             renderGMGrid(taskId, results, isLocked, taskData.isLotteryRunning, config.useCooldowns);
             updateDrawCountSelect(taskId, taskData);
             if(isLocked) renderScoringArea(taskId, results);
         }
 
-        // Voittaja-animaatio (vain kerran per lukitus)
         if (isLocked && isMePart && !taskData.animDone) {
             triggerWinnerOverlay(taskData.n);
             db.ref(`gameState/activeTasks/${taskId}/animDone`).set(true);
@@ -191,50 +204,33 @@ function renderActiveTasks(tasksObj, config) {
     });
 }
 
-// --- ARVONTA-ANIMAATIO (EPÄTAHTI) ---
+// --- ARVONTA ---
 function drawRandom(taskId) {
     const sel = document.getElementById(`drawCount-${taskId}`);
     const count = parseInt(sel.value) || 1;
-    
     db.ref(`gameState/activeTasks/${taskId}/isLotteryRunning`).set(true);
-    
-    // Haetaan vapaaehtoiset
     db.ref(`gameState/activeTasks/${taskId}/participants`).once('value', s => {
         let list = s.val() || [];
-        if(list.length === 0) {
-            db.ref(`gameState/activeTasks/${taskId}/isLotteryRunning`).set(false);
-            alert("Ei ilmoittautuneita!");
-            return;
-        }
-
-        // Visuaalinen kikkailu epätahtiin
+        if(list.length === 0) { db.ref(`gameState/activeTasks/${taskId}/isLotteryRunning`).set(false); alert("Ei ilmoittautuneita!"); return; }
         const gridItems = document.querySelectorAll(`#grid-${taskId} button`);
-        gridItems.forEach(btn => {
-            const randomDelay = Math.random() * 500;
-            setTimeout(() => { btn.classList.add('shuffling'); }, randomDelay);
-        });
-
-        // Lopullinen arvonta viiveen jälkeen
+        gridItems.forEach(btn => { const randomDelay = Math.random() * 500; setTimeout(() => { btn.classList.add('shuffling'); }, randomDelay); });
         setTimeout(() => {
             let shuffled = [...list].sort(() => 0.5 - Math.random());
             const winners = shuffled.slice(0, count).map(p => ({ ...p, win: true }));
-            db.ref(`gameState/activeTasks/${taskId}`).update({ 
-                participants: winners, 
-                isLotteryRunning: false 
-            });
+            db.ref(`gameState/activeTasks/${taskId}`).update({ participants: winners, isLotteryRunning: false });
         }, 1500);
     });
 }
 
 // --- TOIMINNOT ---
-
 function setRole(r) {
     document.body.className = r + '-mode';
     document.getElementById('btnPlayer').classList.toggle('active', r === 'player');
     document.getElementById('btnGM').classList.toggle('active', r === 'gm');
+    // Pakotetaan uudelleenpiirto, jotta GM-paneelit häviävät/ilmestyvät välittömästi
+    db.ref('gameState/activeTasks').once('value', s => renderActiveTasks(s.val() || {}, {}));
 }
 
-// GM-napin pitkä painallus
 let gmHoldTimer;
 const gmBtn = document.getElementById('btnGM');
 if(gmBtn) {
@@ -288,7 +284,6 @@ function showScoring(taskId) {
         const heroId = d.config?.bdayHero;
         let used = d.usedTaskIds || [];
         used.push(taskInstance.id);
-
         const updatedPlayers = allPlayers.map((p, idx) => {
             const part = res.find(r => r.name === p.name);
             let earned = 0;
@@ -296,40 +291,27 @@ function showScoring(taskId) {
                 if(part.win) earned += taskInstance.p;
                 else if(taskInstance.m) earned -= taskInstance.p;
                 if(d.config?.useCooldowns) p.cooldown = true;
-            } else {
-                // Jäähy säännön tulee toimia, vaikka edellinen tehtävä olisi vielä kesken
-                // Jos ei osallistunut tähän, mutta oli jo jäähyllä, pysyy jäähyllä
-                if(taskInstance.b && idx === heroId) earned += taskInstance.p;
-            }
+            } else { if(taskInstance.b && idx === heroId) earned += taskInstance.p; }
             p.score = Math.max(0, (p.score || 0) + earned);
             return p;
         });
-
-        // Poista tämä tehtävä aktiivisista ja päivitä pelaajat
         const newActiveTasks = { ...d.activeTasks };
         delete newActiveTasks[taskId];
-
-        db.ref('gameState').update({ 
-            players: updatedPlayers, 
-            activeTasks: newActiveTasks, 
-            usedTaskIds: used 
-        });
+        db.ref('gameState').update({ players: updatedPlayers, activeTasks: newActiveTasks, usedTaskIds: used });
     });
 }
 
-// --- GM APUFUNKTIOT ---
-
 function renderGMGrid(taskId, results, isLocked, isShuffling, showCD) {
     const grid = document.getElementById(`grid-${taskId}`);
-    if(!grid) return;
+    if(!grid) return; grid.innerHTML = '';
     allPlayers.forEach(p => {
         const isInc = results.some(r => r.name === p.name);
         const onCD = showCD && p.cooldown;
         const btn = document.createElement('button');
-        // Jäähyllä olevat näkyvät GM:lle punaisella reunalla tms (on-cooldown class)
         btn.className = `btn ${isInc ? 'btn-primary' : 'btn-secondary'} ${onCD ? 'on-cooldown' : ''} ${isShuffling && isInc ? 'shuffling' : ''}`;
         btn.innerHTML = `${p.name}${onCD ? ' <small>(J)</small>' : ''}`;
         btn.disabled = isLocked || isShuffling;
+        // KORJAUS 4: Jäähy ei estä GM:ää valitsemasta pelaajaa
         btn.onclick = () => toggleParticipant(taskId, p.name);
         grid.appendChild(btn);
     });
@@ -337,11 +319,10 @@ function renderGMGrid(taskId, results, isLocked, isShuffling, showCD) {
 
 function renderScoringArea(taskId, results) {
     const sArea = document.getElementById(`scoring-${taskId}`);
-    sArea.innerHTML = '<p style="font-size:0.7rem; color:var(--muted); margin-top:10px; text-align:center;">ONNISTUIKO TEHTÄVÄ?</p>';
+    if(!sArea) return; sArea.innerHTML = '<p style="font-size:0.7rem; color:var(--muted); margin-top:10px; text-align:center;">ONNISTUIKO TEHTÄVÄ?</p>';
     results.forEach((r, i) => {
         const row = document.createElement('div');
-        row.className = 'player-row';
-        row.style.padding = '8px';
+        row.className = 'player-row'; row.style.padding = '8px';
         row.innerHTML = `<span>${r.name}</span><button class="btn" style="width:70px; margin:0; padding:5px; background:${r.win?'var(--success)':'var(--danger)'}" onclick='toggleWin("${taskId}", ${i})'>${r.win?'WIN':'FAIL'}</button>`;
         sArea.appendChild(row);
     });
@@ -349,20 +330,18 @@ function renderScoringArea(taskId, results) {
 
 function updateDrawCountSelect(taskId, task) {
     const sel = document.getElementById(`drawCount-${taskId}`);
-    if (!sel) return;
+    if (!sel || sel.options.length > 0) return;
     const max = Math.max(allPlayers.length, 1);
     for (let i = 1; i <= max; i++) {
         const opt = document.createElement('option');
         opt.value = i; opt.innerText = i;
-        if(i === (task.r || 1)) opt.selected = true; // Oletuksena tehtävän suositus
+        if(i === (task.r || 1)) opt.selected = true;
         sel.appendChild(opt);
     }
 }
 
 function toggleWin(taskId, i) { db.ref(`gameState/activeTasks/${taskId}/participants/${i}/win`).transaction(w => !w); }
-function toggleGMSpy(taskId) { localSpyState[taskId] = !localSpyState[taskId]; db.ref('gameState').child('dummy').set(Date.now()); }
-
-// --- MUUT ADMIN TOIMINNOT (SÄILYTETTY) ---
+function toggleGMSpy(taskId) { localSpyState[taskId] = !localSpyState[taskId]; db.ref('gameState/activeTasks/' + taskId).once('value', s => renderActiveTasks({[taskId]: s.val()}, {})); }
 
 function confirmRandomize() {
     db.ref('gameState').once('value', snap => {
@@ -371,8 +350,6 @@ function confirmRandomize() {
         let pool = taskLibrary.filter(t => !used.includes(t.id));
         if(pool.length === 0) { db.ref('gameState/usedTaskIds').set([]); pool = taskLibrary; }
         const t = pool[Math.floor(Math.random() * pool.length)];
-        
-        // Luodaan uniikki ID tälle tehtäväinstanssille
         const instanceId = "t_" + Date.now();
         db.ref(`gameState/activeTasks/${instanceId}`).set({ ...t, locked: false, participants: [] });
     });
@@ -391,11 +368,7 @@ function adminAddPlayer() {
     if(!n) return;
     db.ref('gameState/players').once('value', snap => {
         let p = snap.val() || [];
-        if(!p.find(x => x.name === n)) {
-            p.push({ name: n, score: 0, cooldown: false });
-            db.ref('gameState/players').set(p);
-            input.value = '';
-        } else { alert("Pelaaja on jo listalla!"); }
+        if(!p.find(x => x.name === n)) { p.push({ name: n, score: 0, cooldown: false }); db.ref('gameState/players').set(p); input.value = ''; } else { alert("Pelaaja on jo listalla!"); }
     });
 }
 
@@ -417,11 +390,8 @@ function adminCreateTask() {
     if(!n || !d) return;
     const newTask = { id: Date.now(), n, d, p, m, b, r };
     db.ref('gameState/tasks').transaction(list => { list = list || []; list.push(newTask); return list; });
-    document.getElementById('newTaskName').value = '';
-    document.getElementById('newTaskDesc').value = '';
+    document.getElementById('newTaskName').value = ''; document.getElementById('newTaskDesc').value = '';
 }
-
-// --- UI APUFUNKTIOT ---
 
 function renderLeaderboard(showCD, heroId) {
     const list = document.getElementById('playerList');
@@ -442,15 +412,7 @@ function renderAdminPlayerList(heroId) {
     allPlayers.forEach((p, i) => {
         const div = document.createElement('div');
         div.className = 'player-row'; div.style.padding = '8px';
-        div.innerHTML = `
-            <span style="font-size:0.8rem;">${p.name} (${p.score})</span>
-            <div style="display:flex; gap:4px;">
-                <button class="btn" style="width:32px; padding:5px; margin:0; background:${i===heroId?'var(--gm-accent)':'#333'}" onclick="setBdayHero(${i})">🎂</button>
-                <button class="btn ${p.cooldown ? 'btn-success' : 'btn-secondary'}" style="width:auto; font-size:0.5rem; padding:5px; margin:0;" onclick="adminToggleCooldown(${i})">${p.cooldown ? 'VAP' : 'J'}</button>
-                <button class="btn btn-secondary" style="width:28px; padding:5px; margin:0;" onclick="adjustScore(${i}, 1)">+</button>
-                <button class="btn btn-secondary" style="width:28px; padding:5px; margin:0;" onclick="adjustScore(${i}, -1)">-</button>
-                <button class="btn btn-danger" style="width:28px; padding:5px; margin:0;" onclick="removePlayer(${i})">X</button>
-            </div>`;
+        div.innerHTML = `<span style="font-size:0.8rem;">${p.name} (${p.score})</span><div style="display:flex; gap:4px;"><button class="btn" style="width:32px; padding:5px; margin:0; background:${i===heroId?'var(--gm-accent)':'#333'}" onclick="setBdayHero(${i})">🎂</button><button class="btn ${p.cooldown ? 'btn-success' : 'btn-secondary'}" style="width:auto; font-size:0.5rem; padding:5px; margin:0;" onclick="adminToggleCooldown(${i})">${p.cooldown ? 'VAP' : 'J'}</button><button class="btn btn-secondary" style="width:28px; padding:5px; margin:0;" onclick="adjustScore(${i}, 1)">+</button><button class="btn btn-secondary" style="width:28px; padding:5px; margin:0;" onclick="adjustScore(${i}, -1)">-</button><button class="btn btn-danger" style="width:28px; padding:5px; margin:0;" onclick="removePlayer(${i})">X</button></div>`;
         list.appendChild(div);
     });
 }
@@ -461,55 +423,32 @@ function renderTaskLibrary() {
     taskLibrary.forEach((t, i) => {
         const div = document.createElement('div');
         div.style.borderBottom = "1px solid #333"; div.style.padding = "10px 0";
-        div.innerHTML = `
-            <input type="text" value="${t.n}" onchange="updateTaskInLib(${i}, 'n', this.value)">
-            <textarea onchange="updateTaskInLib(${i}, 'd', this.value)">${t.d}</textarea>
-            <div class="admin-task-controls" style="background:none; padding:0;">
-                <div class="point-input-group">
-                    <input type="number" style="width:40px" title="XP" value="${t.p}" onchange="updateTaskInLib(${i}, 'p', parseInt(this.value))">
-                    <input type="number" style="width:40px" title="Suositus" value="${t.r||1}" onchange="updateTaskInLib(${i}, 'r', parseInt(this.value))">
-                    <label class="minus-label"><input type="checkbox" ${t.m?'checked':''} onchange="updateTaskInLib(${i}, 'm', this.checked)"> MIINUS</label>
-                    <label class="minus-label" style="color:var(--gm-accent);"><input type="checkbox" ${t.b?'checked':''} onchange="updateTaskInLib(${i}, 'b', this.checked)"> 🎂</label>
-                </div>
-                <button class="btn btn-danger" style="width:auto; padding:5px 10px; margin:0;" onclick="removeTask(${i})">POISTA</button>
-            </div>`;
+        div.innerHTML = `<input type="text" value="${t.n}" onchange="updateTaskInLib(${i}, 'n', this.value)"><textarea onchange="updateTaskInLib(${i}, 'd', this.value)">${t.d}</textarea><div class="admin-task-controls" style="background:none; padding:0;"><div class="point-input-group"><input type="number" style="width:40px" title="XP" value="${t.p}" onchange="updateTaskInLib(${i}, 'p', parseInt(this.value))"><input type="number" style="width:40px" title="Suositus" value="${t.r||1}" onchange="updateTaskInLib(${i}, 'r', parseInt(this.value))"><label class="minus-label"><input type="checkbox" ${t.m?'checked':''} onchange="updateTaskInLib(${i}, 'm', this.checked)"> MIINUS</label><label class="minus-label" style="color:var(--gm-accent);"><input type="checkbox" ${t.b?'checked':''} onchange="updateTaskInLib(${i}, 'b', this.checked)"> 🎂</label></div><button class="btn btn-danger" style="width:auto; padding:5px 10px; margin:0;" onclick="removeTask(${i})">POISTA</button></div>`;
         lib.appendChild(div);
     });
 }
 
 function updateManualTaskSelect() {
     const sel = document.getElementById('manualTaskSelect');
-    if (!sel) return;
-    sel.innerHTML = '<option value="">VALITSE TEHTÄVÄ...</option>';
+    if (!sel) return; sel.innerHTML = '<option value="">VALITSE TEHTÄVÄ...</option>';
     taskLibrary.forEach((t, i) => { sel.innerHTML += `<option value="${i}">${t.n}</option>`; });
 }
 
-function updateIdentityUI() { 
-    document.getElementById('identityCard').style.display = myName ? 'none' : 'block'; 
-    document.getElementById('idTag').innerText = myName ? "PROFIILI: " + myName : "KIRJAUDU SISÄÄN"; 
-}
+function updateIdentityUI() { document.getElementById('identityCard').style.display = myName ? 'none' : 'block'; document.getElementById('idTag').innerText = myName ? "PROFIILI: " + myName : "KIRJAUDU SISÄÄN"; }
 
 function showXPAnimation(points) {
     const pop = document.getElementById('xpPopUp');
-    if(!pop || points === 0) return;
-    pop.style.display = 'block';
-    pop.style.color = points > 0 ? "var(--success)" : "var(--danger)";
-    pop.innerText = (points > 0 ? "+" : "") + points + " XP";
-    pop.classList.remove('xp-animate'); void pop.offsetWidth; pop.classList.add('xp-animate');
+    if(!pop || points === 0) return; pop.style.display = 'block'; pop.style.color = points > 0 ? "var(--success)" : "var(--danger)"; pop.innerText = (points > 0 ? "+" : "") + points + " XP"; pop.classList.remove('xp-animate'); void pop.offsetWidth; pop.classList.add('xp-animate');
     setTimeout(() => { pop.style.display = 'none'; }, 1800);
 }
 
 function triggerWinnerOverlay(taskName) {
     const overlay = document.getElementById('lotteryWinner');
-    document.getElementById('winnerTaskName').innerText = taskName;
-    overlay.style.display = 'flex';
-    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-    setTimeout(() => { overlay.style.display = 'none'; }, 2000);
+    document.getElementById('winnerTaskName').innerText = taskName; overlay.style.display = 'flex';
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200]); setTimeout(() => { overlay.style.display = 'none'; }, 2000);
 }
 
 function toggleAdminPanel() { 
-    const p = document.getElementById('adminPanel'); 
-    const isOpening = p.style.display === 'none';
-    p.style.display = isOpening ? 'block' : 'none'; 
+    const p = document.getElementById('adminPanel'); const isOpening = p.style.display === 'none'; p.style.display = isOpening ? 'block' : 'none'; 
     if(isOpening) { renderAdminPlayerList(null); renderTaskLibrary(); }
 }
