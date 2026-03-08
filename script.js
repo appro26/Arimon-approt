@@ -10,7 +10,7 @@ let allPlayers = [];
 let taskLibrary = [];
 let localSpyState = {}; 
 let lastMyScore = null;
-let lastKnownTasks = {}; // UUSI: Reaaliaikaista pop-up seurantaa varten
+let lastKnownTasks = {}; 
 
 const APP_NAME = "Arimon Approt";
 document.title = APP_NAME;
@@ -94,25 +94,18 @@ db.ref('gameState').on('value', (snap) => {
         renderTaskLibrary();
     }
 
-    // UUSI: Tarkistetaan tuliko uusia lukittuja tehtäviä voittajailmoitusta varten
     checkForNewWinnerPopups(data.activeTasks || {});
-    
     renderActiveTasks(data.activeTasks || {}, config);
-    
-    // Päivitetään muistiin nykyinen tila vertailua varten
     lastKnownTasks = JSON.parse(JSON.stringify(data.activeTasks || {}));
 });
 
-// --- UUSI: POP-UP TARKISTUS ---
+// --- POP-UP TARKISTUS ---
 function checkForNewWinnerPopups(newTasks) {
     if (!myName) return;
     Object.keys(newTasks).forEach(taskId => {
         const newTask = newTasks[taskId];
         const oldTask = lastKnownTasks[taskId];
-        
-        // Jos tehtävä on juuri lukittu
         const wasJustLocked = newTask.locked && (!oldTask || !oldTask.locked);
-        
         if (wasJustLocked) {
             const results = newTask.participants || [];
             const isMeSelected = results.some(r => r.name === myName && r.win);
@@ -160,17 +153,21 @@ function renderActiveTasks(tasksObj, config) {
             <div class="xp-badge" style="display:inline-block; margin-bottom:10px;">${taskData.p} XP</div>
         `;
 
-        const showDesc = isLocked && (isMePart || isGM || localSpyState[taskId]);
-        const gmPeeking = !isLocked && (isGM && localSpyState[taskId]);
+        // KORJAUS 3: Kaikki näkevät ohjeet ja osallistujat, kun tehtävä on lukittu
+        const showDesc = isLocked || (isGM && localSpyState[taskId]);
 
-        if (showDesc || gmPeeking) {
+        if (showDesc) {
             html += `<div class="instruction-card"><p><strong>OHJEET:</strong><br>${taskData.d}</p></div>`;
+            if (isLocked) {
+                const winners = results.filter(r => r.win).map(r => r.name);
+                html += `<div style="margin-top:10px; font-weight:900; color:var(--success); font-size:0.8rem;">SUORITTAJAT: ${winners.join(', ') || 'Ei suorittajia'}</div>`;
+            }
         } else {
             html += `<p class="task-description" style="opacity:0.5; font-size:1.1rem;">Tehtävä paljastetaan valituille pelaajille...</p>`;
         }
 
         if (isLocked && !isMePart && !isGM) {
-            html += `<div class="not-selected-banner">ET OSALLISTU TÄHÄN TEHTÄVÄÄN</div>`;
+            html += `<div class="not-selected-banner">SEURAA MUIDEN SUORITUSTA</div>`;
         }
 
         if (!isLocked) {
@@ -180,7 +177,7 @@ function renderActiveTasks(tasksObj, config) {
 
             html += `<div class="join-action-area" style="margin-top:15px;">`;
             if (onCD && !amIIn) {
-                html += `<p style="color:var(--danger); font-weight:800;">OLET JÄÄHYLLÄ!</p>`;
+                html += `<p style="color:var(--danger); font-weight:800; text-align:center;">OLET JÄÄHYLLÄ!</p>`;
             } else {
                 html += `<button class="btn ${amIIn ? 'btn-success' : 'btn-primary'}" onclick="volunteer('${taskId}')">${amIIn ? 'OSALLISTUT! ✓' : 'HALUAN OSALLISTUA'}</button>`;
             }
@@ -228,9 +225,7 @@ function drawRandom(taskId) {
         if(list.length === 0) { alert("Ei osallistujia arvottavaksi!"); return; }
 
         db.ref(`gameState/activeTasks/${taskId}/isLotteryRunning`).set(true);
-        const gridItems = document.querySelectorAll(`#grid-${taskId} button.btn-primary`);
-        gridItems.forEach(btn => { btn.classList.add('shuffling'); });
-
+        
         setTimeout(() => {
             let winners = [...list].sort(() => 0.5 - Math.random()).slice(0, count).map(p => ({ ...p, win: true }));
             db.ref(`gameState/activeTasks/${taskId}`).update({ participants: winners, isLotteryRunning: false });
@@ -238,7 +233,7 @@ function drawRandom(taskId) {
     });
 }
 
-// --- GM GRID ---
+// --- GM GRID (KORJAUS 1: YKSILÖLLINEN VÄLKKYNTÄ) ---
 function renderGMGrid(taskId, results, isLocked, isShuffling, showCD) {
     const grid = document.getElementById(`grid-${taskId}`);
     if(!grid) return; grid.innerHTML = '';
@@ -247,7 +242,14 @@ function renderGMGrid(taskId, results, isLocked, isShuffling, showCD) {
         const onCD = showCD && p.cooldown;
         const btn = document.createElement('button');
         
-        btn.className = `btn ${isInc ? 'btn-primary selected-participant' : 'btn-secondary'} ${onCD ? 'on-cooldown' : ''} ${isShuffling && isInc ? 'shuffling' : ''}`;
+        btn.className = `btn ${isInc ? 'btn-primary selected-participant' : 'btn-secondary'} ${onCD ? 'on-cooldown' : ''}`;
+        
+        // Lisätään arvonta-animaatio satunnaisella viiveellä
+        if (isShuffling && isInc) {
+            btn.classList.add('shuffling');
+            btn.style.animationDelay = (Math.random() * 0.2) + "s";
+        }
+
         btn.innerHTML = `${p.name}${onCD ? ' <small>(J)</small>' : ''}`;
         btn.disabled = isLocked || isShuffling;
         btn.onclick = () => toggleParticipant(taskId, p.name);
@@ -255,22 +257,18 @@ function renderGMGrid(taskId, results, isLocked, isShuffling, showCD) {
     });
 }
 
-// --- KORJATTU: SPEKSIT (REAAALIAIKAINEN) ---
 function toggleGMSpy(taskId) {
     localSpyState[taskId] = !localSpyState[taskId];
-    // Pakotetaan käyttöliittymän uudelleenpiirto paikallisesti heti
     db.ref('gameState').once('value', snap => {
         const d = snap.val();
         renderActiveTasks(d.activeTasks || {}, d.config || {});
     });
 }
 
-// --- KORJATTU: ROOLIN VAIHTO (REAALIAIKAINEN) ---
 function setRole(r) {
     document.body.className = r + '-mode';
     document.getElementById('btnPlayer').classList.toggle('active', r === 'player');
     document.getElementById('btnGM').classList.toggle('active', r === 'gm');
-    // Päivitetään näkymä heti uusimmalla datalla
     db.ref('gameState').once('value', snap => {
         const d = snap.val();
         renderActiveTasks(d.activeTasks || {}, d.config || {});
@@ -297,22 +295,16 @@ function claimIdentity() {
     });
 }
 
-// --- KORJATTU: VOLUNTEER (JÄÄHY-ESTO) ---
 function volunteer(taskId) {
     if(!myName) return;
-    
     db.ref('gameState').once('value', snap => {
         const data = snap.val();
         const meData = (data.players || []).find(p => p.name === myName);
-        
-        // Estetään jos jäähyllä
         if (data.config?.useCooldowns && meData?.cooldown) {
-            alert("Olet jäähyllä! Odota seuraavaa tehtävää.");
+            alert("Olet jäähyllä!");
             return;
         }
-
         if(data.activeTasks[taskId].locked) return;
-
         db.ref(`gameState/activeTasks/${taskId}/participants`).transaction(list => {
             list = list || []; const idx = list.findIndex(r => r.name === myName);
             if(idx > -1) list.splice(idx, 1); else list.push({ name: myName, win: true });
@@ -329,11 +321,28 @@ function toggleParticipant(taskId, name) {
     });
 }
 
+// KORJAUS 2: Kun lukitaan, osallistujille jäähy (cooldown: true)
 function lockParticipants(taskId) { 
-    db.ref(`gameState/activeTasks/${taskId}/locked`).set(true); 
-    localSpyState[taskId] = false;
+    db.ref('gameState').once('value', snap => {
+        const d = snap.val();
+        const taskInstance = d.activeTasks[taskId];
+        const res = taskInstance.participants || [];
+        
+        if (d.config?.useCooldowns) {
+            const updatedPlayers = allPlayers.map(p => {
+                if (res.some(r => r.name === p.name && r.win)) {
+                    p.cooldown = true;
+                }
+                return p;
+            });
+            db.ref('gameState/players').set(updatedPlayers);
+        }
+        db.ref(`gameState/activeTasks/${taskId}/locked`).set(true); 
+        localSpyState[taskId] = false;
+    });
 }
 
+// KORJAUS 2: Kun tehtävä valmistuu, vapautetaan osallistujat jäähyltä
 function showScoring(taskId) {
     db.ref('gameState').once('value', snap => {
         const d = snap.val();
@@ -342,13 +351,15 @@ function showScoring(taskId) {
         const heroId = d.config?.bdayHero;
         let used = d.usedTaskIds || [];
         used.push(taskInstance.id);
+        
         const updatedPlayers = allPlayers.map((p, idx) => {
             const part = res.find(r => r.name === p.name);
             let earned = 0;
             if(part) {
                 if(part.win) earned += taskInstance.p;
                 else if(taskInstance.m) earned -= taskInstance.p;
-                if(d.config?.useCooldowns) p.cooldown = true;
+                // Vapautetaan jäähyltä, kun tehtävä on VALMIS
+                if(d.config?.useCooldowns) p.cooldown = false;
             } else { if(taskInstance.b && idx === heroId) earned += taskInstance.p; }
             p.score = Math.max(0, (p.score || 0) + earned);
             return p;
@@ -489,7 +500,7 @@ function triggerWinnerOverlay(taskName) {
     document.getElementById('winnerTaskName').innerText = taskName; 
     overlay.style.display = 'flex';
     if (navigator.vibrate) navigator.vibrate([200, 100, 200]); 
-    setTimeout(() => { overlay.style.display = 'none'; }, 3000); // Pidennetty kestoa hieman
+    setTimeout(() => { overlay.style.display = 'none'; }, 3000); 
 }
 
 function toggleAdminPanel() { 
