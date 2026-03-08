@@ -89,7 +89,6 @@ body {
     box-shadow: 0 0 15px var(--gm-glow); 
 }
 
-/* GM-tilan pitkän painalluksen visuaalinen palaute */
 .role-btn.gm:active::after {
     content: '';
     position: absolute;
@@ -106,7 +105,7 @@ body {
 }
 
 /* ==========================================
-   3. KORTIT JA MULTI-TASK RAKENNE
+   3. KORTIT JA MULTI-TASK (KORJATTU)
    ========================================== */
 .card { 
     background: var(--surface); 
@@ -117,13 +116,19 @@ body {
     animation: slideIn 0.4s ease-out; 
     position: relative;
     contain: content;
+    min-height: 200px; /* Pitää korkeuden vakaana */
 }
 
-/* Dynaamisten tehtäväkorttien erityistyylit */
+/* UUSI: Korostus kun pelaaja on valittu tehtävään */
+.active-task-item.participating {
+    border: 2px solid var(--success) !important;
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.2);
+}
+
 .active-task-item {
     border-left: 5px solid var(--accent);
     margin-bottom: 25px;
-    transition: all 0.3s ease;
+    transition: transform 0.2s, border 0.3s;
 }
 
 .card h2 { 
@@ -153,40 +158,12 @@ body {
     justify-content: center; 
 }
 
-.btn:active { 
-    transform: scale(0.97); 
-}
-
-.btn-primary { 
-    background: var(--accent); 
-    color: #000; 
-    box-shadow: 0 4px 15px var(--accent-glow); 
-}
-
-.btn-gm { 
-    background: var(--gm-accent); 
-    color: #000; 
-    box-shadow: 0 4px 15px var(--gm-glow); 
-}
-
-.btn-secondary { 
-    background: var(--surface-light); 
-    color: var(--text); 
-    border: 1px solid rgba(255,255,255,0.05); 
-}
-
-.btn-success { 
-    background: var(--success); 
-    color: #000; 
-}
-
-.btn-danger { 
-    background: transparent; 
-    color: var(--danger); 
-    border: 1px solid var(--danger); 
-    font-size: 0.7rem; 
-    padding: 8px; 
-}
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: var(--accent); color: #000; box-shadow: 0 4px 15px var(--accent-glow); }
+.btn-gm { background: var(--gm-accent); color: #000; box-shadow: 0 4px 15px var(--gm-glow); }
+.btn-secondary { background: var(--surface-light); color: var(--text); border: 1px solid rgba(255,255,255,0.05); }
+.btn-success { background: var(--success); color: #000; }
+.btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); font-size: 0.7rem; padding: 8px; }
 
 /* ==========================================
    5. PELAAJARIVIT JA LEADERBOARD
@@ -202,15 +179,8 @@ body {
     border: 1px solid transparent; 
 }
 
-.player-row.me { 
-    border-color: var(--accent); 
-    background: rgba(0, 229, 255, 0.05); 
-}
-
-.player-row.is-hero { 
-    border: 1px solid var(--gm-accent); 
-    background: rgba(255, 159, 67, 0.05); 
-}
+.player-row.me { border-color: var(--accent); background: rgba(0, 229, 255, 0.05); }
+.player-row.is-hero { border: 1px solid var(--gm-accent); background: rgba(255, 159, 67, 0.05); }
 
 .xp-badge { 
     background: #000; 
@@ -223,13 +193,9 @@ body {
 }
 
 /* ==========================================
-   6. TEHTÄVÄN SISÄLTÖ JA INSTRUKTIOT
+   6. TEHTÄVÄN SISÄLTÖ (KORJATTU)
    ========================================== */
-.task-box { 
-    text-align: center; 
-    border: 2px solid var(--accent); 
-    box-shadow: 0 0 25px var(--accent-glow); 
-}
+.task-box { text-align: center; border: 2px solid var(--accent); box-shadow: 0 0 25px var(--accent-glow); }
 
 .active-task-item h1 { 
     font-weight: 900; 
@@ -239,24 +205,33 @@ body {
     margin: 10px 0; 
 }
 
+/* ISOMPI TEKSTI KUVAUKSEEN */
 .instruction-card {
     background: rgba(255, 255, 255, 0.04);
-    padding: 18px;
+    padding: 20px;
     border-radius: 12px;
     margin-top: 15px;
     border-left: 4px solid var(--accent);
     text-align: left;
     animation: slideIn 0.3s ease-out;
+    min-height: 80px; /* Estää hyppimisen */
+}
+
+.instruction-card p {
+    font-size: 1.1rem !important; /* Suurempi teksti */
+    line-height: 1.4;
+    margin: 0;
 }
 
 .task-description {
     transition: opacity 0.3s ease;
     line-height: 1.5;
     margin: 15px 0;
+    font-size: 1.05rem;
 }
 
 /* ==========================================
-   7. LOMAKKEET JA SYÖTTEET
+   7. LOMAKKEET
    ========================================== */
 input, textarea, select { 
     background: var(--surface-light); 
@@ -270,16 +245,8 @@ input, textarea, select {
     font-size: 1rem;
 }
 
-select {
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='white' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: calc(100% - 12px) center;
-    padding-right: 35px;
-}
-
 /* ==========================================
-   8. ADMIN JA GM TYÖKALUT
+   8. ADMIN JA GM TYÖKALUT (KORJATTU)
    ========================================== */
 .volunteer-selector-grid {
     display: grid; 
@@ -292,85 +259,36 @@ select {
 .btn.on-cooldown {
     border: 1px solid var(--danger) !important;
     color: var(--danger) !important;
-    background: rgba(255, 71, 87, 0.05) !important;
+    background: rgba(255, 71, 87, 0.1) !important;
 }
 
-.admin-task-controls { 
-    display: flex; 
-    flex-direction: column; 
-    gap: 12px; 
-    margin-top: 5px;
-    background: rgba(0,0,0,0.3);
-    padding: 15px;
-    border-radius: 12px;
-}
-
-.point-input-group { 
-    display: flex; 
-    align-items: center; 
-    justify-content: flex-start;
-    gap: 15px; 
-    background: transparent;
-    padding: 0;
-    font-size: 0.8rem;
-    flex-wrap: wrap;
-    min-width: 100%;
-}
-
-.minus-label { 
-    display: flex; 
-    align-items: center; 
-    gap: 8px; 
-    font-size: 0.75rem; 
-    font-weight: 800; 
-    text-transform: uppercase;
-    cursor: pointer;
-    white-space: nowrap;
-    line-height: 1;
-}
-
-.minus-label input[type="checkbox"] { 
-    width: 20px; 
-    height: 20px; 
-    margin: 0; 
-    accent-color: var(--accent);
-}
-
-.admin-row-stack {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    width: 100%;
+/* Kun pelaaja on valittu (sininen), vaikka olisi jäähyllä */
+.btn.selected-participant {
+    background: var(--accent) !important;
+    color: #000 !important;
+    border: 1px solid #fff !important;
 }
 
 /* ==========================================
-   9. ANIMAATIOT (SHUFFLING, XP, WINNER)
+   9. ANIMAATIOT (KORJATTU)
    ========================================== */
 
-/* Arvonnan välkyntäefekti */
+/* Arvonnan välkyntä (Ei mene liian tummaksi) */
 .shuffling {
-    animation: rapid-flash-dynamic 0.1s infinite alternate;
+    animation: rapid-flash-dynamic 0.15s infinite alternate;
     border: 2px solid #fff !important;
-    background: var(--accent) !important;
-    color: #000 !important;
 }
 
 @keyframes rapid-flash-dynamic {
-    0% { opacity: 1; transform: scale(1.05); filter: hue-rotate(0deg); }
-    100% { opacity: 0.4; transform: scale(0.95); filter: hue-rotate(20deg); }
+    0% { background: var(--accent); color: #000; opacity: 1; transform: scale(1.02); }
+    100% { background: var(--surface-light); color: var(--text); opacity: 0.7; transform: scale(0.98); }
 }
 
-/* XP POPUP ANIMAATIO */
+/* XP POPUP */
 .xp-popup {
-    position: fixed; 
-    top: 50%; 
-    left: 50%; 
-    transform: translate(-50%, -50%);
-    font-weight: 900; 
-    font-size: 4rem;
-    z-index: 3100; 
-    pointer-events: none; 
-    display: none;
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    font-weight: 900; font-size: 4rem;
+    z-index: 3100; pointer-events: none; display: none;
     text-shadow: 0 0 30px rgba(0,0,0,0.8);
 }
 
@@ -385,41 +303,11 @@ select {
     100% { opacity: 0; transform: translate(-50%, -250%) scale(0.8); }
 }
 
-/* VOITTO-ILMOITUKSEN TAUSTA */
-.winner-announcement {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(5, 5, 7, 0.95); color: #fff; z-index: 3000;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    text-align: center; padding: 30px; backdrop-filter: blur(10px);
-}
-
-.winner-content {
-    background: var(--surface); padding: 40px 20px; border-radius: 24px;
-    border: 2px solid var(--accent); box-shadow: 0 0 50px var(--accent-glow);
-    max-width: 400px; width: 95%;
-    animation: winner-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.timer-bar { 
-    width: 100%; height: 6px; background: rgba(255,255,255,0.05); 
-    margin-top: 30px; border-radius: 3px; overflow: hidden; 
-}
-
-.timer-bar::after { 
-    content: ''; display: block; height: 100%; background: var(--accent); width: 100%; 
-    animation: shrink 1.5s linear forwards; 
-}
-
 /* ==========================================
-   10. APULUOKAT JA MOBIILI-OPTIMOINTI
+   10. APULUOKAT JA LOPUT
    ========================================== */
-.gm-only { 
-    display: none; 
-}
-
-.gm-mode .gm-only { 
-    display: block; 
-}
+.gm-only { display: none; }
+.gm-mode .gm-only { display: block; }
 
 .not-selected-banner {
     background: rgba(255, 71, 87, 0.1);
@@ -431,21 +319,11 @@ select {
     text-align: center;
 }
 
-/* Kirjaston muokkauskentät */
-#taskLibraryEditor input[type="text"] { font-weight: 700; color: var(--accent); margin-bottom: 5px; }
-#taskLibraryEditor textarea { font-size: 0.85rem; height: 80px; margin-bottom: 8px; line-height: 1.4; color: var(--muted); }
-
-/* Yleiset avainruudut */
 @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes winner-pop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 @keyframes shrink { from { width: 100%; } to { width: 0%; } }
 
-/* Mobiilinäytöt */
 @media (max-width: 480px) {
-    .volunteer-selector-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-    .container {
-        padding-top: 100px;
-    }
+    .volunteer-selector-grid { grid-template-columns: repeat(2, 1fr); }
+    .container { padding-top: 100px; }
 }
