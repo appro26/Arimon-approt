@@ -450,23 +450,34 @@ function updateSpyBtnText() { const btn = document.getElementById('btnGMSpy'); i
 function toggleAdminPanel() { const p = document.getElementById('adminPanel'); p.style.display = p.style.display === 'none' ? 'block' : 'none'; if(p.style.display === 'block') { renderAdminPlayerList(); renderTaskLibrary(); } }
 function adjustScore(idx, amt) { db.ref('gameState/players/' + idx + '/score').transaction(s => Math.max(0, (s || 0) + amt)); }
 function removePlayer(idx) { if(confirm("Poista?")) { allPlayers.splice(idx, 1); db.ref('gameState/players').set(allPlayers); } }
-function updateIdentityUI() { document.getElementById('identityCard').style.display = myName ? 'none' : 'block'; document.getElementById('idTag').innerText = myName ? "PROFIILI: " + myName : "KIRJAUDU SISÄÄN"; }
+function updateIdentityUI() { 
+    const card = document.getElementById('identityCard');
+    if(card) card.style.display = myName ? 'none' : 'block'; 
+    const tag = document.getElementById('idTag');
+    if(tag) tag.innerText = myName ? "PROFIILI: " + myName : "KIRJAUDU SISÄÄN"; 
+}
 
-// --- PRO-KIKKA: Pitkä painallus avaa GM-tilan ---
+// --- GM-TILAN AKTIVOINTI (Salasana tai 2s painallus) ---
 const gmBtn = document.getElementById('btnGM');
 let holdTimer;
 
 if (gmBtn) {
+    gmBtn.addEventListener('click', () => {
+        // Tavallinen klikkaus kysyy salasanaa
+        setRole('gm');
+    });
+
     gmBtn.addEventListener('touchstart', (e) => {
         holdTimer = setTimeout(() => {
-            setRole('gm', true); // TRUE ohittaa salasanan
+            setRole('gm', true); // Ohittaa salasanan
             if ("vibrate" in navigator) navigator.vibrate(60);
         }, 2000);
     });
     gmBtn.addEventListener('touchend', () => clearTimeout(holdTimer));
+
     gmBtn.addEventListener('mousedown', () => {
         holdTimer = setTimeout(() => {
-            setRole('gm', true);
+            setRole('gm', true); // Ohittaa salasanan
         }, 2000);
     });
     gmBtn.addEventListener('mouseup', () => clearTimeout(holdTimer));
