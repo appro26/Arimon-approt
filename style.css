@@ -40,7 +40,7 @@ body {
     padding-bottom: 30px; 
 }
 
-/* --- ROOLI-KYTKIN --- */
+/* --- ROOLI-KYTKIN JA GM-LUKITUS --- */
 .role-switcher { 
     position: fixed; 
     top: calc(15px + env(safe-area-inset-top)); 
@@ -54,6 +54,7 @@ body {
     border-radius: 27px; 
     border: 1px solid rgba(255,255,255,0.08); 
     padding: 5px; 
+    overflow: hidden;
 }
 
 .role-btn { 
@@ -67,10 +68,28 @@ body {
     cursor: pointer; 
     border-radius: 22px; 
     transition: 0.3s; 
+    position: relative;
+    z-index: 2;
 }
 
 .role-btn.player.active { background: var(--accent); color: #000; box-shadow: 0 0 15px var(--accent-glow); }
 .role-btn.gm.active { background: var(--gm-accent); color: #000; box-shadow: 0 0 15px var(--gm-glow); }
+
+/* Visuaalinen palaute GM-nappia pohjaan painettaessa */
+.role-btn.gm:active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 4px;
+    background: var(--gm-accent);
+    animation: hold-progress 1.2s linear forwards;
+}
+
+@keyframes hold-progress {
+    from { width: 0%; }
+    to { width: 100%; }
+}
 
 /* --- KORTIT --- */
 .card { 
@@ -116,10 +135,6 @@ body {
 .btn-success { background: var(--success); color: #000; }
 .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); font-size: 0.7rem; padding: 8px; }
 
-/* Jäähy-tyyli painikkeelle */
-.btn.on-cooldown { border: 1px solid var(--danger) !important; opacity: 0.5; cursor: not-allowed; }
-.on-cooldown-text { color: var(--danger); font-weight: 900; font-size: 0.65rem; margin-left: 5px; }
-
 /* --- LISTAUKSET JA PELAAJARIVIT --- */
 .player-row { 
     display: flex; 
@@ -163,6 +178,13 @@ body {
     margin-top: 15px;
     border-left: 4px solid var(--accent);
     text-align: left;
+    animation: slideIn 0.3s ease-out;
+}
+
+.task-description {
+    transition: opacity 0.3s ease;
+    line-height: 1.5;
+    margin: 15px 0;
 }
 
 /* --- LOMAKKEET --- */
@@ -178,8 +200,21 @@ input, textarea, select {
     font-size: 1rem;
 }
 
-/* --- ADMIN OHJAIMET --- */
-.admin-row-stack { display: flex; flex-direction: column; gap: 5px; }
+select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='white' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: calc(100% - 12px) center;
+    padding-right: 35px;
+}
+
+/* --- ADMIN JA GM TYÖKALUT --- */
+.volunteer-selector-grid {
+    display: grid; 
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 8px; 
+    margin-bottom: 15px;
+}
 
 .admin-task-controls { 
     display: flex; 
@@ -187,28 +222,16 @@ input, textarea, select {
     gap: 8px; 
     margin-top: 5px;
     background: rgba(0,0,0,0.2);
-    padding: 10px;
+    padding: 12px;
     border-radius: 10px;
 }
 
 .point-input-group { 
     display: flex; 
     align-items: center; 
-    gap: 5px; 
-    background: var(--surface-light);
-    padding: 6px 10px;
-    border-radius: 10px;
-    font-size: 0.6rem;
-    font-weight: 800;
-    text-transform: uppercase;
-}
-
-.point-input-group input[type="number"] { 
-    width: 42px; 
-    margin: 0; 
-    padding: 5px; 
-    text-align: center; 
-    font-size: 0.8rem; 
+    gap: 8px; 
+    flex: 1;
+    min-width: 150px;
 }
 
 .minus-label { 
@@ -219,33 +242,22 @@ input, textarea, select {
     font-weight: 800; 
     text-transform: uppercase;
     cursor: pointer;
-    white-space: nowrap;
 }
 
-.minus-label input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
-
-.volunteer-selector-grid {
-    display: grid; 
-    grid-template-columns: repeat(3, 1fr); 
-    gap: 8px; 
-    margin-bottom: 15px;
-}
-
-/* --- ARVONTA JA ANIMAATIOT --- */
+/* --- ANIMAATIOT --- */
 .shuffling {
     animation: rapid-flash 0.15s infinite alternate;
     border: 2px solid #fff !important;
     background: var(--accent) !important;
     color: #000 !important;
-    z-index: 10;
 }
 
 @keyframes rapid-flash {
     from { opacity: 1; transform: scale(1.02); }
-    to { opacity: 0.4; transform: scale(0.96); filter: brightness(1.2) contrast(1.2); }
+    to { opacity: 0.5; transform: scale(0.98); }
 }
 
-/* PREMIUM XP POPUP */
+/* XP POPUP */
 .xp-popup {
     position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
     font-weight: 900; font-size: 4rem;
@@ -255,13 +267,13 @@ input, textarea, select {
 
 .xp-animate {
     display: block !important;
-    animation: xp-premium-float 1.8s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+    animation: xp-float 1.8s cubic-bezier(0.19, 1, 0.22, 1) forwards;
 }
 
-@keyframes xp-premium-float {
-    0% { opacity: 0; transform: translate(-50%, 40%) scale(0.3); filter: blur(10px); }
-    20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); filter: blur(0px); }
-    100% { opacity: 0; transform: translate(-50%, -250%) scale(0.8); filter: blur(5px); }
+@keyframes xp-float {
+    0% { opacity: 0; transform: translate(-50%, 40%) scale(0.3); }
+    20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+    100% { opacity: 0; transform: translate(-50%, -250%) scale(0.8); }
 }
 
 /* --- VOITTO-ILMOITUS --- */
@@ -279,8 +291,6 @@ input, textarea, select {
     animation: winner-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.winner-icon { font-size: 3.5rem; margin-bottom: 15px; animation: bounce 0.5s ease infinite alternate; }
-
 .timer-bar { 
     width: 100%; height: 6px; background: rgba(255,255,255,0.05); 
     margin-top: 30px; border-radius: 3px; overflow: hidden; 
@@ -291,7 +301,7 @@ input, textarea, select {
     animation: shrink 1.5s linear forwards; 
 }
 
-/* --- YLEISET JA APULUOKAT --- */
+/* --- APULUOKAT --- */
 .gm-only { display: none; }
 .gm-mode .gm-only { display: block; }
 
@@ -304,22 +314,6 @@ input, textarea, select {
     text-transform: uppercase; font-size: 0.8rem;
 }
 
-/* ADMIN ASETUKSET */
-.admin-settings-list { display: flex; flex-direction: column; gap: 8px; }
-.admin-checkbox-label {
-    display: flex; align-items: center; gap: 12px;
-    padding: 12px; background: var(--surface-light);
-    border-radius: 12px; cursor: pointer;
-    font-weight: 700; font-size: 0.85rem;
-}
-.admin-checkbox-label input[type="checkbox"] { width: 20px; height: 20px; margin: 0; accent-color: var(--accent); }
-
-/* TEHTÄVÄKIRJASTON MUOKKAUS */
-#taskLibraryEditor input[type="text"] { font-weight: 700; color: var(--accent); margin-bottom: 5px; }
-#taskLibraryEditor textarea { font-size: 0.85rem; height: 80px; margin-bottom: 8px; line-height: 1.4; color: var(--muted); }
-
-/* ANIMAATIO-KEYFRAMET */
-@keyframes slideIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes winner-pop { 0% { transform: scale(0.7); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-@keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
+@keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes winner-pop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 @keyframes shrink { from { width: 100%; } to { width: 0%; } }
