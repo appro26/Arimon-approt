@@ -8,7 +8,7 @@ let allPlayers = [];
 let currentTasks = [];
 let isTaskActive = false;
 let localSpyEnabled = false;
-let lastMyScore = null; // Seurataan omaa pistemäärää animaatiota varten
+let lastMyScore = null;
 
 const initialPlaybook = [
     { id: 0, n: "Keittiömestarin Battle Royale", p: 3, d: "Nopeuskisa tyhjentämisessä." },
@@ -53,9 +53,14 @@ db.ref('gameState').on('value', (snap) => {
     if (currentResetId && data.resetId !== currentResetId) { localStorage.clear(); location.reload(); return; }
     if (!currentResetId) { currentResetId = data.resetId; localStorage.setItem('appro_reset_id', data.resetId); }
 
+    const oldPlayerCount = allPlayers.length;
     allPlayers = data.players || [];
     
-    // Tarkistetaan oma pistemäärä animaatiota varten
+    // Päivitetään GM:n arvontamäärä-valikko jos pelaajamäärä muuttuu
+    if (oldPlayerCount !== allPlayers.length) {
+        updateDrawCountSelect();
+    }
+
     const me = allPlayers.find(p => p.name === myName);
     if (me) {
         if (lastMyScore !== null && me.score > lastMyScore) {
@@ -64,7 +69,6 @@ db.ref('gameState').on('value', (snap) => {
         lastMyScore = me.score;
     }
 
-    // Päivitetään tehtäväpankki ja GM-valikko
     if (currentTasks.length !== (data.tasks || []).length) {
         currentTasks = data.tasks || [];
         updateManualTaskSelect();
@@ -78,12 +82,25 @@ db.ref('gameState').on('value', (snap) => {
         renderTaskLibrary();
     }
 
-    // Arvonta-animaation kuuntelu
+    // ARVONTA-LOGIIKKA
     const lotteryOverlay = document.getElementById('lotteryOverlay');
+    const winnerOverlay = document.getElementById('lotteryWinner');
+    
     if (data.isLotteryRunning) {
         lotteryOverlay.style.display = 'flex';
+        winnerOverlay.style.display = 'none'; // Piilota vanha voittoilmoitus uuden tieltä
     } else {
         lotteryOverlay.style.display = 'none';
+        
+        // Jos arvonta loppui ja peli on lukittu, tarkista olenko voittaja
+        if (data.locked && data.activeTask) {
+            const results = data.participants || [];
+            const amIChosen = results.some(r => r.name === myName);
+            if (amIChosen && !isTaskActive) { // Näytä vain kerran tehtävän alussa
+                winnerOverlay.style.display = 'flex';
+                setTimeout(() => { winnerOverlay.style.display = 'none'; }, 3000);
+            }
+        }
     }
 
     const live = data.activeTask;
@@ -109,6 +126,12 @@ db.ref('gameState').on('value', (snap) => {
 
         const shouldSeeSpecs = (isLocked && (isMePart || isGM)) || (isGM && localSpyEnabled);
         document.getElementById('instructionBox').style.display = shouldSeeSpecs ? 'block' : 'none';
+        
+        // Korostetaan tehtävänantoa pelaajalle
+        if (isLocked && isMePart) {
+            document.getElementById('instructionBox').classList.add('flash-effect');
+        }
+
         document.getElementById('taskPhaseTitle').innerText = isLocked ? "VAIHE: SUORITUS" : "VAIHE: ILMOITTAUTUMINEN";
         document.getElementById('joinAction').style.display = isLocked ? 'none' : 'block';
 
@@ -125,8 +148,25 @@ db.ref('gameState').on('value', (snap) => {
         renderGMVolunteers(results, isLocked);
     } else { 
         taskBox.style.display = 'none'; 
+        winnerOverlay.style.display = 'none';
     }
 });
+
+// UUSI: Päivittää arvontamäärän dynaamisesti pelaajien mukaan
+function updateDrawCountSelect() {
+    const sel = document.getElementById('drawCount');
+    if (!sel) return;
+    const currentVal = sel.value;
+    sel.innerHTML = '';
+    const max = allPlayers.length || 1;
+    for (let i = 1; i <= max; i++) {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.innerText = i;
+        sel.appendChild(opt);
+    }
+    sel.value = Math.min(currentVal, max) || 1;
+}
 
 function showXPAnimation(points) {
     const pop = document.getElementById('xpPopUp');
@@ -250,10 +290,9 @@ function toggleParticipant(name) {
     });
 }
 
+// NOPEUTETTU ARVONTA
 function drawRandom() {
     const count = parseInt(document.getElementById('drawCount').value) || 1;
-    
-    // Käynnistetään animaatio kaikille
     db.ref('gameState/isLotteryRunning').set(true);
     
     setTimeout(() => {
@@ -261,11 +300,15 @@ function drawRandom() {
             let list = s.val() || [];
             if(list.length > count) {
                 let shuffled = list.sort(() => 0.5 - Math.random());
-                db.ref('gameState/participants').set(shuffled.slice(0, count));
+                list = shuffled.slice(0, count);
             }
-            db.ref('gameState/isLotteryRunning').set(false);
+            db.ref('gameState').update({ 
+                participants: list,
+                isLotteryRunning: false,
+                locked: true // Arvonta lukitsee tilanteen automaattisesti
+            });
         });
-    }, 2000); // 2 sekunnin animaatio
+    }, 1200); 
 }
 
 function lockParticipants() { db.ref('gameState/locked').set(true); localSpyEnabled = false; updateSpyBtnText(); }
@@ -311,7 +354,6 @@ function updateIdentityUI() {
 function renderLeaderboard() {
     const list = document.getElementById('playerList'); list.innerHTML = '';
     [...allPlayers].sort((a,b) => b.score - a.score).forEach(p => {
-        // MUUTETTU: [J] -> [JÄÄHY] tyylitellyllä luokalla
         const cooldownTag = p.cooldown ? `<span class="on-cooldown-text">[JÄÄHY]</span>` : '';
         list.innerHTML += `<div class="player-row ${p.name === myName?'me':''}"><span>${p.name}${cooldownTag}</span><span class="xp-badge">${p.score} XP</span></div>`;
     });
@@ -332,6 +374,7 @@ function renderGMVolunteers(results, isLocked) {
     allPlayers.forEach(p => {
         const isInc = results.some(r => r.name === p.name);
         const btn = document.createElement('button');
+        // LISÄTTY: on-cooldown luokka jos pelaaja on jäähyllä
         btn.className = `btn ${isInc ? 'btn-primary' : 'btn-secondary'} ${p.cooldown ? 'on-cooldown' : ''}`;
         btn.style.margin = '0';
         btn.style.fontSize = '0.6rem';
