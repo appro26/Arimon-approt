@@ -90,7 +90,7 @@ body {
     to { width: 100%; }
 }
 
-/* --- KORTIT --- */
+/* --- KORTIT JA MULTI-TASK --- */
 .card { 
     background: var(--surface); 
     border-radius: var(--radius); 
@@ -100,6 +100,12 @@ body {
     animation: slideIn 0.4s ease-out; 
     position: relative;
     contain: content;
+}
+
+/* Multi-task korttien välihionta */
+.active-task-item {
+    border-left: 5px solid var(--accent);
+    margin-bottom: 25px;
 }
 
 .card h2 { 
@@ -162,7 +168,7 @@ body {
 /* --- TEHTÄVÄN SPEKSIT JA INSTRUKTIOT --- */
 .task-box { text-align: center; border: 2px solid var(--accent); box-shadow: 0 0 25px var(--accent-glow); }
 
-#liveTaskName { 
+#liveTaskName, .active-task-item h1 { 
     font-weight: 900; 
     color: var(--accent); 
     text-transform: uppercase; 
@@ -215,7 +221,13 @@ select {
     margin-bottom: 15px;
 }
 
-/* KORJAUS: Admin-ohjainten rivitys ja checkboxien kohdistus */
+/* UUSI: Jäähyindikaattori GM-gridissä */
+.btn.on-cooldown {
+    border: 1px solid var(--danger) !important;
+    color: var(--danger) !important;
+    background: rgba(255, 71, 87, 0.05) !important;
+}
+
 .admin-task-controls { 
     display: flex; 
     flex-direction: column; 
@@ -265,16 +277,19 @@ select {
 }
 
 /* --- ANIMAATIOT --- */
+
+/* Päivitetty: Epätahtinen välkyntä (Shuffling) */
 .shuffling {
-    animation: rapid-flash 0.15s infinite alternate;
+    animation: rapid-flash-dynamic 0.1s infinite alternate;
     border: 2px solid #fff !important;
     background: var(--accent) !important;
     color: #000 !important;
 }
 
-@keyframes rapid-flash {
-    from { opacity: 1; transform: scale(1.02); }
-    to { opacity: 0.5; transform: scale(0.98); }
+/* Lisätään vaihtelua välkyntään CSS-muuttujalla jos mahdollista, tai useilla avainruuduilla */
+@keyframes rapid-flash-dynamic {
+    0% { opacity: 1; transform: scale(1.05); filter: hue-rotate(0deg); }
+    100% { opacity: 0.4; transform: scale(0.95); filter: hue-rotate(20deg); }
 }
 
 /* XP POPUP */
@@ -332,6 +347,7 @@ select {
     padding: 15px; border-radius: 12px;
     font-weight: 900; margin-top: 15px;
     text-transform: uppercase; font-size: 0.8rem;
+    text-align: center;
 }
 
 @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -341,3 +357,13 @@ select {
 /* TEHTÄVÄKIRJASTON MUOKKAUS */
 #taskLibraryEditor input[type="text"] { font-weight: 700; color: var(--accent); margin-bottom: 5px; }
 #taskLibraryEditor textarea { font-size: 0.85rem; height: 80px; margin-bottom: 8px; line-height: 1.4; color: var(--muted); }
+
+/* Mobiili-optimointi multi-taskille */
+@media (max-width: 480px) {
+    .volunteer-selector-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .container {
+        padding-top: 100px;
+    }
+}
