@@ -1,9 +1,16 @@
 :root {
-    --bg: #050507; --surface: #101014; --surface-light: #18181f;
-    --accent: #00e5ff; --accent-glow: rgba(0, 229, 255, 0.3);
-    --gm-accent: #ff9f43; --gm-glow: rgba(255, 159, 67, 0.3);
-    --success: #00ff88; --danger: #ff4757;
-    --text: #ffffff; --muted: #a0a0ab; --radius: 16px;
+    --bg: #050507; 
+    --surface: #101014; 
+    --surface-light: #18181f;
+    --accent: #00e5ff; 
+    --accent-glow: rgba(0, 229, 255, 0.3);
+    --gm-accent: #ff9f43; 
+    --gm-glow: rgba(255, 159, 67, 0.3);
+    --success: #00ff88; 
+    --danger: #ff4757;
+    --text: #ffffff; 
+    --muted: #a0a0ab; 
+    --radius: 16px;
 }
 
 * { 
@@ -26,9 +33,14 @@ body {
     overflow-x: hidden;
 }
 
-.container { width: 100%; max-width: 460px; padding-top: 110px; padding-bottom: 30px; }
+.container { 
+    width: 100%; 
+    max-width: 460px; 
+    padding-top: 110px; 
+    padding-bottom: 30px; 
+}
 
-/* ROOLI-KYTKIN */
+/* --- ROOLI-KYTKIN --- */
 .role-switcher { 
     position: fixed; 
     top: calc(15px + env(safe-area-inset-top)); 
@@ -44,11 +56,23 @@ body {
     padding: 5px; 
 }
 
-.role-btn { flex: 1; border: none; color: var(--muted); background: transparent; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; cursor: pointer; border-radius: 22px; transition: 0.3s; }
+.role-btn { 
+    flex: 1; 
+    border: none; 
+    color: var(--muted); 
+    background: transparent; 
+    font-weight: 700; 
+    font-size: 0.75rem; 
+    text-transform: uppercase; 
+    cursor: pointer; 
+    border-radius: 22px; 
+    transition: 0.3s; 
+}
+
 .role-btn.player.active { background: var(--accent); color: #000; box-shadow: 0 0 15px var(--accent-glow); }
 .role-btn.gm.active { background: var(--gm-accent); color: #000; box-shadow: 0 0 15px var(--gm-glow); }
 
-/* KORTIT */
+/* --- KORTIT --- */
 .card { 
     background: var(--surface); 
     border-radius: var(--radius); 
@@ -60,19 +84,43 @@ body {
     contain: content;
 }
 
-.card h2 { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; margin: 0 0 15px 0; letter-spacing: 1.5px; }
+.card h2 { 
+    font-size: 0.75rem; 
+    color: var(--muted); 
+    text-transform: uppercase; 
+    margin: 0 0 15px 0; 
+    letter-spacing: 1.5px; 
+}
 
-/* PAINIKKEET */
-.btn { font-family: inherit; border-radius: 14px; border: none; font-weight: 800; padding: 16px; text-transform: uppercase; cursor: pointer; transition: transform 0.1s, filter 0.2s; width: 100%; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; }
+/* --- PAINIKKEET --- */
+.btn { 
+    font-family: inherit; 
+    border-radius: 14px; 
+    border: none; 
+    font-weight: 800; 
+    padding: 16px; 
+    text-transform: uppercase; 
+    cursor: pointer; 
+    transition: transform 0.1s, filter 0.2s; 
+    width: 100%; 
+    margin-bottom: 10px; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+}
+
 .btn:active { transform: scale(0.97); }
-
 .btn-primary { background: var(--accent); color: #000; box-shadow: 0 4px 15px var(--accent-glow); }
 .btn-gm { background: var(--gm-accent); color: #000; box-shadow: 0 4px 15px var(--gm-glow); }
 .btn-secondary { background: var(--surface-light); color: var(--text); border: 1px solid rgba(255,255,255,0.05); }
 .btn-success { background: var(--success); color: #000; }
 .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); font-size: 0.7rem; padding: 8px; }
 
-/* LISTAUKSET */
+/* Jäähy-tyyli painikkeelle */
+.btn.on-cooldown { border: 1px solid var(--danger) !important; opacity: 0.5; cursor: not-allowed; }
+.on-cooldown-text { color: var(--danger); font-weight: 900; font-size: 0.65rem; margin-left: 5px; }
+
+/* --- LISTAUKSET JA PELAAJARIVIT --- */
 .player-row { 
     display: flex; 
     justify-content: space-between; 
@@ -83,18 +131,31 @@ body {
     margin-bottom: 6px; 
     border: 1px solid transparent; 
 }
-.player-row.me { border-color: var(--accent); background: rgba(0, 229, 255, 0.05); }
 
-/* Synttärisankari korostus */
-.player-row.is-hero { 
-    border: 1px solid var(--gm-accent); 
-    background: rgba(255, 159, 67, 0.05); 
+.player-row.me { border-color: var(--accent); background: rgba(0, 229, 255, 0.05); }
+.player-row.is-hero { border: 1px solid var(--gm-accent); background: rgba(255, 159, 67, 0.05); }
+
+.xp-badge { 
+    background: #000; 
+    color: var(--accent); 
+    font-weight: 900; 
+    padding: 4px 10px; 
+    border-radius: 12px; 
+    font-size: 0.7rem; 
+    border: 1px solid var(--accent); 
 }
 
-.xp-badge { background: #000; color: var(--accent); font-weight: 900; padding: 4px 10px; border-radius: 12px; font-size: 0.7rem; border: 1px solid var(--accent); }
-
-/* TEHTÄVÄN SPEKSIT */
+/* --- TEHTÄVÄN SPEKSIT JA INSTRUKTIOT --- */
 .task-box { text-align: center; border: 2px solid var(--accent); box-shadow: 0 0 25px var(--accent-glow); }
+
+#liveTaskName { 
+    font-weight: 900; 
+    color: var(--accent); 
+    text-transform: uppercase; 
+    letter-spacing: -1px; 
+    margin: 10px 0; 
+}
+
 .instruction-card {
     background: rgba(255, 255, 255, 0.04);
     padding: 18px;
@@ -104,8 +165,7 @@ body {
     text-align: left;
 }
 
-#liveTaskName { font-weight: 900; color: var(--accent); text-transform: uppercase; letter-spacing: -1px; margin: 10px 0; }
-
+/* --- LOMAKKEET --- */
 input, textarea, select { 
     background: var(--surface-light); 
     border: 1px solid rgba(255,255,255,0.1); 
@@ -118,8 +178,9 @@ input, textarea, select {
     font-size: 1rem;
 }
 
-/* ADMIN MUOKKAUSPINO JA UUDET KENTÄT */
+/* --- ADMIN OHJAIMET --- */
 .admin-row-stack { display: flex; flex-direction: column; gap: 5px; }
+
 .admin-task-controls { 
     display: flex; 
     flex-wrap: wrap; 
@@ -141,7 +202,14 @@ input, textarea, select {
     font-weight: 800;
     text-transform: uppercase;
 }
-.point-input-group input[type="number"] { width: 42px; margin: 0; padding: 5px; text-align: center; font-size: 0.8rem; }
+
+.point-input-group input[type="number"] { 
+    width: 42px; 
+    margin: 0; 
+    padding: 5px; 
+    text-align: center; 
+    font-size: 0.8rem; 
+}
 
 .minus-label { 
     display: flex; 
@@ -153,13 +221,17 @@ input, textarea, select {
     cursor: pointer;
     white-space: nowrap;
 }
+
 .minus-label input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
 
-/* JÄÄHY-TYYLIT */
-.on-cooldown-text { color: var(--danger); font-weight: 900; font-size: 0.65rem; margin-left: 5px; }
-.btn.on-cooldown { border: 1px solid var(--danger) !important; opacity: 0.5; cursor: not-allowed; }
+.volunteer-selector-grid {
+    display: grid; 
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 8px; 
+    margin-bottom: 15px;
+}
 
-/* --- ARVONTA-ANIMAATIO --- */
+/* --- ARVONTA JA ANIMAATIOT --- */
 .shuffling {
     animation: rapid-flash 0.15s infinite alternate;
     border: 2px solid #fff !important;
@@ -192,10 +264,7 @@ input, textarea, select {
     100% { opacity: 0; transform: translate(-50%, -250%) scale(0.8); filter: blur(5px); }
 }
 
-.gm-only { display: none; }
-.gm-mode .gm-only { display: block; }
-
-/* VOITTO-ILMOITUS */
+/* --- VOITTO-ILMOITUS --- */
 .winner-announcement {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(5, 5, 7, 0.95); color: #fff; z-index: 3000;
@@ -210,7 +279,22 @@ input, textarea, select {
     animation: winner-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* ET OSALLISTU BANNERI */
+.winner-icon { font-size: 3.5rem; margin-bottom: 15px; animation: bounce 0.5s ease infinite alternate; }
+
+.timer-bar { 
+    width: 100%; height: 6px; background: rgba(255,255,255,0.05); 
+    margin-top: 30px; border-radius: 3px; overflow: hidden; 
+}
+
+.timer-bar::after { 
+    content: ''; display: block; height: 100%; background: var(--accent); width: 100%; 
+    animation: shrink 1.5s linear forwards; 
+}
+
+/* --- YLEISET JA APULUOKAT --- */
+.gm-only { display: none; }
+.gm-mode .gm-only { display: block; }
+
 .not-selected-banner {
     background: rgba(255, 71, 87, 0.1);
     color: var(--danger);
@@ -220,7 +304,7 @@ input, textarea, select {
     text-transform: uppercase; font-size: 0.8rem;
 }
 
-/* ADMIN SETTINGS */
+/* ADMIN ASETUKSET */
 .admin-settings-list { display: flex; flex-direction: column; gap: 8px; }
 .admin-checkbox-label {
     display: flex; align-items: center; gap: 12px;
@@ -230,25 +314,12 @@ input, textarea, select {
 }
 .admin-checkbox-label input[type="checkbox"] { width: 20px; height: 20px; margin: 0; accent-color: var(--accent); }
 
-.volunteer-selector-grid {
-    display: grid; grid-template-columns: repeat(3, 1fr); 
-    gap: 8px; margin-bottom: 15px;
-}
+/* TEHTÄVÄKIRJASTON MUOKKAUS */
+#taskLibraryEditor input[type="text"] { font-weight: 700; color: var(--accent); margin-bottom: 5px; }
+#taskLibraryEditor textarea { font-size: 0.85rem; height: 80px; margin-bottom: 8px; line-height: 1.4; color: var(--muted); }
 
-/* ANIMAATIOT */
+/* ANIMAATIO-KEYFRAMET */
 @keyframes slideIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes winner-pop { 0% { transform: scale(0.7); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
 @keyframes shrink { from { width: 100%; } to { width: 0%; } }
-
-.timer-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.05); margin-top: 30px; border-radius: 3px; overflow: hidden; }
-.timer-bar::after { 
-    content: ''; display: block; height: 100%; background: var(--accent); width: 100%; 
-    animation: shrink 1.5s linear forwards; 
-}
-
-.winner-icon { font-size: 3.5rem; margin-bottom: 15px; animation: bounce 0.5s ease infinite alternate; }
-
-/* UUSI: Tehtäväkirjaston muokkausnäkymän optimointi */
-#taskLibraryEditor input[type="text"] { font-weight: 700; color: var(--accent); margin-bottom: 5px; }
-#taskLibraryEditor textarea { font-size: 0.85rem; height: 80px; margin-bottom: 8px; line-height: 1.4; color: var(--muted); }
