@@ -95,7 +95,7 @@ db.ref('gameState').on('value', (snap) => {
     const isMePart = results.some(r => r.name === myName);
     const isGM = document.body.className.includes('gm');
 
-    // --- MUUTOS: Voitto-ilmoituksen kesto puolitettu (1.5s) ---
+    // --- VOITTO-ANIMAATIO (1.5s) ---
     if (isLocked && data.activeTask) {
         if (isMePart && !isTaskActive) {
             document.getElementById('winnerTaskName').innerText = data.activeTask.n;
@@ -121,7 +121,7 @@ db.ref('gameState').on('value', (snap) => {
         const instrBox = document.getElementById('instructionBox');
         const winnerDesc = document.getElementById('winnerTaskDesc');
 
-        // --- MUUTOS: GM-puolen kuvaus piiloon ellei speksit päällä ---
+        // --- GM SPEKSIT LOGIIKKA ---
         if (isLocked) {
             descEl.style.display = 'none';
             if (isMePart || isGM || localSpyEnabled) {
@@ -131,7 +131,6 @@ db.ref('gameState').on('value', (snap) => {
                 instrBox.style.display = 'none';
             }
         } else {
-            // GM-näkymässä ilmoittautumisvaiheessa piilotetaan kuvaus, ellei Spy ole päällä
             if (isGM) {
                 descEl.style.display = localSpyEnabled ? 'block' : 'none';
                 descEl.innerText = live.d;
@@ -207,11 +206,11 @@ function lockParticipants() {
     updateSpyBtnText(); 
 }
 
-// --- MUUTOS: Tähti -> Täytekakku ---
+// --- SYNTTÄRISANKARI (KAKKU) ---
 function renderLeaderboard(showCD, heroId) {
     const list = document.getElementById('playerList');
     const fragment = document.createDocumentFragment();
-    [...allPlayers].sort((a,b) => b.score - a.score).forEach((p, i) => {
+    [...allPlayers].sort((a,b) => b.score - a.score).forEach((p) => {
         const isHero = allPlayers.findIndex(x => x.name === p.name) === heroId;
         const div = document.createElement('div');
         div.className = `player-row ${p.name === myName ? 'me' : ''} ${isHero ? 'is-hero' : ''}`;
@@ -223,6 +222,7 @@ function renderLeaderboard(showCD, heroId) {
     list.innerHTML = ''; list.appendChild(fragment);
 }
 
+// --- ARVONTA (EPÄSYNKRONOITU VÄLKYNTÄ) ---
 function renderGMVolunteers(results, isLocked, isShuffling, showCD) {
     const grid = document.getElementById('volunteerGrid');
     if (!grid) return;
@@ -234,7 +234,12 @@ function renderGMVolunteers(results, isLocked, isShuffling, showCD) {
         const onCD = showCD && p.cooldown;
         
         btn.className = `btn ${isInc ? 'btn-primary' : 'btn-secondary'} ${onCD ? 'on-cooldown' : ''}`;
-        if (isShuffling && isInc) btn.classList.add('shuffling');
+        
+        // Lisätään satunnainen animaatioviive jotta nimet välkkyvät eri aikaan
+        if (isShuffling && isInc) {
+            btn.classList.add('shuffling');
+            btn.style.animationDelay = (Math.random() * 0.3).toFixed(2) + "s";
+        }
         
         btn.style.margin = '0'; btn.style.fontSize = '0.6rem';
         btn.innerText = p.name;
@@ -259,7 +264,7 @@ function renderGMVolunteers(results, isLocked, isShuffling, showCD) {
     }
 }
 
-// --- MUUTOS: Tähti -> Täytekakku & CD -> J ---
+// --- ADMIN LISTA (KAKKU + J-KIRJAIN) ---
 function renderAdminPlayerList(heroId) {
     const list = document.getElementById('adminPlayerList');
     list.innerHTML = "";
@@ -450,15 +455,11 @@ function toggleParticipant(name) {
 
 function toggleWin(i) { db.ref('gameState/participants/' + i + '/win').transaction(w => !w); }
 
-// --- MUUTOS: Ohjeet näkyviin GM puolella vain speksit-napilla ---
 function toggleGMSpyLocal() { 
     localSpyEnabled = !localSpyEnabled; 
     updateSpyBtnText(); 
-    
     const isGM = document.body.className.includes('gm');
     const isLocked = isTaskActive;
-    
-    // Hallitaan näkyvyyttä lennosta
     const descEl = document.getElementById('liveTaskDesc');
     const instrBox = document.getElementById('instructionBox');
     
