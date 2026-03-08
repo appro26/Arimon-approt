@@ -43,6 +43,8 @@
 
         <div id="idTag" style="text-align:center; font-size:0.7rem; color:var(--muted); margin-bottom:15px; font-weight:700;"></div>
 
+        <div id="activeTasksContainer"></div>
+
         <div id="liveTask" class="card task-box" style="display:none;">
             <h2 id="taskPhaseTitle">VAIHE: ILMOITTAUTUMINEN</h2>
             <h1 id="liveTaskName">TEHTÄVÄN NIMI</h1>
@@ -64,7 +66,7 @@
                 <p id="cooldownWarning" style="color:var(--danger); font-weight:800; display:none; font-size:0.8rem;">OLET JÄÄHYLLÄ!</p>
             </div>
 
-            <div class="gm-only" style="margin-top:20px; border-top:1px solid #333; padding-top:15px;">
+            <div class="gm-only task-admin-tools" style="margin-top:20px; border-top:1px solid #333; padding-top:15px;">
                 <div id="volunteerGrid" class="volunteer-selector-grid"></div>
                 
                 <div class="admin-row-stack">
@@ -110,7 +112,7 @@
                 <select id="manualTaskSelect" onchange="selectManualTask(this.value)"></select>
 
                 <h2 style="margin-top:20px;">Pelaajien hallinta</h2>
-                <p style="font-size:0.6rem; color:var(--gm-accent); margin-bottom:10px; font-weight:700;">🎂 = SYNTTÄRISANKARI | J = JÄÄHY</p>
+                <p style="font-size:0.6rem; color:var(--gm-accent); margin-bottom:10px; font-weight:700;">🎂 = SYNTTÄRISANKARI | J = JÄÄHYLLÄ (ESTETTY AUTOMAATTIARVONNASTA)</p>
                 <div id="adminPlayerList"></div>
                 
                 <div class="admin-row-stack" style="margin-top:15px;">
@@ -125,6 +127,9 @@
                     
                     <div class="admin-task-controls">
                         <div class="point-input-group">
+                            <label style="font-size:0.7rem; color:var(--muted);">Suos. pelaajamäärä:</label>
+                            <input type="number" id="newTaskRecommendedPlayers" value="2" min="1" max="10">
+                            
                             <input type="number" id="newTaskPoints" value="2">
                             <label class="minus-label">
                                 <input type="checkbox" id="newTaskMinus"> <span>Pistemiinus</span>
