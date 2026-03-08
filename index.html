@@ -45,46 +45,7 @@
 
         <div id="activeTasksContainer"></div>
 
-        <div id="liveTask" class="card task-box" style="display:none;">
-            <h2 id="taskPhaseTitle">VAIHE: ILMOITTAUTUMINEN</h2>
-            <h1 id="liveTaskName">TEHTÄVÄN NIMI</h1>
-            <div id="liveTaskPoints" class="xp-badge" style="display:inline-block; margin-bottom:15px;">0 XP</div>
-            
-            <p id="liveTaskDesc" class="task-description">Tehtävä paljastetaan pian...</p>
-
-            <div id="notParticipatingMsg" class="not-selected-banner" style="display:none;">
-                ET OSALLISTU TÄHÄN TEHTÄVÄÄN
-            </div>
-
-            <div id="instructionBox" class="instruction-card" style="display:none;">
-                <strong style="color:var(--accent);">OHJEET:</strong>
-                <p id="winnerTaskDesc" style="margin-top:5px; font-size:0.9rem;"></p>
-            </div>
-
-            <div id="joinAction" style="margin-top:20px;">
-                <button id="btnVolu" class="btn btn-primary" onclick="volunteer()">HALUAN OSALLISTUA</button>
-                <p id="cooldownWarning" style="color:var(--danger); font-weight:800; display:none; font-size:0.8rem;">OLET JÄÄHYLLÄ!</p>
-            </div>
-
-            <div class="gm-only task-admin-tools" style="margin-top:20px; border-top:1px solid #333; padding-top:15px;">
-                <div id="volunteerGrid" class="volunteer-selector-grid"></div>
-                
-                <div class="admin-row-stack">
-                    <div style="display:flex; gap:10px;">
-                        <select id="drawCount" style="flex:1; margin:0;"></select>
-                        <button id="btnDraw" class="btn btn-gm" style="flex:2; margin:0;" onclick="drawRandom()">ARVO PELAAJAT</button>
-                    </div>
-                    <button id="btnLockManual" class="btn btn-success" style="margin:0; font-size:0.75rem; padding:12px;" onclick="lockParticipants()">LUKITSE VALINNAT</button>
-                </div>
-
-                <div id="scoringArea"></div>
-                
-                <div style="display:flex; gap:10px; margin-top:10px;">
-                    <button id="btnFinish" class="btn btn-success" style="display:none; flex:2; margin:0;" onclick="showScoring()">MERKITSE VALMIIKSI</button>
-                    <button id="btnGMSpy" class="btn btn-secondary" style="flex:1; font-size:0.6rem; padding:8px; margin:0;" onclick="toggleGMSpyLocal()">KATSO SPEKSIT</button>
-                </div>
-            </div>
-        </div>
+        <div id="liveTask" style="display:none;"></div>
 
         <div class="card">
             <h2>Leaderboard</h2>
@@ -92,8 +53,10 @@
         </div>
 
         <div class="gm-only">
-            <button class="btn btn-gm" onclick="confirmRandomize()">ARVO UUSI TEHTÄVÄ</button>
-            <button class="btn btn-secondary" onclick="toggleAdminPanel()">ADMIN-PANEELI</button>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                <button class="btn btn-gm" onclick="confirmRandomize()">ARVO UUSI TEHTÄVÄ</button>
+                <button class="btn btn-secondary" onclick="toggleAdminPanel()">ADMIN-PANEELI</button>
+            </div>
             
             <div id="adminPanel" class="card" style="display:none; margin-top:15px;">
                 <h2>Pelin säännöt</h2>
@@ -112,7 +75,9 @@
                 <select id="manualTaskSelect" onchange="selectManualTask(this.value)"></select>
 
                 <h2 style="margin-top:20px;">Pelaajien hallinta</h2>
-                <p style="font-size:0.6rem; color:var(--gm-accent); margin-bottom:10px; font-weight:700;">🎂 = SYNTTÄRISANKARI | J = JÄÄHYLLÄ (ESTETTY AUTOMAATTIARVONNASTA)</p>
+                <p style="font-size:0.6rem; color:var(--gm-accent); margin-bottom:10px; font-weight:700;">
+                    🎂 = SYNTTÄRISANKARI | J = JÄÄHYLLÄ
+                </p>
                 <div id="adminPlayerList"></div>
                 
                 <div class="admin-row-stack" style="margin-top:15px;">
@@ -127,25 +92,30 @@
                     
                     <div class="admin-task-controls">
                         <div class="point-input-group">
-                            <label style="font-size:0.7rem; color:var(--muted);">Suos. pelaajamäärä:</label>
-                            <input type="number" id="newTaskRecommendedPlayers" value="2" min="1" max="10">
+                            <label style="font-size:0.7rem; color:var(--muted);">Suositeltu pelaajamäärä:</label>
+                            <input type="number" id="newTaskRecommendedPlayers" value="1" min="1" max="10">
                             
+                            <label style="font-size:0.7rem; color:var(--muted);">Pisteet (XP):</label>
                             <input type="number" id="newTaskPoints" value="2">
-                            <label class="minus-label">
-                                <input type="checkbox" id="newTaskMinus"> <span>Pistemiinus</span>
-                            </label>
-                            <label class="minus-label" style="color:var(--gm-accent);">
-                                <input type="checkbox" id="newTaskBday"> <span>Sankari-XP</span>
-                            </label>
+
+                            <div style="display: flex; gap: 15px; margin-top: 5px;">
+                                <label class="minus-label">
+                                    <input type="checkbox" id="newTaskMinus"> <span>Pistemiinus epäonnistuessa</span>
+                                </label>
+                                <label class="minus-label" style="color:var(--gm-accent);">
+                                    <input type="checkbox" id="newTaskBday"> <span>Synttärisankari-XP</span>
+                                </label>
+                            </div>
                         </div>
-                        <button class="btn btn-success" onclick="adminCreateTask()">TALLENNA TEHTÄVÄ</button>
+                        <button class="btn btn-success" style="width:100%; margin-top:10px;" onclick="adminCreateTask()">TALLENNA TEHTÄVÄ PAKKAAN</button>
                     </div>
                 </div>
                 
-                <h2 style="margin-top:20px;">Tehtäväkirjasto</h2>
+                <h2 style="margin-top:20px;">Tehtäväkirjasto (Muokkaa pakkaa)</h2>
                 <div id="taskLibraryEditor" style="max-height:400px; overflow-y:auto; margin-top:10px; border-top:1px solid #333; padding-top:10px;"></div>
 
-                <button class="btn btn-danger" style="margin-top:30px; width:100%;" onclick="window.resetGame()">NOLLAA KOKO PELI</button>
+                <hr style="border: 0; border-top: 1px solid #333; margin: 30px 0;">
+                <button class="btn btn-danger" style="width:100%;" onclick="window.resetGame()">NOLLAA KOKO PELI (DATABASE RESET)</button>
             </div>
         </div>
     </div>
