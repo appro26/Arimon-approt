@@ -6,6 +6,7 @@
     --text: #ffffff; --muted: #a0a0ab; --radius: 16px;
 }
 
+/* PERUSTEET */
 * { 
     box-sizing: border-box; 
     -webkit-font-smoothing: antialiased; 
@@ -48,12 +49,13 @@ body {
 .role-btn.player.active { background: var(--accent); color: #000; box-shadow: 0 0 15px var(--accent-glow); }
 .role-btn.gm.active { background: var(--gm-accent); color: #000; box-shadow: 0 0 15px var(--gm-glow); }
 
-/* KORTIT */
+/* KORTIT JA TEHTÄVÄLISTA */
+#activeTasksContainer { width: 100%; display: flex; flex-direction: column; gap: 15px; margin-bottom: 15px; }
+
 .card { 
     background: var(--surface); 
     border-radius: var(--radius); 
     padding: 20px; 
-    margin-bottom: 15px; 
     border: 1px solid rgba(255,255,255,0.03); 
     animation: slideIn 0.4s ease-out; 
     position: relative;
@@ -61,6 +63,17 @@ body {
 }
 
 .card h2 { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; margin: 0 0 15px 0; letter-spacing: 1.5px; }
+
+/* TEHTÄVÄKORTIN ERITYISTYYLIT */
+.task-box { text-align: center; border: 2px solid var(--accent); box-shadow: 0 0 25px var(--accent-glow); transition: border-color 0.3s; }
+.task-box.phase-execution { border-color: var(--success); box-shadow: 0 0 20px rgba(0, 255, 136, 0.2); }
+
+.task-title { font-weight: 900; color: var(--accent); text-transform: uppercase; letter-spacing: -1px; margin: 10px 0; font-size: 1.8rem; }
+.task-phase-tag { font-size: 0.65rem; font-weight: 800; color: var(--muted); letter-spacing: 1px; margin-bottom: 5px; display: block; }
+
+.xp-badge { background: #000; color: var(--accent); font-weight: 900; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; border: 1px solid var(--accent); display: inline-block; }
+
+.task-description { font-size: 0.95rem; line-height: 1.4; color: var(--text); margin: 15px 0; opacity: 0.9; }
 
 /* PAINIKKEET */
 .btn { font-family: inherit; border-radius: 14px; border: none; font-weight: 800; padding: 16px; text-transform: uppercase; cursor: pointer; transition: transform 0.1s, filter 0.2s; width: 100%; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; }
@@ -72,7 +85,15 @@ body {
 .btn-success { background: var(--success); color: #000; }
 .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); font-size: 0.7rem; padding: 8px; }
 
-/* LISTAUKSET */
+/* Pelaajavalinta GM:lle */
+.p-count-info {
+    font-size: 0.7rem;
+    color: var(--gm-accent);
+    margin-bottom: 5px;
+    font-weight: 700;
+}
+
+/* LEADERBOARD JA RIVIT */
 .player-row { 
     display: flex; 
     justify-content: space-between; 
@@ -84,144 +105,55 @@ body {
     border: 1px solid transparent; 
 }
 .player-row.me { border-color: var(--accent); background: rgba(0, 229, 255, 0.05); }
+.player-row.is-hero { border-color: var(--gm-accent); background: rgba(255, 159, 67, 0.05); }
 
-/* Synttärisankari korostus */
-.player-row.is-hero { 
-    border: 1px solid var(--gm-accent); 
-    background: rgba(255, 159, 67, 0.05); 
-}
-
-.xp-badge { background: #000; color: var(--accent); font-weight: 900; padding: 4px 10px; border-radius: 12px; font-size: 0.7rem; border: 1px solid var(--accent); }
-
-/* TEHTÄVÄN SPEKSIT */
-.task-box { text-align: center; border: 2px solid var(--accent); box-shadow: 0 0 25px var(--accent-glow); }
-.instruction-card {
-    background: rgba(255, 255, 255, 0.04);
-    padding: 18px;
-    border-radius: 12px;
-    margin-top: 15px;
-    border-left: 4px solid var(--accent);
-    text-align: left;
-}
-
-#liveTaskName { font-weight: 900; color: var(--accent); text-transform: uppercase; letter-spacing: -1px; margin: 10px 0; }
-
-input, textarea, select { 
-    background: var(--surface-light); 
-    border: 1px solid rgba(255,255,255,0.1); 
-    color: white; 
-    padding: 12px; 
-    border-radius: 10px; 
-    width: 100%; 
-    margin-bottom: 10px; 
-    font-family: inherit; 
-    font-size: 1rem;
-}
-
-/* ADMIN MUOKKAUSPINO */
-.admin-row-stack { display: flex; flex-direction: column; gap: 5px; }
-.admin-task-controls { 
-    display: flex; 
-    flex-direction: column; 
-    gap: 10px; 
-    margin-top: 5px;
-}
-
-.point-input-group { 
-    display: flex; 
-    align-items: center; 
+/* VOLUNTEER GRID */
+.volunteer-selector-grid {
+    display: grid; 
+    grid-template-columns: repeat(3, 1fr); 
     gap: 8px; 
+    margin: 15px 0;
+}
+.volu-btn {
+    padding: 10px 5px;
+    font-size: 0.7rem;
     background: var(--surface-light);
-    padding: 10px;
-    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    color: var(--muted);
+    font-weight: 700;
 }
-.point-input-group input[type="number"] { width: 55px; margin: 0; padding: 8px; text-align: center; }
-
-.minus-label { 
-    display: flex; 
-    align-items: center; 
-    gap: 5px; 
-    font-size: 0.65rem; 
-    font-weight: 800; 
-    text-transform: uppercase;
-    cursor: pointer;
-    white-space: nowrap;
-}
-.minus-label input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
-
-/* JÄÄHY-TYYLIT */
-.on-cooldown-text { color: var(--danger); font-weight: 900; font-size: 0.65rem; margin-left: 5px; }
-.btn.on-cooldown { border: 1px solid var(--danger) !important; opacity: 0.5; cursor: not-allowed; }
-
-/* --- PÄIVITETTY: LUONNOLLISEMPI ARVONTA --- */
-.shuffling {
-    animation: rapid-flash 0.15s infinite alternate;
-    border: 2px solid #fff !important;
-    background: var(--accent) !important;
-    color: #000 !important;
-    z-index: 10;
+.volu-btn.active {
+    background: var(--accent);
+    color: #000;
+    border-color: var(--accent);
 }
 
-@keyframes rapid-flash {
-    from { 
-        opacity: 1; 
-        transform: scale(1.02); 
-    }
-    to { 
-        opacity: 0.4; 
-        transform: scale(0.96); 
-        filter: brightness(1.2) contrast(1.2);
-    }
-}
+/* JÄÄHY */
+.on-cooldown-text { color: var(--danger); font-weight: 900; font-size: 0.6rem; display: block; }
+.btn.on-cooldown { opacity: 0.5; pointer-events: none; filter: grayscale(1); }
 
-/* PREMIUM XP POPUP */
-.xp-popup {
-    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    font-weight: 900; font-size: 4rem;
-    z-index: 3100; pointer-events: none; display: none;
-    text-shadow: 0 0 30px rgba(0,0,0,0.8);
-}
-
-.xp-animate {
-    display: block !important;
-    animation: xp-premium-float 1.8s cubic-bezier(0.19, 1, 0.22, 1) forwards;
-}
-
-@keyframes xp-premium-float {
-    0% { opacity: 0; transform: translate(-50%, 40%) scale(0.3); filter: blur(10px); }
-    20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); filter: blur(0px); }
-    100% { opacity: 0; transform: translate(-50%, -250%) scale(0.8); filter: blur(5px); }
-}
-
-.gm-only { display: none; }
-.gm-mode .gm-only { display: block; }
-
-/* VOITTO-ILMOITUS */
-.winner-announcement {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(5, 5, 7, 0.95); color: #fff; z-index: 3000;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    text-align: center; padding: 30px; backdrop-filter: blur(10px);
-}
-
-.winner-content {
-    background: var(--surface); padding: 40px 20px; border-radius: 24px;
-    border: 2px solid var(--accent); box-shadow: 0 0 50px var(--accent-glow);
-    max-width: 400px; width: 95%;
-    animation: winner-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-/* ET OSALLISTU BANNERI */
+/* ILMOITUKSET */
 .not-selected-banner {
     background: rgba(255, 71, 87, 0.1);
     color: var(--danger);
     border: 1px solid var(--danger);
-    padding: 15px; border-radius: 12px;
-    font-weight: 900; margin-top: 15px;
-    text-transform: uppercase; font-size: 0.8rem;
+    padding: 12px; border-radius: 12px;
+    font-weight: 900; margin-top: 10px;
+    text-transform: uppercase; font-size: 0.75rem;
 }
 
-/* ADMIN CHECKBOXIT */
+.instruction-card {
+    background: rgba(255, 255, 255, 0.04);
+    padding: 15px;
+    border-radius: 12px;
+    margin-top: 15px;
+    border-left: 4px solid var(--accent);
+    text-align: left;
+    font-size: 0.9rem;
+}
+
+/* ADMIN PANEELI */
 .admin-settings-list { display: flex; flex-direction: column; gap: 8px; }
 .admin-checkbox-label {
     display: flex; align-items: center; gap: 12px;
@@ -229,24 +161,54 @@ input, textarea, select {
     border-radius: 12px; cursor: pointer;
     font-weight: 700; font-size: 0.85rem;
 }
-.admin-checkbox-label input[type="checkbox"] { width: 20px; height: 20px; margin: 0; accent-color: var(--accent); }
 
-.volunteer-selector-grid {
-    display: grid; grid-template-columns: repeat(3, 1fr); 
-    gap: 8px; margin-bottom: 15px;
+.point-input-group { 
+    display: flex; 
+    flex-wrap: wrap;
+    gap: 10px; 
+    background: var(--surface-light);
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 10px;
 }
+.point-input-group label { font-size: 0.7rem; display: flex; align-items: center; gap: 5px; font-weight: 700; }
+.point-input-group input[type="number"] { width: 50px; padding: 5px; margin: 0; }
 
 /* ANIMAATIOT */
-@keyframes slideIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes winner-pop { 0% { transform: scale(0.7); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-@keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
-@keyframes shrink { from { width: 100%; } to { width: 0%; } }
+@keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-/* --- PÄIVITETTY: Voitto-palkki lyhennetty 1.5 sekuntiin --- */
+.gm-only { display: none; }
+.gm-mode .gm-only { display: block; }
+
+/* XP POPUP & VOITTO (SÄILYTETTY) */
+.xp-popup {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    font-weight: 900; font-size: 4rem; z-index: 3100; pointer-events: none; display: none;
+}
+.xp-animate { display: block !important; animation: xp-premium-float 1.8s forwards; }
+@keyframes xp-premium-float {
+    0% { opacity: 0; transform: translate(-50%, 40%) scale(0.3); }
+    20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+    100% { opacity: 0; transform: translate(-50%, -250%) scale(0.8); }
+}
+
+.winner-announcement {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(5, 5, 7, 0.98); color: #fff; z-index: 3000;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    backdrop-filter: blur(10px);
+}
+.winner-content {
+    background: var(--surface); padding: 40px 20px; border-radius: 24px;
+    border: 2px solid var(--accent); box-shadow: 0 0 50px var(--accent-glow);
+    max-width: 400px; width: 90%;
+    animation: winner-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes winner-pop { 0% { transform: scale(0.7); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
 .timer-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.05); margin-top: 30px; border-radius: 3px; overflow: hidden; }
 .timer-bar::after { 
     content: ''; display: block; height: 100%; background: var(--accent); width: 100%; 
     animation: shrink 1.5s linear forwards; 
 }
-
-.winner-icon { font-size: 3.5rem; margin-bottom: 15px; animation: bounce 0.5s ease infinite alternate; }
+@keyframes shrink { from { width: 100%; } to { width: 0%; } }
