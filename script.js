@@ -167,6 +167,7 @@ function setRole(r) {
 }
 
 
+
 function drawRandom() {
     const count = parseInt(document.getElementById('drawCount').value) || 1;
     db.ref('gameState/isLotteryRunning').set(true);
@@ -461,23 +462,27 @@ function updateIdentityUI() {
 
 const gmBtn = document.getElementById('btnGM');
 let holdTimer;
+const HOLD_TIME = 1500; // 1.5 sekuntia
 
 if (gmBtn) {
-    // Poistettu click-tapahtuma, jotta tavallinen klikkaus ei tee mitään
-    
+    // Estetään nopea klikkaus kokonaan (ei salasanoja/ilmoituksia)
+    gmBtn.onclick = (e) => { e.preventDefault(); };
+
     gmBtn.addEventListener('touchstart', (e) => {
         holdTimer = setTimeout(() => {
-            setRole('gm'); // Aktivoi suoraan
+            setRole('gm');
             if ("vibrate" in navigator) navigator.vibrate(60);
-        }, 2000);
+        }, HOLD_TIME);
     });
     gmBtn.addEventListener('touchend', () => clearTimeout(holdTimer));
 
     gmBtn.addEventListener('mousedown', () => {
         holdTimer = setTimeout(() => {
-            setRole('gm'); // Aktivoi suoraan
-        }, 2000);
+            setRole('gm');
+        }, HOLD_TIME);
     });
     gmBtn.addEventListener('mouseup', () => clearTimeout(holdTimer));
+    gmBtn.addEventListener('mouseleave', () => clearTimeout(holdTimer));
 }
+
 
