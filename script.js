@@ -165,6 +165,10 @@ db.ref('gameState').on('value', (snap) => {
 function setRole(r, force = false) {
     if (r === 'gm' && !force) {
         const pass = prompt("Syötä GM-salasana:");
+        
+        // JOS PAINETAAN PERUUTA: pass on null, jolloin lopetetaan heti ilman herjoja
+        if (pass === null) return; 
+
         if (pass !== "3030") {
             alert("Väärä salasana!");
             return;
