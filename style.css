@@ -118,24 +118,30 @@ input, textarea, select {
     font-size: 1rem;
 }
 
-/* ADMIN MUOKKAUSPINO */
+/* ADMIN MUOKKAUSPINO JA UUDET KENTÄT */
 .admin-row-stack { display: flex; flex-direction: column; gap: 5px; }
 .admin-task-controls { 
     display: flex; 
-    flex-direction: column; 
-    gap: 10px; 
+    flex-wrap: wrap; 
+    gap: 8px; 
     margin-top: 5px;
+    background: rgba(0,0,0,0.2);
+    padding: 10px;
+    border-radius: 10px;
 }
 
 .point-input-group { 
     display: flex; 
     align-items: center; 
-    gap: 8px; 
+    gap: 5px; 
     background: var(--surface-light);
-    padding: 10px;
-    border-radius: 12px;
+    padding: 6px 10px;
+    border-radius: 10px;
+    font-size: 0.6rem;
+    font-weight: 800;
+    text-transform: uppercase;
 }
-.point-input-group input[type="number"] { width: 55px; margin: 0; padding: 8px; text-align: center; }
+.point-input-group input[type="number"] { width: 42px; margin: 0; padding: 5px; text-align: center; font-size: 0.8rem; }
 
 .minus-label { 
     display: flex; 
@@ -153,7 +159,7 @@ input, textarea, select {
 .on-cooldown-text { color: var(--danger); font-weight: 900; font-size: 0.65rem; margin-left: 5px; }
 .btn.on-cooldown { border: 1px solid var(--danger) !important; opacity: 0.5; cursor: not-allowed; }
 
-/* --- PÄIVITETTY: LUONNOLLISEMPI ARVONTA --- */
+/* --- ARVONTA-ANIMAATIO --- */
 .shuffling {
     animation: rapid-flash 0.15s infinite alternate;
     border: 2px solid #fff !important;
@@ -163,15 +169,8 @@ input, textarea, select {
 }
 
 @keyframes rapid-flash {
-    from { 
-        opacity: 1; 
-        transform: scale(1.02); 
-    }
-    to { 
-        opacity: 0.4; 
-        transform: scale(0.96); 
-        filter: brightness(1.2) contrast(1.2);
-    }
+    from { opacity: 1; transform: scale(1.02); }
+    to { opacity: 0.4; transform: scale(0.96); filter: brightness(1.2) contrast(1.2); }
 }
 
 /* PREMIUM XP POPUP */
@@ -221,7 +220,7 @@ input, textarea, select {
     text-transform: uppercase; font-size: 0.8rem;
 }
 
-/* ADMIN CHECKBOXIT */
+/* ADMIN SETTINGS */
 .admin-settings-list { display: flex; flex-direction: column; gap: 8px; }
 .admin-checkbox-label {
     display: flex; align-items: center; gap: 12px;
@@ -242,7 +241,6 @@ input, textarea, select {
 @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
 @keyframes shrink { from { width: 100%; } to { width: 0%; } }
 
-/* --- PÄIVITETTY: Voitto-palkki lyhennetty 1.5 sekuntiin --- */
 .timer-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.05); margin-top: 30px; border-radius: 3px; overflow: hidden; }
 .timer-bar::after { 
     content: ''; display: block; height: 100%; background: var(--accent); width: 100%; 
@@ -250,3 +248,7 @@ input, textarea, select {
 }
 
 .winner-icon { font-size: 3.5rem; margin-bottom: 15px; animation: bounce 0.5s ease infinite alternate; }
+
+/* UUSI: Tehtäväkirjaston muokkausnäkymän optimointi */
+#taskLibraryEditor input[type="text"] { font-weight: 700; color: var(--accent); margin-bottom: 5px; }
+#taskLibraryEditor textarea { font-size: 0.85rem; height: 80px; margin-bottom: 8px; line-height: 1.4; color: var(--muted); }
