@@ -95,7 +95,6 @@ db.ref('gameState').on('value', (snap) => {
     const isMePart = results.some(r => r.name === myName);
     const isGM = document.body.className.includes('gm');
 
-    // --- VOITTO-ANIMAATIO (1.5s) ---
     if (isLocked && data.activeTask) {
         if (isMePart && !isTaskActive) {
             document.getElementById('winnerTaskName').innerText = data.activeTask.n;
@@ -108,7 +107,6 @@ db.ref('gameState').on('value', (snap) => {
     }
 
     isTaskActive = isLocked;
-
     const live = data.activeTask;
     const taskBox = document.getElementById('liveTask');
     
@@ -116,12 +114,10 @@ db.ref('gameState').on('value', (snap) => {
         taskBox.style.display = 'block';
         document.getElementById('liveTaskName').innerText = live.n;
         document.getElementById('liveTaskPoints').innerText = live.p + " XP";
-
         const descEl = document.getElementById('liveTaskDesc');
         const instrBox = document.getElementById('instructionBox');
         const winnerDesc = document.getElementById('winnerTaskDesc');
 
-        // --- GM SPEKSIT LOGIIKKA ---
         if (isLocked) {
             descEl.style.display = 'none';
             if (isMePart || isGM || localSpyEnabled) {
@@ -144,7 +140,6 @@ db.ref('gameState').on('value', (snap) => {
 
         const notSelectedEl = document.getElementById('notParticipatingMsg');
         notSelectedEl.style.display = (isLocked && !isMePart && !isGM) ? 'block' : 'none';
-
         document.getElementById('taskPhaseTitle').innerText = isLocked ? "VAIHE: SUORITUS" : "VAIHE: ILMOITTAUTUMINEN";
         document.getElementById('joinAction').style.display = isLocked ? 'none' : 'block';
 
@@ -161,13 +156,18 @@ db.ref('gameState').on('value', (snap) => {
             vBtn.className = isMePart ? "btn btn-success" : "btn btn-primary";
             vBtn.innerText = isMePart ? "OSALLISTUT! ✓" : "HALUAN OSALLISTUA";
         }
-        
         renderGMVolunteers(results, isLocked, data.isLotteryRunning, config.useCooldowns);
     } else { 
         taskBox.style.display = 'none'; 
     }
 });
 
+function setRole(r, force = false) {
+    if (r === 'gm' && !force) {
+        const pass = prompt("Syötä GM-salasana:");
+        if (pass !== "3030") {
+            alert("Väärä salasana!");
+            return;
         }
     }
     document.body.className = r + '-mode';
@@ -178,7 +178,6 @@ db.ref('gameState').on('value', (snap) => {
 function drawRandom() {
     const count = parseInt(document.getElementById('drawCount').value) || 1;
     db.ref('gameState/isLotteryRunning').set(true);
-    
     setTimeout(() => {
         db.ref('gameState/participants').once('value', s => {
             let list = s.val() || [];
@@ -200,7 +199,6 @@ function lockParticipants() {
     updateSpyBtnText(); 
 }
 
-// --- SYNTTÄRISANKARI (KAKKU) ---
 function renderLeaderboard(showCD, heroId) {
     const list = document.getElementById('playerList');
     const fragment = document.createDocumentFragment();
@@ -216,35 +214,27 @@ function renderLeaderboard(showCD, heroId) {
     list.innerHTML = ''; list.appendChild(fragment);
 }
 
-// --- ARVONTA (EPÄSYNKRONOITU VÄLKYNTÄ) ---
 function renderGMVolunteers(results, isLocked, isShuffling, showCD) {
     const grid = document.getElementById('volunteerGrid');
     if (!grid) return;
     const fragment = document.createDocumentFragment();
-    
     allPlayers.forEach((p) => {
         const isInc = results.some(r => r.name === p.name);
         const btn = document.createElement('button');
         const onCD = showCD && p.cooldown;
-        
         btn.className = `btn ${isInc ? 'btn-primary' : 'btn-secondary'} ${onCD ? 'on-cooldown' : ''}`;
-        
-        // Lisätään satunnainen animaatioviive jotta nimet välkkyvät eri aikaan
         if (isShuffling && isInc) {
             btn.classList.add('shuffling');
             btn.style.animationDelay = (Math.random() * 0.3).toFixed(2) + "s";
         }
-        
         btn.style.margin = '0'; btn.style.fontSize = '0.6rem';
         btn.innerText = p.name;
         btn.disabled = isLocked || isShuffling;
         btn.onclick = () => toggleParticipant(p.name);
         fragment.appendChild(btn);
     });
-    
     grid.innerHTML = ''; grid.appendChild(fragment);
     document.getElementById('btnFinish').style.display = isLocked ? 'block' : 'none';
-    
     const sArea = document.getElementById('scoringArea');
     sArea.innerHTML = isLocked ? '<p style="font-size:0.7rem; color:var(--muted); margin-top:10px; text-align:center;">ONNISTUIKO TEHTÄVÄ?</p>' : '';
     if(isLocked) {
@@ -258,7 +248,6 @@ function renderGMVolunteers(results, isLocked, isShuffling, showCD) {
     }
 }
 
-// --- ADMIN LISTA (KAKKU + J-KIRJAIN) ---
 function renderAdminPlayerList(heroId) {
     const list = document.getElementById('adminPlayerList');
     list.innerHTML = "";
@@ -306,11 +295,9 @@ function showScoring() {
         const usedIds = d.usedTaskIds || [];
         const heroId = d.config?.bdayHero;
         if(task && !usedIds.includes(task.id)) usedIds.push(task.id);
-
         const updated = allPlayers.map((p, idx) => { 
             const part = res.find(r => r.name === p.name); 
             let earned = 0;
-            
             if(part) { 
                 if(part.win) earned += task.p; 
                 else if(task.m) earned -= task.p; 
@@ -319,7 +306,6 @@ function showScoring() {
                 p.cooldown = false;
                 if(task.b && idx === heroId) earned += task.p;
             }
-            
             p.score = Math.max(0, (p.score || 0) + earned);
             return p; 
         }); 
@@ -380,10 +366,8 @@ function adminCreateTask() {
     const p = parseInt(document.getElementById('newTaskPoints').value) || 2;
     const m = document.getElementById('newTaskMinus')?.checked || false;
     const b = document.getElementById('newTaskBday')?.checked || false;
-    
     if (!n || !d) return alert("Täytä nimi ja ohjeet!");
     const newTask = { id: Date.now(), n, d, p, m, b };
-    
     db.ref('gameState/tasks').once('value', s => {
         let list = s.val() || []; list.push(newTask);
         db.ref('gameState/tasks').set(list).then(() => {
@@ -456,13 +440,9 @@ function toggleGMSpyLocal() {
     const isLocked = isTaskActive;
     const descEl = document.getElementById('liveTaskDesc');
     const instrBox = document.getElementById('instructionBox');
-    
     if (isGM) {
-        if (!isLocked) {
-            descEl.style.display = localSpyEnabled ? 'block' : 'none';
-        } else {
-            instrBox.style.display = localSpyEnabled ? 'block' : 'none';
-        }
+        if (!isLocked) { descEl.style.display = localSpyEnabled ? 'block' : 'none'; } 
+        else { instrBox.style.display = localSpyEnabled ? 'block' : 'none'; }
     }
 }
 
@@ -471,27 +451,23 @@ function toggleAdminPanel() { const p = document.getElementById('adminPanel'); p
 function adjustScore(idx, amt) { db.ref('gameState/players/' + idx + '/score').transaction(s => Math.max(0, (s || 0) + amt)); }
 function removePlayer(idx) { if(confirm("Poista?")) { allPlayers.splice(idx, 1); db.ref('gameState/players').set(allPlayers); } }
 function updateIdentityUI() { document.getElementById('identityCard').style.display = myName ? 'none' : 'block'; document.getElementById('idTag').innerText = myName ? "PROFIILI: " + myName : "KIRJAUDU SISÄÄN"; }
+
 // --- PRO-KIKKA: Pitkä painallus avaa GM-tilan ---
 const gmBtn = document.getElementById('btnGM');
 let holdTimer;
 
 if (gmBtn) {
-    // Mobiililaitteet
     gmBtn.addEventListener('touchstart', (e) => {
         holdTimer = setTimeout(() => {
-            setRole('gm');
-            if ("vibrate" in navigator) navigator.vibrate(60); // Pieni värinä kuittauksena
-        }, 2000); // 2 sekunnin viive
-    });
-
-    gmBtn.addEventListener('touchend', () => clearTimeout(holdTimer));
-
-    // Tietokoneen hiiri (testausta varten)
-    gmBtn.addEventListener('mousedown', () => {
-        holdTimer = setTimeout(() => {
-            setRole('gm');
+            setRole('gm', true); // TRUE ohittaa salasanan
+            if ("vibrate" in navigator) navigator.vibrate(60);
         }, 2000);
     });
-    
+    gmBtn.addEventListener('touchend', () => clearTimeout(holdTimer));
+    gmBtn.addEventListener('mousedown', () => {
+        holdTimer = setTimeout(() => {
+            setRole('gm', true);
+        }, 2000);
+    });
     gmBtn.addEventListener('mouseup', () => clearTimeout(holdTimer));
 }
