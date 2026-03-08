@@ -22,7 +22,14 @@
 <div id="lotteryOverlay" class="lottery-overlay" style="display:none;">
     <div class="lottery-content">
         <div class="lottery-spinner"></div>
-        <h1 id="lotteryStatus">ARVOTAAN...</h1>
+        <h1 id="lotteryStatus">ETSITÄÄN SANKAREITA...</h1>
+    </div>
+</div>
+
+<div id="lotteryWinner" class="winner-announcement" style="display:none;">
+    <div class="winner-content">
+        <h2>SINUT ON VALITTU!</h2>
+        <p>VALMISTAUDU SUORITTAMAAN</p>
     </div>
 </div>
 
@@ -41,30 +48,25 @@
     </div>
 
     <div id="liveTask" class="card task-box" style="display:none;">
-        <div id="taskPhaseTitle" style="font-size: 0.6rem; color: var(--accent); letter-spacing: 2px;">VAIHE: ILMOITTAUTUMINEN</div>
-        <h1 id="liveTaskName">TEHTÄVÄ ARVOTTU</h1>
-        <div id="liveTaskPoints" style="font-weight: 900; color: var(--accent); margin-bottom: 15px;">0 XP</div>
+        <div id="taskPhaseTitle" style="font-size: 0.7rem; color: var(--accent); letter-spacing: 2px; font-weight: 700;">VAIHE: ILMOITTAUTUMINEN</div>
+        <h1 id="liveTaskName" style="font-size: 2.2rem; margin: 15px 0;">TEHTÄVÄ ARVOTTU</h1>
+        <div id="liveTaskPoints" style="font-weight: 900; color: var(--accent); margin-bottom: 20px; font-size: 1.2rem;">0 XP</div>
 
         <div class="player-only" id="joinAction">
             <button id="btnVolu" class="btn btn-primary" onclick="volunteer()">MUKANA TEHTÄVÄSSÄ!</button>
-            <p id="cooldownWarning" style="color:var(--danger); font-size:0.7rem; font-weight:bold; display:none;">OLET JÄÄHYLLÄ - ODOTA</p>
+            <p id="cooldownWarning" style="color:var(--danger); font-size:0.8rem; font-weight:bold; display:none; text-transform: uppercase;">OLET JÄÄHYLLÄ - ODOTA</p>
         </div>
 
-        <div id="instructionBox" style="display:none;">
-            <h2 style="font-size:0.7rem; color:var(--accent); margin-bottom:5px;">SPEKSIT:</h2>
-            <p id="liveTaskDesc" style="font-size:1rem; margin:0; line-height:1.4;"></p>
+        <div id="instructionBox" class="instruction-card" style="display:none;">
+            <h2 style="font-size:0.8rem; color:var(--accent); margin-bottom:10px; opacity: 0.8;">TEHTÄVÄN SPEKSIT:</h2>
+            <p id="liveTaskDesc" style="font-size:1.4rem; font-weight: 600; margin:0; line-height:1.3; color: #fff;"></p>
         </div>
 
         <div class="gm-only" id="gmPhaseControls" style="margin-top:20px; border-top:1px solid #333; padding-top:15px;">
             <div style="background:rgba(255,159,67,0.1); padding:10px; border-radius:8px; margin-bottom:15px; text-align:left;">
                 <label style="font-size:0.6rem; color:var(--gm-accent); display:block; margin-bottom:5px;">GM TYÖKALUT</label>
                 <div style="display:flex; flex-wrap:wrap; gap:8px;">
-                    <select id="drawCount" style="margin:0; width:60px; padding:8px; background:var(--surface-light); color:white; border:1px solid rgba(255,255,255,0.1); border-radius:10px;">
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
+                    <select id="drawCount" style="margin:0; width:70px; padding:8px; background:var(--surface-light); color:white; border:1px solid rgba(255,255,255,0.1); border-radius:10px;">
                     </select>
                     <button class="btn btn-gm" style="margin:0; padding:8px; font-size:0.6rem; flex:1;" onclick="drawRandom()">Arvo pelaajat</button>
                     <button class="btn btn-secondary" style="margin:0; padding:8px; font-size:0.6rem; flex:1;" id="btnGMSpy" onclick="toggleGMSpyLocal()">KATSO SPEKSIT</button>
