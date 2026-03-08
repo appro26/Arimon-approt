@@ -31,14 +31,7 @@
 
     <div class="role-switcher">
         <button id="btnPlayer" class="role-btn player active" onclick="setRole('player')">PELAAJA</button>
-        <button id="btnGM" class="role-btn gm" 
-                onmousedown="startGMLongPress()" 
-                onmouseup="cancelGMLongPress()" 
-                onmouseleave="cancelGMLongPress()"
-                ontouchstart="startGMLongPress()" 
-                ontouchend="cancelGMLongPress()">
-            GAME MASTER
-        </button>
+        <button id="btnGM" class="role-btn gm">GAME MASTER</button>
     </div>
 
     <div class="container">
@@ -74,7 +67,7 @@
             <div class="gm-only" style="margin-top:20px; border-top:1px solid #333; padding-top:15px;">
                 <div id="volunteerGrid" class="volunteer-selector-grid"></div>
                 
-                <div style="display:flex; flex-direction:column; gap:8px;">
+                <div class="admin-row-stack">
                     <div style="display:flex; gap:10px;">
                         <select id="drawCount" style="flex:1; margin:0;"></select>
                         <button id="btnDraw" class="btn btn-gm" style="flex:2; margin:0;" onclick="drawRandom()">ARVO PELAAJAT</button>
@@ -101,30 +94,31 @@
             <button class="btn btn-secondary" onclick="toggleAdminPanel()">ADMIN-PANEELI</button>
             
             <div id="adminPanel" class="card" style="display:none; margin-top:15px;">
-                <h2>Asetukset</h2>
+                <h2>Pelin säännöt</h2>
                 <div class="admin-settings-list">
-                    <label class="admin-checkbox-label">
+                    <label class="minus-label">
                         <input type="checkbox" id="useCooldowns" onchange="updateConfig('useCooldowns', this.checked)"> 
                         <span>Käytä jäähyä</span>
                     </label>
-                    <label class="admin-checkbox-label">
+                    <label class="minus-label">
                         <input type="checkbox" id="excludeUsedTasks" onchange="updateConfig('excludeUsedTasks', this.checked)"> 
                         <span>Poista käytetyt pakasta</span>
                     </label>
                 </div>
                 
-                <h2 style="margin-top:20px;">Manuaalinen valinta</h2>
+                <h2 style="margin-top:20px;">Valitse tehtävä manuaalisesti</h2>
                 <select id="manualTaskSelect" onchange="selectManualTask(this.value)"></select>
 
                 <h2 style="margin-top:20px;">Pelaajien hallinta</h2>
-                <p style="font-size:0.6rem; color:var(--gm-accent); margin-bottom:10px; font-weight:700;">🎂 = SYNTTÄRISANKARI</p>
+                <p style="font-size:0.6rem; color:var(--gm-accent); margin-bottom:10px; font-weight:700;">🎂 = SYNTTÄRISANKARI | J = JÄÄHY</p>
                 <div id="adminPlayerList"></div>
-                <div style="display:flex; gap:5px; margin-top:10px;">
-                    <input type="text" id="adminNewPlayerName" placeholder="Nimi..." style="margin:0;">
-                    <button class="btn btn-success" style="width:auto; margin:0; padding:10px;" onclick="adminAddPlayer()">LISÄÄ</button>
+                
+                <div class="admin-row-stack" style="margin-top:15px;">
+                    <input type="text" id="adminNewPlayerName" placeholder="Pelaajan nimi...">
+                    <button class="btn btn-success" onclick="adminAddPlayer()">LISÄÄ PELAAJA</button>
                 </div>
 
-                <h2 style="margin-top:20px;">Muokkaa pakkaa</h2>
+                <h2 style="margin-top:20px;">Lisää uusi tehtävä pakkaan</h2>
                 <div class="admin-row-stack">
                     <input type="text" id="newTaskName" placeholder="Tehtävän nimi">
                     <textarea id="newTaskDesc" placeholder="Kuvaus/Ohjeet"></textarea>
@@ -139,11 +133,12 @@
                                 <input type="checkbox" id="newTaskBday"> <span>Sankari-XP</span>
                             </label>
                         </div>
-                        <button class="btn btn-success" onclick="adminCreateTask()">LISÄÄ PAKKAAN</button>
+                        <button class="btn btn-success" onclick="adminCreateTask()">TALLENNA TEHTÄVÄ</button>
                     </div>
                 </div>
                 
-                <div id="taskLibraryEditor" style="max-height:300px; overflow-y:auto; margin-top:15px; border-top:1px solid #333; padding-top:10px;"></div>
+                <h2 style="margin-top:20px;">Tehtäväkirjasto</h2>
+                <div id="taskLibraryEditor" style="max-height:400px; overflow-y:auto; margin-top:10px; border-top:1px solid #333; padding-top:10px;"></div>
 
                 <button class="btn btn-danger" style="margin-top:30px; width:100%;" onclick="window.resetGame()">NOLLAA KOKO PELI</button>
             </div>
@@ -161,18 +156,6 @@
             <p style="font-size:0.7rem; color:var(--muted); margin-top:10px;">VALMISTAUDU SUORITTAMAAN</p>
         </div>
     </div>
-
-    <script>
-        let gmTimer;
-        function startGMLongPress() {
-            gmTimer = setTimeout(() => {
-                setRole('gm');
-            }, 1200); // 1.2 sekuntia
-        }
-        function cancelGMLongPress() {
-            clearTimeout(gmTimer);
-        }
-    </script>
 
     <script src="script.js"></script>
 </body>
