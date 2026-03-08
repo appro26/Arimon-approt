@@ -405,7 +405,36 @@ function renderTaskLibrary() {
 
 function updateTaskInLib(idx, field, val) { db.ref(`gameState/tasks/${idx}/${field}`).set(val); }
 function removeTask(idx) { if(confirm("Poista?")) { currentTasks.splice(idx, 1); db.ref('gameState/tasks').set(currentTasks); } }
-function resetGame() { if(!confirm("Nollaa peli?")) return; db.ref('gameState').update({ players: [], activeTask: null, participants: null, locked: false, usedTaskIds: [], resetId: Date.now().toString() }); }
+function resetGame() {
+    if (confirm("HUOM! Tämä poistaa kaikki pelaajat, pisteet ja palauttaa pakan alkuperäiseksi (32 uutta tehtävää). Oletko varma?")) {
+        
+        // Luodaan uusi aloitusnäkymä ja ladataan defaultTasks (ne 32 uutta)
+        const updates = {};
+        updates['players'] = null; // Poistaa pelaajat
+        updates['tasks'] = defaultTasks; // Kirjoittaa uudet 32 tehtävää vanhojen päälle
+        updates['gameState'] = {
+            phase: 'lobby',
+            activeTask: null,
+            timestamp: Date.now()
+        };
+        updates['config'] = {
+            useCooldowns: true,
+            excludeUsedTasks: true
+        };
+
+        // Tallennetaan muutokset Firebaseen
+        firebase.database().ref().update(updates)
+            .then(() => {
+                alert("Peli nollattu ja uusi pakka ladattu!");
+                location.reload(); 
+            })
+            .catch((error) => {
+                console.error("Virhe nollauksessa: ", error);
+                alert("Nollaus epäonnistui tietokantavirheen takia.");
+            });
+    }
+}
+
 
 function claimIdentity() {
     const n = document.getElementById('playerNameInput').value.trim();
