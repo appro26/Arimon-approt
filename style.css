@@ -8,24 +8,23 @@
 * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
 body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
 
-/* KORJAUS: Lisätty hieman enemmän tilaa yläreunaan, jotta sisältö ei ala liian ylhäältä */
-.container { width: 100%; max-width: 460px; padding-top: 85px; padding-bottom: 30px; }
+/* KORJAUS: Siirretty sisältöä vielä alemmas, jotta se ei jää uuden nappisijainnin alle */
+.container { width: 100%; max-width: 460px; padding-top: 110px; padding-bottom: 30px; }
 
-/* KORJAUS: Lisätty safe-area-inset-top iPhonen notchille */
+/* KORJAUS: Laskettu palkkia alemmas (top: 20px) ja varmistettu safe-area-inset */
 .role-switcher { 
     position: fixed; 
-    top: 0; /* Muutettu 0:aan, jotta tausta valuu ylös asti */
+    top: calc(20px + env(safe-area-inset-top)); 
     left: 10px; 
     right: 10px; 
-    height: calc(55px + env(safe-area-inset-top)); /* Lasketaan korkeus notchin mukaan */
+    height: 50px; 
     display: flex; 
     z-index: 1000; 
-    background: rgba(16, 16, 20, 0.8); 
+    background: rgba(16, 16, 20, 0.9); 
     backdrop-filter: blur(10px); 
-    border-radius: 0 0 25px 25px; /* Pyöristys vain alhaalle jos top on 0 */
+    border-radius: 25px; 
     border: 1px solid rgba(255,255,255,0.1); 
-    padding: 5px;
-    padding-top: calc(5px + env(safe-area-inset-top)); /* Tämä työntää napit notchin alapuolelle */
+    padding: 5px; 
 }
 
 .role-btn { flex: 1; border: none; color: var(--muted); background: transparent; font-weight: 700; font-size: 0.75rem; text-transform: uppercase; cursor: pointer; border-radius: 20px; transition: 0.3s; }
