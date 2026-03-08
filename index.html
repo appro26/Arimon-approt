@@ -122,13 +122,13 @@
 
     <div id="xpPopUp" class="xp-popup">+2 XP</div>
 
-    <div id="lotteryWinner" class="winner-announcement" style="display:none;">
+    <div id="lotteryWinner" class="winner-overlay" style="display:none;">
         <div class="winner-content">
-            <div class="winner-icon">🎉</div>
-            <h1 style="margin:0; color:var(--accent);">SINUT VALITTIIN!</h1>
-            <p style="font-size:1.2rem; margin:15px 0;" id="winnerTaskName">Tehtävän nimi</p>
-            <div class="timer-bar"></div>
-            <p style="font-size:0.7rem; color:var(--muted); margin-top:10px;">VALMISTAUDU SUORITTAMAAN</p>
+            <h1 style="margin:0;">🎉 SINUT VALITTIIN!</h1>
+            <p style="font-size:1.1rem; color:var(--muted); margin:10px 0;">TEHTÄVÄN NIMI:</p>
+            <h2 id="winnerTaskName" style="color:var(--accent); font-size:2rem; margin:0 0 20px 0; text-transform: uppercase;">Tehtävän nimi</h2>
+            <div style="background:var(--accent); height:4px; width:100%; border-radius:2px; animation: shrink 3s linear forwards;"></div>
+            <p style="font-size:0.8rem; color:var(--muted); margin-top:15px; font-weight:900;">VALMISTAUDU SUORITTAMAAN</p>
         </div>
     </div>
 
