@@ -160,19 +160,12 @@ db.ref('gameState').on('value', (snap) => {
     }
 });
 
-function setRole(r, force = false) {
-    if (r === 'gm' && !force) {
-        const pass = prompt("Syötä GM-salasana:");
-        if (pass === null) return; 
-        if (pass !== "3030") {
-            alert("Väärä salasana!");
-            return;
-        }
-    }
+function setRole(r) {
     document.body.className = r + '-mode';
     document.getElementById('btnPlayer').classList.toggle('active', r === 'player');
     document.getElementById('btnGM').classList.toggle('active', r === 'gm');
 }
+
 
 function drawRandom() {
     const count = parseInt(document.getElementById('drawCount').value) || 1;
@@ -470,16 +463,21 @@ const gmBtn = document.getElementById('btnGM');
 let holdTimer;
 
 if (gmBtn) {
-    gmBtn.addEventListener('click', () => { setRole('gm'); });
+    // Poistettu click-tapahtuma, jotta tavallinen klikkaus ei tee mitään
+    
     gmBtn.addEventListener('touchstart', (e) => {
         holdTimer = setTimeout(() => {
-            setRole('gm', true);
+            setRole('gm'); // Aktivoi suoraan
             if ("vibrate" in navigator) navigator.vibrate(60);
         }, 2000);
     });
     gmBtn.addEventListener('touchend', () => clearTimeout(holdTimer));
+
     gmBtn.addEventListener('mousedown', () => {
-        holdTimer = setTimeout(() => { setRole('gm', true); }, 2000);
+        holdTimer = setTimeout(() => {
+            setRole('gm'); // Aktivoi suoraan
+        }, 2000);
     });
     gmBtn.addEventListener('mouseup', () => clearTimeout(holdTimer));
 }
+
