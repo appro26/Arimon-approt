@@ -87,7 +87,7 @@ db.ref('gameState').on('value', (snap) => {
             document.getElementById('winnerTaskName').innerText = data.activeTask.n;
             document.getElementById('winnerTaskDesc').innerText = data.activeTask.d;
             winnerOverlay.style.display = 'flex';
-            setTimeout(() => { winnerOverlay.style.display = 'none'; }, 5000);
+            setTimeout(() => { winnerOverlay.style.display = 'none'; }, 6000);
         }
     } else {
         winnerOverlay.style.display = 'none';
@@ -130,7 +130,6 @@ db.ref('gameState').on('value', (snap) => {
             vBtn.innerText = isMePart ? "OLET MUKANA! ✓" : "OSALLISTUTKO?";
         }
         
-        // GM:n vapaaehtoisten renderöinti (lisää Shuffle-efektin jos käynnissä)
         renderGMVolunteers(results, isLocked, data.isLotteryRunning);
     } else { 
         taskBox.style.display = 'none'; 
@@ -139,11 +138,8 @@ db.ref('gameState').on('value', (snap) => {
 
 function drawRandom() {
     const count = parseInt(document.getElementById('drawCount').value) || 1;
-    
-    // 1. Käynnistä välkyntä paikallisesti ja tietokannassa
     db.ref('gameState/isLotteryRunning').set(true);
     
-    // 2. Simuloi arvontaefektiä 1.5 sekuntia
     setTimeout(() => {
         db.ref('gameState/participants').once('value', s => {
             let list = s.val() || [];
@@ -151,7 +147,6 @@ function drawRandom() {
                 let shuffled = list.sort(() => 0.5 - Math.random());
                 list = shuffled.slice(0, count);
             }
-            // 3. Tallenna voittajat ja lukitse peli
             db.ref('gameState').update({ 
                 participants: list,
                 isLotteryRunning: false,
@@ -169,8 +164,6 @@ function renderGMVolunteers(results, isLocked, isShuffling) {
     allPlayers.forEach(p => {
         const isInc = results.some(r => r.name === p.name);
         const btn = document.createElement('button');
-        
-        // Lisätään shuffling-luokka jos arvonta on käynnissä
         let classes = `btn ${isInc ? 'btn-primary' : 'btn-secondary'} ${p.cooldown ? 'on-cooldown' : ''}`;
         if (isShuffling) classes += ' shuffling';
         
@@ -191,7 +184,6 @@ function renderGMVolunteers(results, isLocked, isShuffling) {
     }
 }
 
-// LOPUT FUNKTIOT SÄILYTETTY ENNALLAAN
 function updateDrawCountSelect() {
     const sel = document.getElementById('drawCount');
     if (!sel) return;
