@@ -94,14 +94,12 @@ db.ref('gameState').on('value', (snap) => {
         } else {
             vBtn.style.display = 'block'; document.getElementById('cooldownWarning').style.display = 'none';
             vBtn.className = isMePart ? "btn btn-success" : "btn btn-primary";
-            // KORJAUS: Muutettu napin teksti
             vBtn.innerText = isMePart ? "OLET MUKANA! ✓" : "OSALLISTUTKO?";
         }
         
-        // KORJAUS: GM-näkymä päivittyy aina kun Firebasesta tulee uutta tietoa
-        if(isGM) {
-            renderGMVolunteers(results, isLocked);
-        }
+        // KORJAUS: Päivitetään GM-lista aina kun data muuttuu, riippumatta siitä kuka on GM
+        renderGMVolunteers(results, isLocked);
+        
     } else { 
         taskBox.style.display = 'none'; 
     }
@@ -278,6 +276,7 @@ function renderGMVolunteers(results, isLocked) {
     allPlayers.forEach(p => {
         const isInc = results.some(r => r.name === p.name);
         const btn = document.createElement('button');
+        // KORJAUS: Varmistettu, että väri vaihtuu dynaamisesti isInc-arvon mukaan
         btn.className = `btn ${isInc ? 'btn-primary' : 'btn-secondary'} ${p.cooldown ? 'on-cooldown' : ''}`;
         btn.style.margin = '0';
         btn.style.fontSize = '0.6rem';
