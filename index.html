@@ -30,7 +30,12 @@
             <h2 id="taskPhaseTitle">VAIHE: ILMOITTAUTUMINEN</h2>
             <h1 id="liveTaskName">TEHTÄVÄN NIMI</h1>
             <div id="liveTaskPoints" class="xp-badge" style="display:inline-block; margin-bottom:15px;">0 XP</div>
-            <p id="liveTaskDesc">Tehtävän kuvaus tulee tähän...</p>
+            
+            <p id="liveTaskDesc" class="task-description">Tehtävä paljastetaan pian...</p>
+
+            <div id="notParticipatingMsg" class="not-selected-banner" style="display:none;">
+                ET OSALLISTU TÄHÄN TEHTÄVÄÄN
+            </div>
 
             <div id="instructionBox" class="instruction-card" style="display:none;">
                 <strong style="color:var(--accent);">OHJEET:</strong>
@@ -43,17 +48,23 @@
             </div>
 
             <div class="gm-only" style="margin-top:20px; border-top:1px solid #333; padding-top:15px;">
-                <div id="volunteerGrid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap:5px; margin-bottom:15px;"></div>
+                <div id="volunteerGrid" class="volunteer-selector-grid"></div>
                 
-                <div style="display:flex; gap:10px;">
-                    <select id="drawCount" style="flex:1; margin:0;"></select>
-                    <button id="btnLock" class="btn btn-gm" style="flex:2; margin:0;" onclick="drawRandom()">ARVO & LUKITSE</button>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <div style="display:flex; gap:10px;">
+                        <select id="drawCount" style="flex:1; margin:0;"></select>
+                        <button id="btnDraw" class="btn btn-gm" style="flex:2; margin:0;" onclick="drawRandom()">ARVO PELAAJAT</button>
+                    </div>
+                    
+                    <button id="btnLockManual" class="btn btn-success" style="margin:0; font-size:0.75rem; padding:12px;" onclick="lockParticipants()">VALITSE KÄSIN / LUKITSE</button>
                 </div>
 
                 <div id="scoringArea"></div>
                 
-                <button id="btnFinish" class="btn btn-success" style="display:none; margin-top:10px;" onclick="showScoring()">MERKITSE VALMIIKSI</button>
-                <button id="btnGMSpy" class="btn btn-secondary" style="font-size:0.6rem; padding:8px;" onclick="toggleGMSpyLocal()">KATSO SPEKSIT</button>
+                <div style="display:flex; gap:10px; margin-top:10px;">
+                    <button id="btnFinish" class="btn btn-success" style="display:none; flex:2; margin:0;" onclick="showScoring()">MERKITSE VALMIIKSI</button>
+                    <button id="btnGMSpy" class="btn btn-secondary" style="flex:1; font-size:0.6rem; padding:8px; margin:0;" onclick="toggleGMSpyLocal()">KATSO SPEKSIT</button>
+                </div>
             </div>
         </div>
 
@@ -68,8 +79,16 @@
             
             <div id="adminPanel" class="card" style="display:none; margin-top:15px;">
                 <h2>Asetukset</h2>
-                <label><input type="checkbox" id="useCooldowns" onchange="updateConfig('useCooldowns', this.checked)"> Käytä jäähyä</label><br>
-                <label><input type="checkbox" id="excludeUsedTasks" onchange="updateConfig('excludeUsedTasks', this.checked)"> Poista käytetyt pakasta</label>
+                <div class="admin-settings-list">
+                    <label class="admin-checkbox-label">
+                        <input type="checkbox" id="useCooldowns" onchange="updateConfig('useCooldowns', this.checked)"> 
+                        <span>Käytä jäähyä</span>
+                    </label>
+                    <label class="admin-checkbox-label">
+                        <input type="checkbox" id="excludeUsedTasks" onchange="updateConfig('excludeUsedTasks', this.checked)"> 
+                        <span>Poista käytetyt pakasta</span>
+                    </label>
+                </div>
                 
                 <h2 style="margin-top:20px;">Manuaalinen valinta</h2>
                 <select id="manualTaskSelect" onchange="selectManualTask(this.value)"></select>
@@ -87,8 +106,10 @@
                     <textarea id="newTaskDesc" placeholder="Kuvaus/Ohjeet"></textarea>
                     <div style="display:flex; align-items:center; gap:10px;">
                         <input type="number" id="newTaskPoints" value="2" style="width:60px; margin:0;">
-                        <label style="font-size:0.7rem;"><input type="checkbox" id="newTaskMinus"> Miinus-FAIL</label>
-                        <button class="btn btn-success" style="margin:0;" onclick="adminCreateTask()">LISÄÄ PAKKAAN</button>
+                        <label style="font-size:0.7rem; display:flex; align-items:center; gap:4px;">
+                            <input type="checkbox" id="newTaskMinus"> Miinus-FAIL
+                        </label>
+                        <button class="btn btn-success" style="margin:0; flex:1;" onclick="adminCreateTask()">LISÄÄ PAKKAAN</button>
                     </div>
                 </div>
                 <div id="taskLibraryEditor" style="max-height:300px; overflow-y:auto; margin-top:10px;"></div>
