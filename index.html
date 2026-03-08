@@ -41,7 +41,9 @@
             <button class="btn btn-primary" onclick="claimIdentity()">ALOITA PELI</button>
         </div>
 
-        <div id="idTag" style="text-align:center; font-size:0.7rem; color:var(--muted); margin-bottom:15px; font-weight:700;"></div>
+        <div id="idTag" style="text-align:center; font-size:0.7rem; color:var(--muted); margin-bottom:15px; font-weight:700; text-transform: uppercase; letter-spacing: 1px;">
+            KIRJAUDU SISÄÄN
+        </div>
 
         <div id="activeTasksContainer"></div>
 
@@ -63,7 +65,7 @@
                 <div class="admin-settings-list">
                     <label class="minus-label">
                         <input type="checkbox" id="useCooldowns" onchange="updateConfig('useCooldowns', this.checked)"> 
-                        <span>Käytä jäähyä</span>
+                        <span>Käytä jäähyä (Cooldown)</span>
                     </label>
                     <label class="minus-label">
                         <input type="checkbox" id="excludeUsedTasks" onchange="updateConfig('excludeUsedTasks', this.checked)"> 
