@@ -1,7 +1,9 @@
+// --- KONFIGURAATIO ---
 const firebaseConfig = { databaseURL: "https://approplaybook-default-rtdb.europe-west1.firebasedatabase.app/" };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+// --- GLOBAALIT MUUTTUJAT ---
 let myName = localStorage.getItem('appro_name') || null;
 let currentResetId = localStorage.getItem('appro_reset_id') || null;
 let allPlayers = [];
@@ -14,7 +16,6 @@ const APP_NAME = "Arimon Approt";
 document.title = APP_NAME;
 
 // --- UUSI 32 TEHTÄVÄN PAKKA ---
-// n=nimi, d=kuvaus, s=suorittajien määrä, p=pisteet, m=miinus, b=sankarin bonus
 const defaultTasks = [
     { id: 1, n: "Mise en place", d: "Varmista, että kaikilla seurueen jäsenillä on lasissa juotavaa (myös vettä). Jos jollain on tyhjää, täytä se.", s: 2, p: 2, m: true, b: 0 },
     { id: 2, n: "Uudelleenkäynnistys (Reboot)", d: "Kaikkien suorittajien on juotava lasi vettä yhdeltä istumalta 'järjestelmän vakauttamiseksi'.", s: 3, p: 1, m: false, b: 0 },
@@ -50,30 +51,65 @@ const defaultTasks = [
     { id: 32, n: "Winner Winner Dinner", d: "Tilaa sankarille pientä syötävää, kuten kanansiipiä tai vastaavaa.", s: 1, p: 3, m: false, b: 2 }
 ];
 
-// --- FIREBASE SYNC ---
+// --- NOLLAUS-FUNKTIO (TÄRKEÄ: Määritelty globaalisti) ---
+window.resetGame = function() {
+    if (confirm("VAROITUS: Tämä poistaa kaikki pelaajat ja lataa uudet 32 tehtävää. Jatketaanko?")) {
+        const newResetId = Date.now().toString();
+        const initialState = {
+            players: [],
+            tasks: defaultTasks,
+            usedTaskIds: [],
+            participants: null,
+            activeTask: null,
+            locked: false,
+            isLotteryRunning: false,
+            resetId: newResetId,
+            config: { useCooldowns: true, excludeUsedTasks: true, bdayHero: null }
+        };
+
+        db.ref('gameState').set(initialState)
+            .then(() => {
+                localStorage.clear();
+                alert("Peli nollattu onnistuneesti!");
+                location.reload();
+            })
+            .catch(err => alert("Virhe nollauksessa: " + err));
+    }
+};
+
+// --- PÄÄKUUNTELIJA ---
 db.ref('gameState').on('value', (snap) => {
     const data = snap.val();
     
-    // Jos tietokanta on tyhjä, alusta se heti uusilla tehtävillä
-    if(!data || !data.tasks || data.tasks.length < 10) {
+    // Automaattinen alustus jos kanta on tyhjä
+    if(!data) {
         db.ref('gameState').set({ 
             tasks: defaultTasks, 
             usedTaskIds: [], 
-            players: allPlayers, 
+            players: [], 
             resetId: Date.now().toString(),
             config: { useCooldowns: true, excludeUsedTasks: true, bdayHero: null }
         });
         return;
     }
 
-    if (currentResetId && data.resetId !== currentResetId) { localStorage.clear(); location.reload(); return; }
-    if (!currentResetId) { currentResetId = data.resetId; localStorage.setItem('appro_reset_id', data.resetId); }
+    // Pakotettu refresh jos resetId muuttuu
+    if (currentResetId && data.resetId !== currentResetId) {
+        localStorage.clear();
+        location.reload();
+        return;
+    }
+    if (!currentResetId) {
+        currentResetId = data.resetId;
+        localStorage.setItem('appro_reset_id', data.resetId);
+    }
 
     allPlayers = data.players || [];
     currentTasks = data.tasks || [];
     const config = data.config || {};
     const heroId = config.bdayHero;
 
+    // XP-animaatio tarkistus
     const me = allPlayers.find(p => p.name === myName);
     if (me) {
         if (lastMyScore !== null && me.score !== lastMyScore) { showXPAnimation(me.score - lastMyScore); }
@@ -92,18 +128,19 @@ db.ref('gameState').on('value', (snap) => {
         renderTaskLibrary();
     }
 
-    // Tehtävälogiikka
+    // Tehtävän hallinta
     const isLocked = !!data.locked;
     const results = data.participants || [];
     const isMePart = results.some(r => r.name === myName);
     const isGM = document.body.className.includes('gm');
 
+    // Voittaja-overlay
     if (isLocked && live && isMePart && !isTaskActive) {
         const overlay = document.getElementById('lotteryWinner');
         document.getElementById('winnerTaskName').innerText = live.n;
         overlay.style.display = 'flex';
-        if ("vibrate" in navigator) navigator.vibrate([200, 100, 200]);
-        setTimeout(() => { overlay.style.display = 'none'; }, 1500);
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+        setTimeout(() => { overlay.style.display = 'none'; }, 2000);
     }
     isTaskActive = isLocked;
 
@@ -120,11 +157,11 @@ db.ref('gameState').on('value', (snap) => {
             if (isMePart || isGM || localSpyEnabled) {
                 instrBox.style.display = 'block';
                 document.getElementById('winnerTaskDesc').innerText = live.d;
-            }
+            } else { instrBox.style.display = 'none'; }
         } else {
             descEl.style.display = 'block';
-            descEl.innerText = isGM || localSpyEnabled ? live.d : "Tehtävä paljastetaan valituille pelaajille...";
-            descEl.style.opacity = isGM || localSpyEnabled ? "1.0" : "0.5";
+            descEl.innerText = (isGM || localSpyEnabled) ? live.d : "Tehtävä paljastetaan valituille pelaajille...";
+            descEl.style.opacity = (isGM || localSpyEnabled) ? "1.0" : "0.5";
             instrBox.style.display = 'none';
         }
 
@@ -134,32 +171,33 @@ db.ref('gameState').on('value', (snap) => {
     } else { taskBox.style.display = 'none'; }
 });
 
-// --- TOIMINNALLISUUDET ---
-
-function resetGame() {
-    if (confirm("HUOM! Tämä poistaa KAIKKI pelaajat ja palauttaa pakan 32 uuteen tehtävään. Oletko varma?")) {
-        const updates = {
-            players: [],
-            tasks: defaultTasks,
-            usedTaskIds: [],
-            participants: null,
-            activeTask: null,
-            locked: false,
-            isLotteryRunning: false,
-            resetId: Date.now().toString(),
-            config: { useCooldowns: true, excludeUsedTasks: true, bdayHero: null }
-        };
-        db.ref('gameState').set(updates).then(() => {
-            localStorage.clear();
-            location.reload();
-        });
-    }
-}
+// --- APUFUNKTIOT ---
 
 function setRole(r) {
     document.body.className = r + '-mode';
     document.getElementById('btnPlayer').classList.toggle('active', r === 'player');
     document.getElementById('btnGM').classList.toggle('active', r === 'gm');
+}
+
+function claimIdentity() {
+    const n = document.getElementById('playerNameInput').value.trim();
+    if(!n) return; myName = n; localStorage.setItem('appro_name', n);
+    db.ref('gameState/players').transaction(p => {
+        p = p || []; if(!p.find(x => x.name === n)) p.push({ name: n, score: 0, cooldown: false });
+        return p;
+    });
+}
+
+function volunteer() {
+    db.ref('gameState').once('value', snap => {
+        const d = snap.val();
+        if(d.locked) return;
+        db.ref('gameState/participants').transaction(list => {
+            list = list || []; const idx = list.findIndex(r => r.name === myName);
+            if(idx > -1) list.splice(idx, 1); else list.push({ name: myName, win: true });
+            return list;
+        });
+    });
 }
 
 function drawRandom() {
@@ -170,14 +208,11 @@ function drawRandom() {
             let list = s.val() || [];
             if(list.length > 0) {
                 let shuffled = [...list].sort(() => 0.5 - Math.random());
-                let selected = shuffled.slice(0, count);
-                db.ref('gameState').update({ participants: selected, isLotteryRunning: false });
+                db.ref('gameState').update({ participants: shuffled.slice(0, count), isLotteryRunning: false });
             } else { db.ref('gameState/isLotteryRunning').set(false); alert("Ei ilmoittautuneita!"); }
         });
     }, 1200); 
 }
-
-function lockParticipants() { db.ref('gameState/locked').set(true); localSpyEnabled = false; updateSpyBtnText(); }
 
 function showScoring() { 
     db.ref('gameState').once('value', snap => { 
@@ -206,12 +241,12 @@ function showScoring() {
     }); 
 }
 
-// --- UI RENDERÖINTI ---
+// --- RENDERÖINTI ---
 
 function renderLeaderboard(showCD, heroId) {
     const list = document.getElementById('playerList');
     list.innerHTML = '';
-    [...allPlayers].sort((a,b) => b.score - a.score).forEach((p, i) => {
+    [...allPlayers].sort((a,b) => b.score - a.score).forEach((p) => {
         const pIdx = allPlayers.findIndex(x => x.name === p.name);
         const isHero = heroId !== null && pIdx === heroId;
         const div = document.createElement('div');
@@ -221,6 +256,52 @@ function renderLeaderboard(showCD, heroId) {
     });
 }
 
+function renderAdminPlayerList(heroId) {
+    const list = document.getElementById('adminPlayerList');
+    list.innerHTML = "";
+    allPlayers.forEach((p, i) => {
+        const div = document.createElement('div');
+        div.className = 'player-row';
+        div.innerHTML = `<span>${p.name}</span>
+            <div style="display:flex; gap:4px;">
+                <button class="btn" style="width:30px; padding:5px; margin:0; background:${i===heroId?'var(--gm-accent)':'#333'}" onclick="setBdayHero(${i})">🎂</button>
+                <button class="btn btn-secondary" style="width:30px; padding:5px; margin:0;" onclick="adjustScore(${i}, 1)">+</button>
+                <button class="btn btn-danger" style="width:30px; padding:5px; margin:0;" onclick="removePlayer(${i})">X</button>
+            </div>`;
+        list.appendChild(div);
+    });
+}
+
+function renderTaskLibrary() {
+    const lib = document.getElementById('taskLibraryEditor');
+    lib.innerHTML = '';
+    currentTasks.forEach((t, i) => {
+        const div = document.createElement('div');
+        div.style.borderBottom = "1px solid #333"; div.style.padding = "10px 0";
+        div.innerHTML = `<strong>${t.n}</strong> (S:${t.s}, P:${t.p}, B:${t.b||0}) <button onclick="removeTask(${i})">POISTA</button>`;
+        lib.appendChild(div);
+    });
+}
+
+// --- LISÄFUNKTIOT ---
+function lockParticipants() { db.ref('gameState/locked').set(true); localSpyEnabled = false; updateSpyBtnText(); }
+function confirmRandomize() {
+    db.ref('gameState').once('value', snap => {
+        const d = snap.val();
+        const used = d.usedTaskIds || [];
+        let pool = currentTasks.filter(t => !used.includes(t.id));
+        if(pool.length === 0) { db.ref('gameState/usedTaskIds').set([]); pool = currentTasks; }
+        const t = pool[Math.floor(Math.random() * pool.length)];
+        db.ref('gameState').update({ activeTask: t, participants: null, locked: false, isLotteryRunning: false });
+    });
+}
+function toggleParticipant(name) {
+    db.ref('gameState/participants').transaction(list => {
+        list = list || []; const idx = list.findIndex(r => r.name === name);
+        if(idx > -1) list.splice(idx, 1); else list.push({ name: name, win: true });
+        return list;
+    });
+}
 function renderGMVolunteers(results, isLocked, isShuffling, showCD) {
     const grid = document.getElementById('volunteerGrid');
     grid.innerHTML = '';
@@ -245,97 +326,18 @@ function renderGMVolunteers(results, isLocked, isShuffling, showCD) {
         });
     }
 }
-
-function renderAdminPlayerList(heroId) {
-    const list = document.getElementById('adminPlayerList');
-    list.innerHTML = "";
-    allPlayers.forEach((p, i) => {
-        const div = document.createElement('div');
-        div.className = 'player-row';
-        div.innerHTML = `<span>${p.name} (${p.score})</span>
-            <div style="display:flex; gap:4px;">
-                <button class="btn" style="width:30px; padding:5px; margin:0; background:${i===heroId?'var(--gm-accent)':'#333'}" onclick="setBdayHero(${i})">🎂</button>
-                <button class="btn btn-secondary" style="width:30px; padding:5px; margin:0;" onclick="adjustScore(${i}, 1)">+</button>
-                <button class="btn btn-danger" style="width:30px; padding:5px; margin:0;" onclick="removePlayer(${i})">X</button>
-            </div>`;
-        list.appendChild(div);
-    });
-}
-
-function renderTaskLibrary() {
-    const lib = document.getElementById('taskLibraryEditor');
-    lib.innerHTML = '';
-    currentTasks.forEach((t, i) => {
-        const div = document.createElement('div');
-        div.style.borderBottom = "1px solid #333"; div.style.padding = "10px 0";
-        div.innerHTML = `
-            <input type="text" value="${t.n}" onchange="updateTaskInLib(${i}, 'n', this.value)">
-            <textarea onchange="updateTaskInLib(${i}, 'd', this.value)">${t.d}</textarea>
-            <div style="display:flex; gap:10px; font-size:0.7rem;">
-                P: <input type="number" value="${t.p}" onchange="updateTaskInLib(${i}, 'p', parseInt(this.value))" style="width:35px;">
-                S: <input type="number" value="${t.s||1}" onchange="updateTaskInLib(${i}, 's', parseInt(this.value))" style="width:35px;">
-                B: <input type="number" value="${t.b||0}" onchange="updateTaskInLib(${i}, 'b', parseInt(this.value))" style="width:35px;">
-                <button onclick="removeTask(${i})">POISTA</button>
-            </div>`;
-        lib.appendChild(div);
-    });
-}
-
-// --- APUFUNKTIOT ---
-function confirmRandomize() {
-    db.ref('gameState').once('value', snap => {
-        const d = snap.val();
-        const used = d.usedTaskIds || [];
-        let pool = currentTasks.filter(t => !used.includes(t.id));
-        if(pool.length === 0) { db.ref('gameState/usedTaskIds').set([]); pool = currentTasks; }
-        const t = pool[Math.floor(Math.random() * pool.length)];
-        db.ref('gameState').update({ activeTask: t, participants: null, locked: false, isLotteryRunning: false });
-    });
-}
-
-function claimIdentity() {
-    const n = document.getElementById('playerNameInput').value.trim();
-    if(!n) return; myName = n; localStorage.setItem('appro_name', n);
-    db.ref('gameState/players').transaction(p => {
-        p = p || []; if(!p.find(x => x.name === n)) p.push({ name: n, score: 0, cooldown: false });
-        return p;
-    });
-}
-
-function volunteer() {
-    db.ref('gameState').once('value', snap => {
-        const d = snap.val();
-        if(d.locked) return;
-        db.ref('gameState/participants').transaction(list => {
-            list = list || []; const idx = list.findIndex(r => r.name === myName);
-            if(idx > -1) list.splice(idx, 1); else list.push({ name: myName, win: true });
-            return list;
-        });
-    });
-}
-
-function showXPAnimation(points) {
+function showXPAnimation(pts) {
     const pop = document.getElementById('xpPopUp');
-    if(!pop || points === 0) return;
+    if(!pop || pts === 0) return;
     pop.style.display = 'block';
-    pop.style.color = points > 0 ? "var(--success)" : "var(--danger)";
-    pop.innerText = (points > 0 ? "+" : "") + points + " XP";
-    pop.classList.remove('xp-animate');
-    void pop.offsetWidth;
-    pop.classList.add('xp-animate');
+    pop.style.color = pts > 0 ? "var(--success)" : "var(--danger)";
+    pop.innerText = (pts > 0 ? "+" : "") + pts + " XP";
+    pop.classList.remove('xp-animate'); void pop.offsetWidth; pop.classList.add('xp-animate');
     setTimeout(() => { pop.style.display = 'none'; }, 1800);
 }
-
-function toggleParticipant(name) {
-    db.ref('gameState/participants').transaction(list => {
-        list = list || []; const idx = list.findIndex(r => r.name === name);
-        if(idx > -1) list.splice(idx, 1); else list.push({ name: name, win: true });
-        return list;
-    });
-}
-
 function updateDrawCountSelect(val) {
     const sel = document.getElementById('drawCount');
+    if(!sel) return;
     sel.innerHTML = '';
     for (let i = 1; i <= Math.max(allPlayers.length, 1); i++) {
         const opt = document.createElement('option');
@@ -343,13 +345,12 @@ function updateDrawCountSelect(val) {
     }
     sel.value = val || 1;
 }
-
 function updateManualTaskSelect() {
     const sel = document.getElementById('manualTaskSelect');
+    if(!sel) return;
     sel.innerHTML = '<option value="">VALITSE TEHTÄVÄ...</option>';
     currentTasks.forEach((t, i) => { sel.innerHTML += `<option value="${i}">${t.n}</option>`; });
 }
-
 function selectManualTask(idx) { if(idx!=="") db.ref('gameState').update({activeTask:currentTasks[idx], participants:null, locked:false}); }
 function updateTaskInLib(idx, f, v) { db.ref(`gameState/tasks/${idx}/${f}`).set(v); }
 function removeTask(idx) { if(confirm("Poista?")) { currentTasks.splice(idx, 1); db.ref('gameState/tasks').set(currentTasks); } }
@@ -358,7 +359,7 @@ function adjustScore(i, a) { db.ref(`gameState/players/${i}/score`).transaction(
 function removePlayer(i) { if(confirm("Poista pelaaja?")) { allPlayers.splice(i,1); db.ref('gameState/players').set(allPlayers); } }
 function toggleWin(i) { db.ref(`gameState/participants/${i}/win`).transaction(w => !w); }
 function toggleGMSpyLocal() { localSpyEnabled = !localSpyEnabled; updateSpyBtnText(); }
-function updateSpyBtnText() { document.getElementById('btnGMSpy').innerText = localSpyEnabled ? "PIILOTA SPEKSIT" : "KATSO SPEKSIT"; }
+function updateSpyBtnText() { const b = document.getElementById('btnGMSpy'); if(b) b.innerText = localSpyEnabled ? "PIILOTA SPEKSIT" : "KATSO SPEKSIT"; }
 function toggleAdminPanel() { const p = document.getElementById('adminPanel'); p.style.display = p.style.display === 'none' ? 'block' : 'none'; }
 function updateIdentityUI() { 
     document.getElementById('identityCard').style.display = myName ? 'none' : 'block'; 
