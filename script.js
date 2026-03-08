@@ -56,16 +56,11 @@ db.ref('gameState').on('value', (snap) => {
     const oldPlayerCount = allPlayers.length;
     allPlayers = data.players || [];
     
-    // Päivitetään GM:n arvontamäärä-valikko jos pelaajamäärä muuttuu
-    if (oldPlayerCount !== allPlayers.length) {
-        updateDrawCountSelect();
-    }
+    if (oldPlayerCount !== allPlayers.length) { updateDrawCountSelect(); }
 
     const me = allPlayers.find(p => p.name === myName);
     if (me) {
-        if (lastMyScore !== null && me.score > lastMyScore) {
-            showXPAnimation(me.score - lastMyScore);
-        }
+        if (lastMyScore !== null && me.score > lastMyScore) { showXPAnimation(me.score - lastMyScore); }
         lastMyScore = me.score;
     }
 
@@ -82,25 +77,20 @@ db.ref('gameState').on('value', (snap) => {
         renderTaskLibrary();
     }
 
-    // ARVONTA-LOGIIKKA
-    const lotteryOverlay = document.getElementById('lotteryOverlay');
+    // VOITTO-ILMOITUKSEN LOGIIKKA
     const winnerOverlay = document.getElementById('lotteryWinner');
-    
-    if (data.isLotteryRunning) {
-        lotteryOverlay.style.display = 'flex';
-        winnerOverlay.style.display = 'none'; // Piilota vanha voittoilmoitus uuden tieltä
-    } else {
-        lotteryOverlay.style.display = 'none';
+    if (data.locked && data.activeTask) {
+        const results = data.participants || [];
+        const amIChosen = results.some(r => r.name === myName);
         
-        // Jos arvonta loppui ja peli on lukittu, tarkista olenko voittaja
-        if (data.locked && data.activeTask) {
-            const results = data.participants || [];
-            const amIChosen = results.some(r => r.name === myName);
-            if (amIChosen && !isTaskActive) { // Näytä vain kerran tehtävän alussa
-                winnerOverlay.style.display = 'flex';
-                setTimeout(() => { winnerOverlay.style.display = 'none'; }, 3000);
-            }
+        if (amIChosen && !isTaskActive) {
+            document.getElementById('winnerTaskName').innerText = data.activeTask.n;
+            document.getElementById('winnerTaskDesc').innerText = data.activeTask.d;
+            winnerOverlay.style.display = 'flex';
+            setTimeout(() => { winnerOverlay.style.display = 'none'; }, 5000);
         }
+    } else {
+        winnerOverlay.style.display = 'none';
     }
 
     const live = data.activeTask;
@@ -127,11 +117,6 @@ db.ref('gameState').on('value', (snap) => {
         const shouldSeeSpecs = (isLocked && (isMePart || isGM)) || (isGM && localSpyEnabled);
         document.getElementById('instructionBox').style.display = shouldSeeSpecs ? 'block' : 'none';
         
-        // Korostetaan tehtävänantoa pelaajalle
-        if (isLocked && isMePart) {
-            document.getElementById('instructionBox').classList.add('flash-effect');
-        }
-
         document.getElementById('taskPhaseTitle').innerText = isLocked ? "VAIHE: SUORITUS" : "VAIHE: ILMOITTAUTUMINEN";
         document.getElementById('joinAction').style.display = isLocked ? 'none' : 'block';
 
@@ -145,14 +130,68 @@ db.ref('gameState').on('value', (snap) => {
             vBtn.innerText = isMePart ? "OLET MUKANA! ✓" : "OSALLISTUTKO?";
         }
         
-        renderGMVolunteers(results, isLocked);
+        // GM:n vapaaehtoisten renderöinti (lisää Shuffle-efektin jos käynnissä)
+        renderGMVolunteers(results, isLocked, data.isLotteryRunning);
     } else { 
         taskBox.style.display = 'none'; 
-        winnerOverlay.style.display = 'none';
     }
 });
 
-// UUSI: Päivittää arvontamäärän dynaamisesti pelaajien mukaan
+function drawRandom() {
+    const count = parseInt(document.getElementById('drawCount').value) || 1;
+    
+    // 1. Käynnistä välkyntä paikallisesti ja tietokannassa
+    db.ref('gameState/isLotteryRunning').set(true);
+    
+    // 2. Simuloi arvontaefektiä 1.5 sekuntia
+    setTimeout(() => {
+        db.ref('gameState/participants').once('value', s => {
+            let list = s.val() || [];
+            if(list.length > count) {
+                let shuffled = list.sort(() => 0.5 - Math.random());
+                list = shuffled.slice(0, count);
+            }
+            // 3. Tallenna voittajat ja lukitse peli
+            db.ref('gameState').update({ 
+                participants: list,
+                isLotteryRunning: false,
+                locked: true 
+            });
+        });
+    }, 1500);
+}
+
+function renderGMVolunteers(results, isLocked, isShuffling) {
+    const grid = document.getElementById('volunteerGrid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    
+    allPlayers.forEach(p => {
+        const isInc = results.some(r => r.name === p.name);
+        const btn = document.createElement('button');
+        
+        // Lisätään shuffling-luokka jos arvonta on käynnissä
+        let classes = `btn ${isInc ? 'btn-primary' : 'btn-secondary'} ${p.cooldown ? 'on-cooldown' : ''}`;
+        if (isShuffling) classes += ' shuffling';
+        
+        btn.className = classes;
+        btn.style.margin = '0';
+        btn.style.fontSize = '0.6rem';
+        btn.innerText = p.name;
+        btn.disabled = isLocked || isShuffling;
+        btn.onclick = () => toggleParticipant(p.name);
+        grid.appendChild(btn);
+    });
+    
+    document.getElementById('btnLock').style.display = isLocked ? 'none' : 'block';
+    document.getElementById('btnFinish').style.display = isLocked ? 'block' : 'none';
+    const sArea = document.getElementById('scoringArea'); sArea.innerHTML = isLocked ? '<h3>Pisteytys</h3>' : '';
+    if(isLocked) {
+        results.forEach((r, i) => { sArea.innerHTML += `<div class="player-row" style="padding:10px;"><span>${r.name}</span><button class="btn" style="width:70px; margin:0; padding:8px; background:${r.win?'var(--success)':'var(--danger)'}" onclick='toggleWin(${i})'>${r.win?'WIN':'FAIL'}</button></div>`; });
+    }
+}
+
+// LOPUT FUNKTIOT SÄILYTETTY ENNALLAAN
 function updateDrawCountSelect() {
     const sel = document.getElementById('drawCount');
     if (!sel) return;
@@ -161,8 +200,7 @@ function updateDrawCountSelect() {
     const max = allPlayers.length || 1;
     for (let i = 1; i <= max; i++) {
         const opt = document.createElement('option');
-        opt.value = i;
-        opt.innerText = i;
+        opt.value = i; opt.innerText = i;
         sel.appendChild(opt);
     }
     sel.value = Math.min(currentVal, max) || 1;
@@ -179,9 +217,7 @@ function updateManualTaskSelect() {
     const sel = document.getElementById('manualTaskSelect');
     if (!sel) return;
     sel.innerHTML = '<option value="">TAI VALITSE...</option>';
-    currentTasks.forEach((t, i) => {
-        sel.innerHTML += `<option value="${i}">${t.n}</option>`;
-    });
+    currentTasks.forEach((t, i) => { sel.innerHTML += `<option value="${i}">${t.n}</option>`; });
 }
 
 function selectManualTask(idx) {
@@ -196,14 +232,11 @@ function playTaskSound() {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const oscillator = audioCtx.createOscillator();
         const gainNode = audioCtx.createGain();
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+        oscillator.connect(gainNode); gainNode.connect(audioCtx.destination);
+        oscillator.type = 'sine'; oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
         gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-        oscillator.start();
-        oscillator.stop(audioCtx.currentTime + 0.1);
-    } catch(e) { console.log("Audio not supported"); }
+        oscillator.start(); oscillator.stop(audioCtx.currentTime + 0.1);
+    } catch(e) {}
 }
 
 function adminAddPlayer() {
@@ -221,14 +254,11 @@ function adminCreateTask() {
     const desc = document.getElementById('newTaskDesc').value.trim();
     const points = parseInt(document.getElementById('newTaskPoints').value) || 2;
     if (!name || !desc) return alert("Täytä kaikki kentät!");
-    
     const newTask = { id: Date.now(), n: name, p: points, d: desc };
     db.ref('gameState/tasks').once('value', s => {
-        let list = s.val() || [];
-        list.push(newTask);
+        let list = s.val() || []; list.push(newTask);
         db.ref('gameState/tasks').set(list).then(() => {
-            document.getElementById('newTaskName').value = '';
-            document.getElementById('newTaskDesc').value = '';
+            document.getElementById('newTaskName').value = ''; document.getElementById('newTaskDesc').value = '';
             renderTaskLibrary();
         });
     });
@@ -250,11 +280,7 @@ function renderTaskLibrary() {
 
 function updateTaskInLib(idx, field, val) { db.ref(`gameState/tasks/${idx}/${field}`).set(val); }
 function removeTask(idx) { if(!confirm("Poistetaanko tehtävä pysyvästi?")) return; currentTasks.splice(idx, 1); db.ref('gameState/tasks').set(currentTasks); }
-
-function resetGame() {
-    if(!confirm("HUOM: Tämä nollaa vain pelaajat ja pisteet. Tehtäväpankki säilyy. Jatka?")) return;
-    db.ref('gameState').update({ players: [], activeTask: null, participants: null, locked: false, resetId: Date.now().toString() });
-}
+function resetGame() { if(!confirm("Nollataanko pisteet?")) return; db.ref('gameState').update({ players: [], activeTask: null, participants: null, locked: false, resetId: Date.now().toString() }); }
 
 function claimIdentity() {
     const n = document.getElementById('playerNameInput').value.trim();
@@ -269,15 +295,9 @@ function volunteer() {
     if(!myName) return;
     const p = allPlayers.find(x => x.name === myName);
     if(p && p.cooldown) return;
-    
     db.ref('gameState/participants').transaction(list => {
-        list = list || []; 
-        const idx = list.findIndex(r => r.name === myName);
-        if(idx > -1) {
-            list.splice(idx, 1);
-        } else {
-            list.push({ name: myName, win: true });
-        }
+        list = list || []; const idx = list.findIndex(r => r.name === myName);
+        if(idx > -1) list.splice(idx, 1); else list.push({ name: myName, win: true });
         return list;
     });
 }
@@ -290,37 +310,14 @@ function toggleParticipant(name) {
     });
 }
 
-// NOPEUTETTU ARVONTA
-function drawRandom() {
-    const count = parseInt(document.getElementById('drawCount').value) || 1;
-    db.ref('gameState/isLotteryRunning').set(true);
-    
-    setTimeout(() => {
-        db.ref('gameState/participants').once('value', s => {
-            let list = s.val() || [];
-            if(list.length > count) {
-                let shuffled = list.sort(() => 0.5 - Math.random());
-                list = shuffled.slice(0, count);
-            }
-            db.ref('gameState').update({ 
-                participants: list,
-                isLotteryRunning: false,
-                locked: true // Arvonta lukitsee tilanteen automaattisesti
-            });
-        });
-    }, 1200); 
-}
-
 function lockParticipants() { db.ref('gameState/locked').set(true); localSpyEnabled = false; updateSpyBtnText(); }
 function toggleWin(i) { db.ref('gameState/participants/' + i + '/win').transaction(w => !w); }
 
 function showScoring() { 
     db.ref('gameState').once('value', snap => { 
-        const d = snap.val(); 
-        const res = d.participants || []; 
+        const d = snap.val(); const res = d.participants || []; 
         const updated = allPlayers.map(p => { 
-            p.cooldown = false; 
-            const part = res.find(r => r.name === p.name); 
+            p.cooldown = false; const part = res.find(r => r.name === p.name); 
             if(part) { if(part.win) p.score += d.activeTask.p; p.cooldown = true; } 
             return p; 
         }); 
@@ -331,18 +328,8 @@ function showScoring() {
 function toggleGMSpyLocal() { localSpyEnabled = !localSpyEnabled; updateSpyBtnText(); document.getElementById('instructionBox').style.display = localSpyEnabled ? 'block' : 'none'; }
 function updateSpyBtnText() { const btn = document.getElementById('btnGMSpy'); if(btn) btn.innerText = localSpyEnabled ? "PIILOTA SPEKSIT" : "KATSO SPEKSIT"; }
 function setRole(r) { document.body.className = r + '-mode'; document.getElementById('btnPlayer').classList.toggle('active', r==='player'); document.getElementById('btnGM').classList.toggle('active', r==='gm'); }
-
-function toggleAdminPanel() { 
-    const p = document.getElementById('adminPanel'); 
-    p.style.display = p.style.display === 'none' ? 'block' : 'none'; 
-    if(p.style.display === 'block') { renderAdminPlayerList(); renderTaskLibrary(); } 
-}
-
-function confirmRandomize() { 
-    const t = currentTasks[Math.floor(Math.random()*currentTasks.length)]; 
-    db.ref('gameState').update({ activeTask: t, participants: null, locked: false }); 
-}
-
+function toggleAdminPanel() { const p = document.getElementById('adminPanel'); p.style.display = p.style.display === 'none' ? 'block' : 'none'; if(p.style.display === 'block') { renderAdminPlayerList(); renderTaskLibrary(); } }
+function confirmRandomize() { const t = currentTasks[Math.floor(Math.random()*currentTasks.length)]; db.ref('gameState').update({ activeTask: t, participants: null, locked: false }); }
 function adjustScore(idx, amt) { db.ref('gameState/players/' + idx + '/score').transaction(s => (s || 0) + amt); }
 function removePlayer(idx) { if(confirm("Poista pelaaja?")) { allPlayers.splice(idx, 1); db.ref('gameState/players').set(allPlayers); } }
 
@@ -364,30 +351,4 @@ function renderAdminPlayerList() {
     allPlayers.forEach((p, i) => {
         list.innerHTML += `<div class="player-row" style="padding:10px;"><span>${p.name} (${p.score})</span><div style="display:flex; gap:5px;"><button class="btn btn-secondary" style="width:35px; padding:5px; margin:0;" onclick="adjustScore(${i}, 1)">+</button><button class="btn btn-secondary" style="width:35px; padding:5px; margin:0;" onclick="adjustScore(${i}, -1)">-</button><button class="btn btn-danger" style="width:35px; padding:5px; margin:0;" onclick="removePlayer(${i})">X</button></div></div>`;
     });
-}
-
-function renderGMVolunteers(results, isLocked) {
-    const grid = document.getElementById('volunteerGrid');
-    if (!grid) return;
-    grid.innerHTML = '';
-    
-    allPlayers.forEach(p => {
-        const isInc = results.some(r => r.name === p.name);
-        const btn = document.createElement('button');
-        // LISÄTTY: on-cooldown luokka jos pelaaja on jäähyllä
-        btn.className = `btn ${isInc ? 'btn-primary' : 'btn-secondary'} ${p.cooldown ? 'on-cooldown' : ''}`;
-        btn.style.margin = '0';
-        btn.style.fontSize = '0.6rem';
-        btn.innerText = p.name;
-        btn.disabled = isLocked;
-        btn.onclick = () => toggleParticipant(p.name);
-        grid.appendChild(btn);
-    });
-    
-    document.getElementById('btnLock').style.display = isLocked ? 'none' : 'block';
-    document.getElementById('btnFinish').style.display = isLocked ? 'block' : 'none';
-    const sArea = document.getElementById('scoringArea'); sArea.innerHTML = isLocked ? '<h3>Pisteytys</h3>' : '';
-    if(isLocked) {
-        results.forEach((r, i) => { sArea.innerHTML += `<div class="player-row" style="padding:10px;"><span>${r.name}</span><button class="btn" style="width:70px; margin:0; padding:8px; background:${r.win?'var(--success)':'var(--danger)'}" onclick='toggleWin(${i})'>${r.win?'WIN':'FAIL'}</button></div>`; });
-    }
 }
