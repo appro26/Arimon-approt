@@ -14,7 +14,7 @@ let lastMyScore = null;
 const APP_NAME = "Arimon Approt";
 document.title = APP_NAME;
 
-// --- TEHTÄVÄPAKKA ---
+// --- TEHTÄVÄPAKKA (Säilytetty ennallaan) ---
 const defaultTasks = [
     { id: 1, n: "Mise en place", d: "Varmista, että kaikilla seurueen jäsenillä on lasissa juotavaa (myös vettä). Jos jollain on tyhjää, täytä se.", p: 2, m: 1, b: false, r: 1 },
     { id: 2, n: "Uudelleenkäynnistys (Reboot)", d: "Kaikkien suorittajien on juotava lasi vettä yhdeltä istumalta 'järjestelmän vakauttamiseksi'.", p: 1, m: 2, b: false, r: 2 },
@@ -96,22 +96,21 @@ db.ref('gameState').on('value', (snap) => {
     renderActiveTasks(data.activeTasks || {}, config);
 });
 
-// --- RENDERÖINTI: AKTIIVISET TEHTÄVÄT (KORJATTU VÄLÄHDYS JA NÄKYVYYS) ---
+// --- RENDERÖINTI: AKTIIVISET TEHTÄVÄT (KORJATTU) ---
 function renderActiveTasks(tasksObj, config) {
     const container = document.getElementById('activeTasksContainer');
     const isGM = document.body.className.includes('gm');
     
-    // 1. Poistetaan kortit, joita ei ole enää datassa
-    const existingIds = Array.from(container.querySelectorAll('.active-task-item')).map(el => el.getAttribute('data-task-id'));
     const currentIds = Object.keys(tasksObj);
+    const existingIds = Array.from(container.querySelectorAll('.active-task-item')).map(el => el.getAttribute('data-task-id'));
+
     existingIds.forEach(id => {
         if (!currentIds.includes(id)) {
-            const elToRemove = container.querySelector(`[data-task-id="${id}"]`);
-            if (elToRemove) elToRemove.remove();
+            const el = container.querySelector(`[data-task-id="${id}"]`);
+            if (el) el.remove();
         }
     });
 
-    // 2. Päivitetään tai lisätään kortit
     currentIds.forEach(taskId => {
         const taskData = tasksObj[taskId];
         const isLocked = !!taskData.locked;
@@ -119,8 +118,6 @@ function renderActiveTasks(tasksObj, config) {
         const isMePart = results.some(r => r.name === myName && r.win);
         
         let card = container.querySelector(`[data-task-id="${taskId}"]`);
-        
-        // Jos korttia ei ole, luodaan se (estää välähdyksen, kun koko container.innerHTML ei tyhjene)
         if (!card) {
             card = document.createElement('div');
             card.className = 'card task-box active-task-item';
@@ -128,22 +125,23 @@ function renderActiveTasks(tasksObj, config) {
             container.appendChild(card);
         }
 
-        // Rakennetaan sisältömuuttujaan
+        // KORJAUS 5: Korostetaan korttia jos pelaaja osallistuu
+        card.classList.toggle('participating', !isGM && isLocked && isMePart);
+
+        // KORJAUS 2 & 6: Layoutin vakaus ja tekstin koko
         let html = `
             <h2>${isLocked ? 'VAIHE: SUORITUS' : 'VAIHE: ILMOITTAUTUMINEN'}</h2>
-            <h1>${taskData.n}</h1>
-            <div class="xp-badge" style="display:inline-block; margin-bottom:15px;">${taskData.p} XP</div>
+            <h1 style="margin:5px 0;">${taskData.n}</h1>
+            <div class="xp-badge" style="display:inline-block; margin-bottom:10px;">${taskData.p} XP</div>
         `;
 
-        // KUVAUKSEN NÄKYVYYS (KORJAUS 3)
-        // Näytetään kuvaus vain jos: On lukittu JA (olen mukana TAI GM TAI vaklaa)
         const showDesc = isLocked && (isMePart || isGM || localSpyState[taskId]);
-        const gmPeeking = !isLocked && (isGM && localSpyState[taskId]); // GM näkee ennen lukitusta vain Speksit-napista
+        const gmPeeking = !isLocked && (isGM && localSpyState[taskId]);
 
         if (showDesc || gmPeeking) {
-            html += `<div class="instruction-card"><strong style="color:var(--accent);">OHJEET:</strong><p style="margin-top:5px; font-size:0.9rem;">${taskData.d}</p></div>`;
+            html += `<div class="instruction-card"><p><strong>OHJEET:</strong><br>${taskData.d}</p></div>`;
         } else {
-            html += `<p class="task-description" style="opacity:0.5">Tehtävä paljastetaan valituille pelaajille...</p>`;
+            html += `<p class="task-description" style="opacity:0.5; font-size:1.1rem;">Tehtävä paljastetaan valituille pelaajille...</p>`;
         }
 
         if (isLocked && !isMePart && !isGM) {
@@ -155,19 +153,18 @@ function renderActiveTasks(tasksObj, config) {
             const onCD = config.useCooldowns && myD && myD.cooldown;
             const amIIn = results.some(r => r.name === myName);
 
-            html += `<div class="join-action-area" style="margin-top:20px;">`;
+            html += `<div class="join-action-area" style="margin-top:15px;">`;
             if (onCD && !amIIn) {
-                html += `<p style="color:var(--danger); font-weight:800; font-size:0.8rem;">OLET JÄÄHYLLÄ!</p>`;
+                html += `<p style="color:var(--danger); font-weight:800;">OLET JÄÄHYLLÄ!</p>`;
             } else {
                 html += `<button class="btn ${amIIn ? 'btn-success' : 'btn-primary'}" onclick="volunteer('${taskId}')">${amIIn ? 'OSALLISTUT! ✓' : 'HALUAN OSALLISTUA'}</button>`;
             }
             html += `</div>`;
         }
 
-        // GM TYÖKALUT (KORJAUS 1: Varmistetaan CSS-luokka gm-only)
         if (isGM) {
             html += `
-                <div class="gm-only-active-panel" style="margin-top:20px; border-top:1px solid #333; padding-top:15px; display:block;">
+                <div class="gm-only" style="margin-top:20px; border-top:1px solid #333; padding-top:15px; display:block;">
                     <div class="volunteer-selector-grid" id="grid-${taskId}"></div>
                     <div class="admin-row-stack">
                         <div style="display:flex; gap:10px;">
@@ -179,18 +176,14 @@ function renderActiveTasks(tasksObj, config) {
                     <div id="scoring-${taskId}"></div>
                     <div style="display:flex; gap:10px; margin-top:10px;">
                         <button class="btn btn-success" id="finish-${taskId}" style="display:${isLocked ? 'block' : 'none'}; flex:2; margin:0;" onclick="showScoring('${taskId}')">MERKITSE VALMIIKSI</button>
-                        <button class="btn btn-secondary" style="flex:1; font-size:0.6rem; padding:8px; margin:0;" onclick="toggleGMSpy('${taskId}')">${localSpyState[taskId] ? 'PIILOTA' : 'SPEKSIT'}</button>
+                        <button class="btn btn-secondary" style="flex:1; font-size:0.6rem; padding:8px; margin:0;" onclick="toggleGMSpy('${taskId}')">SPEKSIT</button>
                     </div>
                 </div>
             `;
         }
 
-        // Päivitetään kortin sisältö vain jos se on muuttunut (vähentää välkettä entisestään)
-        if (card.innerHTML !== html) {
-            card.innerHTML = html;
-        }
+        if (card.innerHTML !== html) card.innerHTML = html;
 
-        // Täytetään dynaamiset elementit
         if (isGM) {
             renderGMGrid(taskId, results, isLocked, taskData.isLotteryRunning, config.useCooldowns);
             updateDrawCountSelect(taskId, taskData);
@@ -204,30 +197,62 @@ function renderActiveTasks(tasksObj, config) {
     });
 }
 
-// --- ARVONTA ---
+// --- ARVONTA (KORJATTU 4) ---
 function drawRandom(taskId) {
     const sel = document.getElementById(`drawCount-${taskId}`);
     const count = parseInt(sel.value) || 1;
-    db.ref(`gameState/activeTasks/${taskId}/isLotteryRunning`).set(true);
-    db.ref(`gameState/activeTasks/${taskId}/participants`).once('value', s => {
-        let list = s.val() || [];
-        if(list.length === 0) { db.ref(`gameState/activeTasks/${taskId}/isLotteryRunning`).set(false); alert("Ei ilmoittautuneita!"); return; }
-        const gridItems = document.querySelectorAll(`#grid-${taskId} button`);
-        gridItems.forEach(btn => { const randomDelay = Math.random() * 500; setTimeout(() => { btn.classList.add('shuffling'); }, randomDelay); });
+    
+    db.ref(`gameState/activeTasks/${taskId}`).once('value', s => {
+        const taskData = s.val();
+        let list = taskData.participants || [];
+        // Arvotaan vain niistä, jotka ovat jo mukana (vapaaehtoiset/GM:n valitsemat)
+        if(list.length === 0) { alert("Ei osallistujia arvottavaksi!"); return; }
+
+        db.ref(`gameState/activeTasks/${taskId}/isLotteryRunning`).set(true);
+        
+        const gridItems = document.querySelectorAll(`#grid-${taskId} button.btn-primary`);
+        gridItems.forEach(btn => { btn.classList.add('shuffling'); });
+
         setTimeout(() => {
-            let shuffled = [...list].sort(() => 0.5 - Math.random());
-            const winners = shuffled.slice(0, count).map(p => ({ ...p, win: true }));
+            let winners = [...list].sort(() => 0.5 - Math.random()).slice(0, count).map(p => ({ ...p, win: true }));
             db.ref(`gameState/activeTasks/${taskId}`).update({ participants: winners, isLotteryRunning: false });
         }, 1500);
     });
 }
 
-// --- TOIMINNOT ---
+// --- GM GRID (KORJATTU 1) ---
+function renderGMGrid(taskId, results, isLocked, isShuffling, showCD) {
+    const grid = document.getElementById(`grid-${taskId}`);
+    if(!grid) return; grid.innerHTML = '';
+    allPlayers.forEach(p => {
+        const isInc = results.some(r => r.name === p.name);
+        const onCD = showCD && p.cooldown;
+        const btn = document.createElement('button');
+        
+        // KORJAUS 1: Lisätty selected-participant jos valittu
+        btn.className = `btn ${isInc ? 'btn-primary selected-participant' : 'btn-secondary'} ${onCD ? 'on-cooldown' : ''} ${isShuffling && isInc ? 'shuffling' : ''}`;
+        btn.innerHTML = `${p.name}${onCD ? ' <small>(J)</small>' : ''}`;
+        btn.disabled = isLocked || isShuffling;
+        btn.onclick = () => toggleParticipant(taskId, p.name);
+        grid.appendChild(btn);
+    });
+}
+
+// --- SPEKSIT (KORJATTU 3) ---
+function toggleGMSpy(taskId) {
+    localSpyState[taskId] = !localSpyState[taskId];
+    // Pakotetaan vain paikallinen päivitys ilman database-muutosta osallistujissa
+    db.ref('gameState/activeTasks/' + taskId).once('value', s => {
+        const tasks = {}; tasks[taskId] = s.val();
+        renderActiveTasks(tasks, {useCooldowns: true});
+    });
+}
+
+// --- MUUT TOIMINNOT (Säilytetty ennallaan) ---
 function setRole(r) {
     document.body.className = r + '-mode';
     document.getElementById('btnPlayer').classList.toggle('active', r === 'player');
     document.getElementById('btnGM').classList.toggle('active', r === 'gm');
-    // Pakotetaan uudelleenpiirto, jotta GM-paneelit häviävät/ilmestyvät välittömästi
     db.ref('gameState/activeTasks').once('value', s => renderActiveTasks(s.val() || {}, {}));
 }
 
@@ -301,25 +326,9 @@ function showScoring(taskId) {
     });
 }
 
-function renderGMGrid(taskId, results, isLocked, isShuffling, showCD) {
-    const grid = document.getElementById(`grid-${taskId}`);
-    if(!grid) return; grid.innerHTML = '';
-    allPlayers.forEach(p => {
-        const isInc = results.some(r => r.name === p.name);
-        const onCD = showCD && p.cooldown;
-        const btn = document.createElement('button');
-        btn.className = `btn ${isInc ? 'btn-primary' : 'btn-secondary'} ${onCD ? 'on-cooldown' : ''} ${isShuffling && isInc ? 'shuffling' : ''}`;
-        btn.innerHTML = `${p.name}${onCD ? ' <small>(J)</small>' : ''}`;
-        btn.disabled = isLocked || isShuffling;
-        // KORJAUS 4: Jäähy ei estä GM:ää valitsemasta pelaajaa
-        btn.onclick = () => toggleParticipant(taskId, p.name);
-        grid.appendChild(btn);
-    });
-}
-
 function renderScoringArea(taskId, results) {
     const sArea = document.getElementById(`scoring-${taskId}`);
-    if(!sArea) return; sArea.innerHTML = '<p style="font-size:0.7rem; color:var(--muted); margin-top:10px; text-align:center;">ONNISTUIKO TEHTÄVÄ?</p>';
+    if(!sArea) return; sArea.innerHTML = '<p style="font-size:0.7rem; color:var(--muted); margin:10px 0; text-align:center;">ONNISTUIKO TEHTÄVÄ?</p>';
     results.forEach((r, i) => {
         const row = document.createElement('div');
         row.className = 'player-row'; row.style.padding = '8px';
@@ -341,7 +350,6 @@ function updateDrawCountSelect(taskId, task) {
 }
 
 function toggleWin(taskId, i) { db.ref(`gameState/activeTasks/${taskId}/participants/${i}/win`).transaction(w => !w); }
-function toggleGMSpy(taskId) { localSpyState[taskId] = !localSpyState[taskId]; db.ref('gameState/activeTasks/' + taskId).once('value', s => renderActiveTasks({[taskId]: s.val()}, {})); }
 
 function confirmRandomize() {
     db.ref('gameState').once('value', snap => {
