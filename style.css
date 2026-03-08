@@ -60,42 +60,42 @@ input, textarea, select { background: var(--surface-light); border: 1px solid rg
 
 /* JÄÄHY-TYYLIT */
 .on-cooldown-text { color: var(--danger); font-weight: 900; font-size: 0.65rem; margin-left: 5px; text-shadow: 0 0 5px rgba(255, 71, 87, 0.4); }
-/* GM-näkymän nappi kun pelaaja jäähyllä */
 .btn.on-cooldown { border: 1px solid var(--danger) !important; opacity: 0.7; position: relative; }
 .btn.on-cooldown::after { content: " [J]"; color: var(--danger); }
+
+/* --- UUSI: ARVONTA VÄLKYNTÄ GM-PUOLELLA --- */
+.shuffling {
+    animation: shuffle-blue 0.15s infinite;
+    pointer-events: none;
+}
+
+@keyframes shuffle-blue {
+    0% { background: var(--surface-light); color: #fff; }
+    50% { background: var(--accent); color: #000; box-shadow: 0 0 15px var(--accent-glow); }
+    100% { background: var(--surface-light); color: #fff; }
+}
 
 .gm-only, .player-only { display: none; }
 .gm-mode .gm-only { display: block; }
 .player-mode .player-only { display: block; }
 
-/* --- ANIMAATIOT --- */
-
-/* 1. NOPEA ARVONTA OVERLAY */
-.lottery-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(5, 5, 7, 0.98); z-index: 2000;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    backdrop-filter: blur(20px);
-}
-.lottery-spinner {
-    width: 100px; height: 100px; border: 10px solid var(--surface-light);
-    border-top: 10px solid var(--accent); border-right: 10px solid var(--gm-accent);
-    border-radius: 50%;
-    animation: spin 0.6s linear infinite; margin-bottom: 25px;
-    box-shadow: 0 0 30px var(--accent-glow);
-}
-
-/* 2. VOITTO-ILMOITUS (SINUT ON VALITTU) */
+/* --- VOITTO-ILMOITUS (SINUT ON VALITTU) --- */
 .winner-announcement {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: var(--accent); color: #000; z-index: 2500;
-    display: flex; align-items: center; justify-content: center;
-    text-align: center; animation: winnerFlash 0.5s ease-in-out infinite alternate;
+    background: #000; color: #fff; z-index: 2500;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 20px;
 }
-.winner-content h2 { font-size: 3.5rem; font-weight: 900; margin: 0; line-height: 1; }
-.winner-content p { font-size: 1.2rem; font-weight: 800; letter-spacing: 4px; margin-top: 10px; }
+.winner-overlay-bg {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: var(--accent); z-index: -1;
+    animation: winnerFlash 0.4s ease-in-out infinite alternate;
+}
+.winner-content h2 { font-size: 2.8rem; font-weight: 900; margin: 0; line-height: 1; color: #000; text-transform: uppercase; }
+.winner-content .task-title { font-size: 1.5rem; color: #000; font-weight: 800; margin-top: 20px; border-top: 2px solid rgba(0,0,0,0.2); padding-top: 10px; }
+.winner-content .task-desc { font-size: 1.2rem; color: #000; font-weight: 600; margin-top: 10px; opacity: 0.9; }
 
-/* 3. XP POPUP */
+/* XP POPUP */
 .xp-popup {
     position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
     background: var(--success); color: #000; font-weight: 900; font-size: 4rem;
@@ -105,11 +105,9 @@ input, textarea, select { background: var(--surface-light); border: 1px solid rg
     pointer-events: none;
 }
 
-@keyframes spin { 100% { transform: rotate(360deg); } }
-
 @keyframes winnerFlash {
-    from { background: var(--accent); transform: scale(1); }
-    to { background: #fff; transform: scale(1.05); }
+    from { opacity: 0.8; transform: scale(1); }
+    to { opacity: 1; transform: scale(1.02); }
 }
 
 @keyframes xpFloat {
