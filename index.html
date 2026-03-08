@@ -17,8 +17,8 @@
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js')
-            .then(reg => console.log('Service Worker rekisteröity onnistuneesti!'))
-            .catch(err => console.error('Service Workerin rekisteröinti epäonnistui:', err));
+            .then(reg => console.log('Service Worker rekisteröity!'))
+            .catch(err => console.error('SW Error:', err));
         });
       }
     </script>
@@ -31,7 +31,14 @@
 
     <div class="role-switcher">
         <button id="btnPlayer" class="role-btn player active" onclick="setRole('player')">PELAAJA</button>
-        <button id="btnGM" class="role-btn gm" onclick="setRole('gm')">GAME MASTER</button>
+        <button id="btnGM" class="role-btn gm" 
+                onmousedown="startGMLongPress()" 
+                onmouseup="cancelGMLongPress()" 
+                onmouseleave="cancelGMLongPress()"
+                ontouchstart="startGMLongPress()" 
+                ontouchend="cancelGMLongPress()">
+            GAME MASTER
+        </button>
     </div>
 
     <div class="container">
@@ -110,7 +117,7 @@
                 <select id="manualTaskSelect" onchange="selectManualTask(this.value)"></select>
 
                 <h2 style="margin-top:20px;">Pelaajien hallinta</h2>
-                <p style="font-size:0.6rem; color:var(--gm-accent); margin-bottom:10px; font-weight:700;">🎂 = MERKITSE SYNTTÄRISANKARIKSI</p>
+                <p style="font-size:0.6rem; color:var(--gm-accent); margin-bottom:10px; font-weight:700;">🎂 = SYNTTÄRISANKARI</p>
                 <div id="adminPlayerList"></div>
                 <div style="display:flex; gap:5px; margin-top:10px;">
                     <input type="text" id="adminNewPlayerName" placeholder="Nimi..." style="margin:0;">
@@ -136,7 +143,7 @@
                     </div>
                 </div>
                 
-                <div id="taskLibraryEditor" style="max-height:300px; overflow-y:auto; margin-top:10px;"></div>
+                <div id="taskLibraryEditor" style="max-height:300px; overflow-y:auto; margin-top:15px; border-top:1px solid #333; padding-top:10px;"></div>
 
                 <button class="btn btn-danger" style="margin-top:30px; width:100%;" onclick="window.resetGame()">NOLLAA KOKO PELI</button>
             </div>
@@ -154,6 +161,18 @@
             <p style="font-size:0.7rem; color:var(--muted); margin-top:10px;">VALMISTAUDU SUORITTAMAAN</p>
         </div>
     </div>
+
+    <script>
+        let gmTimer;
+        function startGMLongPress() {
+            gmTimer = setTimeout(() => {
+                setRole('gm');
+            }, 1200); // 1.2 sekuntia
+        }
+        function cancelGMLongPress() {
+            clearTimeout(gmTimer);
+        }
+    </script>
 
     <script src="script.js"></script>
 </body>
