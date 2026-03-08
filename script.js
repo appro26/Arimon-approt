@@ -10,7 +10,6 @@ let isTaskActive = false;
 let localSpyEnabled = false;
 let lastMyScore = null;
 
-// --- MUUTOS: Pelin nimi ---
 const APP_NAME = "Arimon Approt";
 document.title = APP_NAME;
 
@@ -73,9 +72,7 @@ db.ref('gameState').on('value', (snap) => {
 
     const me = allPlayers.find(p => p.name === myName);
     if (me) {
-        if (lastMyScore !== null && me.score !== lastMyScore) { 
-            showXPAnimation(me.score - lastMyScore); 
-        }
+        if (lastMyScore !== null && me.score !== lastMyScore) { showXPAnimation(me.score - lastMyScore); }
         lastMyScore = me.score;
     }
 
@@ -103,7 +100,7 @@ db.ref('gameState').on('value', (snap) => {
             setTimeout(() => { winnerOverlay.style.display = 'none'; }, 1500);
         }
     } else {
-        winnerOverlay.style.display = 'none';
+        if(winnerOverlay) winnerOverlay.style.display = 'none';
     }
 
     isTaskActive = isLocked;
@@ -130,6 +127,7 @@ db.ref('gameState').on('value', (snap) => {
             if (isGM) {
                 descEl.style.display = localSpyEnabled ? 'block' : 'none';
                 descEl.innerText = live.d;
+                descEl.style.opacity = "1.0";
             } else {
                 descEl.style.display = 'block';
                 descEl.innerText = "Tehtävä paljastetaan valituille pelaajille...";
@@ -139,7 +137,7 @@ db.ref('gameState').on('value', (snap) => {
         }
 
         const notSelectedEl = document.getElementById('notParticipatingMsg');
-        notSelectedEl.style.display = (isLocked && !isMePart && !isGM) ? 'block' : 'none';
+        if(notSelectedEl) notSelectedEl.style.display = (isLocked && !isMePart && !isGM) ? 'block' : 'none';
         document.getElementById('taskPhaseTitle').innerText = isLocked ? "VAIHE: SUORITUS" : "VAIHE: ILMOITTAUTUMINEN";
         document.getElementById('joinAction').style.display = isLocked ? 'none' : 'block';
 
@@ -158,17 +156,14 @@ db.ref('gameState').on('value', (snap) => {
         }
         renderGMVolunteers(results, isLocked, data.isLotteryRunning, config.useCooldowns);
     } else { 
-        taskBox.style.display = 'none'; 
+        if(taskBox) taskBox.style.display = 'none'; 
     }
 });
 
 function setRole(r, force = false) {
     if (r === 'gm' && !force) {
         const pass = prompt("Syötä GM-salasana:");
-        
-        // JOS PAINETAAN PERUUTA: pass on null, jolloin lopetetaan heti ilman herjoja
         if (pass === null) return; 
-
         if (pass !== "3030") {
             alert("Väärä salasana!");
             return;
@@ -207,7 +202,8 @@ function renderLeaderboard(showCD, heroId) {
     const list = document.getElementById('playerList');
     const fragment = document.createDocumentFragment();
     [...allPlayers].sort((a,b) => b.score - a.score).forEach((p) => {
-        const isHero = allPlayers.findIndex(x => x.name === p.name) === heroId;
+        const pIdx = allPlayers.findIndex(x => x.name === p.name);
+        const isHero = heroId !== null && pIdx === heroId;
         const div = document.createElement('div');
         div.className = `player-row ${p.name === myName ? 'me' : ''} ${isHero ? 'is-hero' : ''}`;
         const cdTag = (showCD && p.cooldown) ? `<span class="on-cooldown-text">[JÄÄHY]</span>` : '';
@@ -254,6 +250,7 @@ function renderGMVolunteers(results, isLocked, isShuffling, showCD) {
 
 function renderAdminPlayerList(heroId) {
     const list = document.getElementById('adminPlayerList');
+    if(!list) return;
     list.innerHTML = "";
     allPlayers.forEach((p, i) => {
         const div = document.createElement('div');
@@ -272,7 +269,13 @@ function renderAdminPlayerList(heroId) {
     });
 }
 
-function setBdayHero(idx) { db.ref('gameState/config/bdayHero').set(idx); }
+function setBdayHero(idx) { 
+    db.ref('gameState/config/bdayHero').once('value', snap => {
+        const currentHero = snap.val();
+        db.ref('gameState/config/bdayHero').set(currentHero === idx ? null : idx);
+    });
+}
+
 function adminToggleCooldown(idx) { db.ref(`gameState/players/${idx}/cooldown`).set(!allPlayers[idx].cooldown); }
 function updateConfig(key, val) { db.ref(`gameState/config/${key}`).set(val); }
 
@@ -382,7 +385,9 @@ function adminCreateTask() {
 }
 
 function renderTaskLibrary() {
-    const lib = document.getElementById('taskLibraryEditor'); lib.innerHTML = '';
+    const lib = document.getElementById('taskLibraryEditor');
+    if(!lib) return;
+    lib.innerHTML = '';
     currentTasks.forEach((t, i) => {
         const div = document.createElement('div');
         div.style.borderBottom = "1px solid #333"; div.style.padding = "10px 0";
@@ -445,13 +450,13 @@ function toggleGMSpyLocal() {
     const descEl = document.getElementById('liveTaskDesc');
     const instrBox = document.getElementById('instructionBox');
     if (isGM) {
-        if (!isLocked) { descEl.style.display = localSpyEnabled ? 'block' : 'none'; } 
-        else { instrBox.style.display = localSpyEnabled ? 'block' : 'none'; }
+        if (!isLocked) { if(descEl) descEl.style.display = localSpyEnabled ? 'block' : 'none'; } 
+        else { if(instrBox) instrBox.style.display = localSpyEnabled ? 'block' : 'none'; }
     }
 }
 
 function updateSpyBtnText() { const btn = document.getElementById('btnGMSpy'); if(btn) btn.innerText = localSpyEnabled ? "PIILOTA SPEKSIT" : "KATSO SPEKSIT"; }
-function toggleAdminPanel() { const p = document.getElementById('adminPanel'); p.style.display = p.style.display === 'none' ? 'block' : 'none'; if(p.style.display === 'block') { renderAdminPlayerList(); renderTaskLibrary(); } }
+function toggleAdminPanel() { const p = document.getElementById('adminPanel'); if(!p) return; p.style.display = p.style.display === 'none' ? 'block' : 'none'; if(p.style.display === 'block') { renderAdminPlayerList(); renderTaskLibrary(); } }
 function adjustScore(idx, amt) { db.ref('gameState/players/' + idx + '/score').transaction(s => Math.max(0, (s || 0) + amt)); }
 function removePlayer(idx) { if(confirm("Poista?")) { allPlayers.splice(idx, 1); db.ref('gameState/players').set(allPlayers); } }
 function updateIdentityUI() { 
@@ -461,28 +466,20 @@ function updateIdentityUI() {
     if(tag) tag.innerText = myName ? "PROFIILI: " + myName : "KIRJAUDU SISÄÄN"; 
 }
 
-// --- GM-TILAN AKTIVOINTI (Salasana tai 2s painallus) ---
 const gmBtn = document.getElementById('btnGM');
 let holdTimer;
 
 if (gmBtn) {
-    gmBtn.addEventListener('click', () => {
-        // Tavallinen klikkaus kysyy salasanaa
-        setRole('gm');
-    });
-
+    gmBtn.addEventListener('click', () => { setRole('gm'); });
     gmBtn.addEventListener('touchstart', (e) => {
         holdTimer = setTimeout(() => {
-            setRole('gm', true); // Ohittaa salasanan
+            setRole('gm', true);
             if ("vibrate" in navigator) navigator.vibrate(60);
         }, 2000);
     });
     gmBtn.addEventListener('touchend', () => clearTimeout(holdTimer));
-
     gmBtn.addEventListener('mousedown', () => {
-        holdTimer = setTimeout(() => {
-            setRole('gm', true); // Ohittaa salasanan
-        }, 2000);
+        holdTimer = setTimeout(() => { setRole('gm', true); }, 2000);
     });
     gmBtn.addEventListener('mouseup', () => clearTimeout(holdTimer));
 }
