@@ -19,6 +19,15 @@
 </head>
 <body class="player-mode">
 
+<div id="lotteryOverlay" class="lottery-overlay" style="display:none;">
+    <div class="lottery-content">
+        <div class="lottery-spinner"></div>
+        <h1 id="lotteryStatus">ARVOTAAN...</h1>
+    </div>
+</div>
+
+<div id="xpPopUp" class="xp-popup" style="display:none;">+2 XP</div>
+
 <div class="role-switcher">
     <button id="btnPlayer" class="role-btn player active" onclick="setRole('player')">Pelaaja</button>
     <button id="btnGM" class="role-btn gm" onclick="setRole('gm')">Game Master</button>
@@ -50,8 +59,14 @@
             <div style="background:rgba(255,159,67,0.1); padding:10px; border-radius:8px; margin-bottom:15px; text-align:left;">
                 <label style="font-size:0.6rem; color:var(--gm-accent); display:block; margin-bottom:5px;">GM TYÖKALUT</label>
                 <div style="display:flex; flex-wrap:wrap; gap:8px;">
-                    <input type="number" id="drawCount" value="1" style="margin:0; width:50px; padding:8px;">
-                    <button class="btn btn-gm" style="margin:0; padding:8px; font-size:0.6rem; flex:1;" onclick="drawRandom()">Arvo X pelaajaa</button>
+                    <select id="drawCount" style="margin:0; width:60px; padding:8px; background:var(--surface-light); color:white; border:1px solid rgba(255,255,255,0.1); border-radius:10px;">
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                    </select>
+                    <button class="btn btn-gm" style="margin:0; padding:8px; font-size:0.6rem; flex:1;" onclick="drawRandom()">Arvo pelaajat</button>
                     <button class="btn btn-secondary" style="margin:0; padding:8px; font-size:0.6rem; flex:1;" id="btnGMSpy" onclick="toggleGMSpyLocal()">KATSO SPEKSIT</button>
                 </div>
             </div>
@@ -65,7 +80,12 @@
     <div class="gm-only">
         <div class="card">
             <h2>Peli-ohjaus</h2>
-            <button class="btn btn-gm" onclick="confirmRandomize()">🎲 ARVO TEHTÄVÄ</button>
+            <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <button class="btn btn-gm" style="flex:2; margin:0;" onclick="confirmRandomize()">🎲 ARVO TEHTÄVÄ</button>
+                <select id="manualTaskSelect" onchange="selectManualTask(this.value)" style="flex:1; background:var(--surface-light); color:white; border-radius:12px; border:1px solid var(--gm-accent); padding:5px; font-size:0.7rem;">
+                    <option value="">TAI VALITSE...</option>
+                </select>
+            </div>
             <button class="btn btn-secondary" onclick="toggleAdminPanel()">🛠 ADMIN TYÖKALUT</button>
         </div>
         <div id="adminPanel" class="card" style="display:none; border-top: 4px solid var(--danger);">
@@ -92,7 +112,7 @@
     </div>
 
     <div class="card">
-        <h2 id="idTag" style="color:var(--accent);">ODOTTAA...</h2>
+        <h2 id="idTag" style="color:var(--accent);">PELAAJA: ODOTTAA...</h2>
         <div id="playerList"></div>
     </div>
 </div>
@@ -107,4 +127,3 @@
 </script>  
 </body>
 </html>
-
