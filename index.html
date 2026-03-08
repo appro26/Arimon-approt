@@ -19,17 +19,13 @@
 </head>
 <body class="player-mode">
 
-<div id="lotteryOverlay" class="lottery-overlay" style="display:none;">
-    <div class="lottery-content">
-        <div class="lottery-spinner"></div>
-        <h1 id="lotteryStatus">ETSITÄÄN SANKAREITA...</h1>
-    </div>
-</div>
-
 <div id="lotteryWinner" class="winner-announcement" style="display:none;">
     <div class="winner-content">
+        <div class="winner-icon">🏆</div>
         <h2>SINUT ON VALITTU!</h2>
-        <p>VALMISTAUDU SUORITTAMAAN</p>
+        <p id="winnerTaskName" style="font-weight:900; color:var(--accent); font-size:1.5rem; margin:10px 0;"></p>
+        <p id="winnerTaskDesc" style="font-style:italic; opacity:0.9;"></p>
+        <div class="timer-bar"></div>
     </div>
 </div>
 
@@ -47,13 +43,13 @@
         <button class="btn btn-primary" onclick="claimIdentity()">Liity peliin</button>
     </div>
 
-    <div id="liveTask" class="card task-box" style="display:none;">
+    <div id="liveTask" class="card task-box" style="display:none; contain: content;">
         <div id="taskPhaseTitle" style="font-size: 0.7rem; color: var(--accent); letter-spacing: 2px; font-weight: 700;">VAIHE: ILMOITTAUTUMINEN</div>
         <h1 id="liveTaskName" style="font-size: 2.2rem; margin: 15px 0;">TEHTÄVÄ ARVOTTU</h1>
         <div id="liveTaskPoints" style="font-weight: 900; color: var(--accent); margin-bottom: 20px; font-size: 1.2rem;">0 XP</div>
 
         <div class="player-only" id="joinAction">
-            <button id="btnVolu" class="btn btn-primary" onclick="volunteer()">MUKANA TEHTÄVÄSSÄ!</button>
+            <button id="btnVolu" class="btn btn-primary" onclick="volunteer()">HALUAN OSALLISTUA</button>
             <p id="cooldownWarning" style="color:var(--danger); font-size:0.8rem; font-weight:bold; display:none; text-transform: uppercase;">OLET JÄÄHYLLÄ - ODOTA</p>
         </div>
 
@@ -63,16 +59,17 @@
         </div>
 
         <div class="gm-only" id="gmPhaseControls" style="margin-top:20px; border-top:1px solid #333; padding-top:15px;">
-            <div style="background:rgba(255,159,67,0.1); padding:10px; border-radius:8px; margin-bottom:15px; text-align:left;">
+            <div style="background:rgba(255,159,67,0.1); padding:10px; border-radius:8px; margin-bottom:15px;">
                 <label style="font-size:0.6rem; color:var(--gm-accent); display:block; margin-bottom:5px;">GM TYÖKALUT</label>
                 <div style="display:flex; flex-wrap:wrap; gap:8px;">
-                    <select id="drawCount" style="margin:0; width:70px; padding:8px; background:var(--surface-light); color:white; border:1px solid rgba(255,255,255,0.1); border-radius:10px;">
-                    </select>
-                    <button class="btn btn-gm" style="margin:0; padding:8px; font-size:0.6rem; flex:1;" onclick="drawRandom()">Arvo pelaajat</button>
+                    <select id="drawCount" style="margin:0; width:70px; padding:8px; background:var(--surface-light); color:white; border:1px solid rgba(255,255,255,0.1); border-radius:10px;"></select>
+                    <button class="btn btn-gm" style="margin:0; padding:8px; font-size:0.6rem; flex:1;" onclick="drawRandom()">ARVO VALITUT</button>
                     <button class="btn btn-secondary" style="margin:0; padding:8px; font-size:0.6rem; flex:1;" id="btnGMSpy" onclick="toggleGMSpyLocal()">KATSO SPEKSIT</button>
                 </div>
             </div>
-            <div id="volunteerGrid" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:15px;"></div>
+            
+            <div id="volunteerGrid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap:5px; margin-bottom:15px; max-height: 200px; overflow-y: auto;"></div>
+            
             <button class="btn btn-gm" id="btnLock" onclick="lockParticipants()">Lukitse & Paljasta kaikille</button>
             <button class="btn btn-success" id="btnFinish" style="display:none;" onclick="showScoring()">Jaa pisteet & Nollaa</button>
             <div id="scoringArea"></div>
@@ -85,37 +82,52 @@
             <div style="display:flex; gap:10px; margin-bottom:10px;">
                 <button class="btn btn-gm" style="flex:2; margin:0;" onclick="confirmRandomize()">🎲 ARVO TEHTÄVÄ</button>
                 <select id="manualTaskSelect" onchange="selectManualTask(this.value)" style="flex:1; background:var(--surface-light); color:white; border-radius:12px; border:1px solid var(--gm-accent); padding:5px; font-size:0.7rem;">
-                    <option value="">TAI VALITSE...</option>
+                    <option value="">VALITSE...</option>
                 </select>
             </div>
-            <button class="btn btn-secondary" onclick="toggleAdminPanel()">🛠 ADMIN TYÖKALUT</button>
+            <button class="btn btn-secondary" onclick="toggleAdminPanel()">🛠 ADMIN & ASETUKSET</button>
         </div>
+
         <div id="adminPanel" class="card" style="display:none; border-top: 4px solid var(--danger);">
+            <div class="admin-settings" style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                <h4 style="margin:0 0 10px 0; font-size:0.8rem; color:var(--gm-accent);">PELIN ASETUKSET</h4>
+                <div style="display:flex; flex-direction:column; gap:10px; font-size:0.8rem;">
+                    <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                        <input type="checkbox" id="useCooldowns" checked onchange="updateConfig('useCooldowns', this.checked)"> Käytä jäähymekaniikkaa
+                    </label>
+                    <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                        <input type="checkbox" id="excludeUsedTasks" checked onchange="updateConfig('excludeUsedTasks', this.checked)"> Poista jo tehdyt arvonnasta
+                    </label>
+                </div>
+            </div>
+
             <h3>Pelaajat</h3>
-            <div id="adminPlayerList"></div>
+            <div id="adminPlayerList" style="max-height: 300px; overflow-y: auto; contain: content;"></div>
             <div style="display:flex; gap:10px; margin-top:10px;">
-                <input type="text" id="adminNewPlayerName" placeholder="Uusi..." style="margin:0;">
+                <input type="text" id="adminNewPlayerName" placeholder="Uusi pelaaja..." style="margin:0;">
                 <button class="btn btn-primary" style="width:60px; margin:0;" onclick="adminAddPlayer()">+</button>
             </div>
+            
             <hr style="border:0; border-top:1px solid #333; margin:20px 0;">
             
             <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
-                <h4 style="margin-top:0; font-size:0.8rem; color:var(--gm-accent);">LISÄÄ UUSI TEHTÄVÄ</h4>
-                <input type="text" id="newTaskName" placeholder="Tehtävän nimi...">
-                <textarea id="newTaskDesc" placeholder="Tehtävän kuvaus..."></textarea>
-                <input type="number" id="newTaskPoints" placeholder="Pisteet (XP)" value="2">
-                <button class="btn btn-success" style="padding:10px; font-size:0.7rem;" onclick="adminCreateTask()">+ LISÄÄ TEHTÄVÄPANKKIIN</button>
+                <h4 style="margin:top:0; font-size:0.8rem; color:var(--gm-accent);">LUO UUSI TEHTÄVÄ</h4>
+                <input type="text" id="newTaskName" placeholder="Nimi...">
+                <textarea id="newTaskDesc" placeholder="Kuvaus..." style="height:60px;"></textarea>
+                <input type="number" id="newTaskPoints" placeholder="XP" value="2">
+                <button class="btn btn-success" style="padding:10px; font-size:0.7rem;" onclick="adminCreateTask()">+ LISÄÄ PANKKIIN</button>
             </div>
 
             <h3>Tehtäväpankki</h3>
-            <div id="taskLibraryEditor"></div>
-            <button class="btn btn-danger" onclick="resetGame()">SERVER WIPE (VAIN PISTEET)</button>
+            <div id="taskLibraryEditor" style="max-height: 300px; overflow-y: auto;"></div>
+            
+            <button class="btn btn-danger" style="margin-top:20px;" onclick="resetGame()">SERVER WIPE (NOLLAA KAIKKI)</button>
         </div>
     </div>
 
     <div class="card">
         <h2 id="idTag" style="color:var(--accent);">PELAAJA: ODOTTAA...</h2>
-        <div id="playerList"></div>
+        <div id="playerList" style="contain: content;"></div>
     </div>
 </div>
 
@@ -123,7 +135,7 @@
 <script>
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js')
-      .then(reg => console.log('SW rekisteröity!', reg))
+      .then(reg => console.log('PWA Service Worker valmis!'))
       .catch(err => console.error('SW virhe:', err));
   }
 </script>  
