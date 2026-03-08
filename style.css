@@ -85,7 +85,7 @@ body {
 }
 .player-row.me { border-color: var(--accent); background: rgba(0, 229, 255, 0.05); }
 
-/* UUSI: Synttärisankari korostus */
+/* Synttärisankari korostus */
 .player-row.is-hero { 
     border: 1px solid var(--gm-accent); 
     background: rgba(255, 159, 67, 0.05); 
@@ -127,7 +127,6 @@ input, textarea, select {
     margin-top: 5px;
 }
 
-/* KORJATTU: Pistevalinnat ja täpät rinnakkain iPhonella */
 .point-input-group { 
     display: flex; 
     align-items: center; 
@@ -154,9 +153,9 @@ input, textarea, select {
 .on-cooldown-text { color: var(--danger); font-weight: 900; font-size: 0.65rem; margin-left: 5px; }
 .btn.on-cooldown { border: 1px solid var(--danger) !important; opacity: 0.5; cursor: not-allowed; }
 
-/* NOPEAMPI ARVONTA */
+/* --- PÄIVITETTY: LUONNOLLISEMPI ARVONTA --- */
 .shuffling {
-    animation: rapid-flash 0.1s infinite alternate;
+    animation: rapid-flash 0.15s infinite alternate;
     border: 2px solid #fff !important;
     background: var(--accent) !important;
     color: #000 !important;
@@ -164,8 +163,15 @@ input, textarea, select {
 }
 
 @keyframes rapid-flash {
-    from { opacity: 1; transform: scale(1.02); }
-    to { opacity: 0.5; transform: scale(0.98); }
+    from { 
+        opacity: 1; 
+        transform: scale(1.02); 
+    }
+    to { 
+        opacity: 0.4; 
+        transform: scale(0.96); 
+        filter: brightness(1.2) contrast(1.2);
+    }
 }
 
 /* PREMIUM XP POPUP */
@@ -236,6 +242,11 @@ input, textarea, select {
 @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
 @keyframes shrink { from { width: 100%; } to { width: 0%; } }
 
+/* --- PÄIVITETTY: Voitto-palkki lyhennetty 1.5 sekuntiin --- */
 .timer-bar { width: 100%; height: 6px; background: rgba(255,255,255,0.05); margin-top: 30px; border-radius: 3px; overflow: hidden; }
-.timer-bar::after { content: ''; display: block; height: 100%; background: var(--accent); width: 100%; animation: shrink 3s linear forwards; }
+.timer-bar::after { 
+    content: ''; display: block; height: 100%; background: var(--accent); width: 100%; 
+    animation: shrink 1.5s linear forwards; 
+}
+
 .winner-icon { font-size: 3.5rem; margin-bottom: 15px; animation: bounce 0.5s ease infinite alternate; }
