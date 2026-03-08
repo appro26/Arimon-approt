@@ -93,7 +93,7 @@ db.ref('gameState').on('value', (snap) => {
     renderLeaderboard(config.useCooldowns, heroId);
     updateManualTaskSelect();
     
-    // Renderöidään admin-jutut vain jos paneeli auki
+    // Admin-jutut
     if(document.getElementById('adminPanel').style.display === 'block') {
         renderAdminPlayerList(heroId);
         renderTaskLibrary();
@@ -114,7 +114,6 @@ db.ref('gameState').on('value', (snap) => {
         const descEl = document.getElementById('liveTaskDesc');
         const instrBox = document.getElementById('instructionBox');
         
-        // Logiikka: Tehtävänanto näkyy vasta kun lukittu tai GM/Spy käytössä
         if (isLocked) {
             descEl.style.display = 'none';
             if (isMePart || isGM || localSpyEnabled) {
@@ -139,7 +138,6 @@ db.ref('gameState').on('value', (snap) => {
         document.getElementById('notParticipatingMsg').style.display = (isLocked && !isMePart && !isGM) ? 'block' : 'none';
         document.getElementById('joinAction').style.display = isLocked ? 'none' : 'block';
 
-        // Osallistuminen & Jäähy
         const vBtn = document.getElementById('btnVolu');
         const myD = allPlayers.find(p => p.name === myName);
         const onCD = config.useCooldowns && myD && myD.cooldown;
@@ -160,7 +158,6 @@ db.ref('gameState').on('value', (snap) => {
         taskBox.style.display = 'none'; 
     }
 
-    // Winner Overlay
     if (isLocked && live && isMePart && !isTaskActive) {
         const overlay = document.getElementById('lotteryWinner');
         document.getElementById('winnerTaskName').innerText = live.n;
@@ -183,7 +180,7 @@ function setRole(r) {
 let gmHoldTimer;
 const gmBtn = document.getElementById('btnGM');
 if(gmBtn) {
-    const startPress = () => {
+    const startPress = (e) => {
         gmHoldTimer = setTimeout(() => {
             setRole('gm');
             if(navigator.vibrate) navigator.vibrate(80);
@@ -192,7 +189,8 @@ if(gmBtn) {
     const endPress = () => clearTimeout(gmHoldTimer);
     gmBtn.addEventListener('mousedown', startPress);
     gmBtn.addEventListener('mouseup', endPress);
-    gmBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startPress(); });
+    gmBtn.addEventListener('mouseleave', endPress);
+    gmBtn.addEventListener('touchstart', (e) => { startPress(); });
     gmBtn.addEventListener('touchend', endPress);
 }
 
@@ -260,6 +258,27 @@ function showScoring() {
     }); 
 }
 
+// --- ADMIN TOIMINNOT ---
+
+function adminAddPlayer() {
+    const input = document.getElementById('adminNewPlayerName');
+    const n = input.value.trim();
+    if(!n) return;
+    db.ref('gameState/players').once('value', snap => {
+        let p = snap.val() || [];
+        if(!p.find(x => x.name === n)) {
+            p.push({ name: n, score: 0, cooldown: false });
+            db.ref('gameState/players').set(p);
+            input.value = '';
+        } else { alert("Pelaaja on jo listalla!"); }
+    });
+}
+
+function adjustScore(idx, amt) { db.ref('gameState/players/' + idx + '/score').transaction(s => Math.max(0, (s || 0) + amt)); }
+function removePlayer(idx) { if(confirm("Poista pelaaja?")) { allPlayers.splice(idx, 1); db.ref('gameState/players').set(allPlayers); } }
+function setBdayHero(idx) { db.ref('gameState/config/bdayHero').transaction(curr => curr === idx ? null : idx); }
+function adminToggleCooldown(idx) { db.ref(`gameState/players/${idx}/cooldown`).set(!allPlayers[idx].cooldown); }
+
 // --- RENDERÖINTI ---
 
 function renderLeaderboard(showCD, heroId) {
@@ -304,6 +323,7 @@ function renderGMVolunteers(results, isLocked, isShuffling, showCD) {
 
 function renderAdminPlayerList(heroId) {
     const list = document.getElementById('adminPlayerList');
+    if(!list) return;
     list.innerHTML = "";
     allPlayers.forEach((p, i) => {
         const div = document.createElement('div');
@@ -334,8 +354,8 @@ function renderTaskLibrary() {
             <textarea onchange="updateTaskInLib(${i}, 'd', this.value)">${t.d}</textarea>
             <div class="admin-task-controls" style="background:none; padding:0;">
                 <div class="point-input-group">
-                    <input type="number" value="${t.p}" onchange="updateTaskInLib(${i}, 'p', parseInt(this.value))">
-                    <label class="minus-label"><input type="checkbox" ${t.m?'checked':''} onchange="updateTaskInLib(${i}, 'm', this.checked)"> Miinus</label>
+                    <input type="number" style="width:50px" value="${t.p}" onchange="updateTaskInLib(${i}, 'p', parseInt(this.value))">
+                    <label class="minus-label"><input type="checkbox" ${t.m?'checked':''} onchange="updateTaskInLib(${i}, 'm', this.checked)"> MIINUS</label>
                     <label class="minus-label" style="color:var(--gm-accent);"><input type="checkbox" ${t.b?'checked':''} onchange="updateTaskInLib(${i}, 'b', this.checked)"> 🎂</label>
                 </div>
                 <button class="btn btn-danger" style="width:auto; padding:5px 10px; margin:0;" onclick="removeTask(${i})">POISTA</button>
@@ -366,7 +386,6 @@ function updateDrawCountSelect(task) {
         const opt = document.createElement('option');
         opt.value = i; opt.innerText = i; sel.appendChild(opt);
     }
-    // Päivitetään luku tehtävän speksien mukaan (oletusarvo)
     if (!sel.getAttribute('data-init') || sel.getAttribute('data-task') != task.id) {
         sel.value = task.m || 1;
         sel.setAttribute('data-init', 'true');
@@ -399,12 +418,8 @@ function selectManualTask(idx) {
 }
 
 function updateTaskInLib(idx, field, val) { db.ref(`gameState/tasks/${idx}/${field}`).set(val); }
-function removeTask(idx) { if(confirm("Poista?")) { currentTasks.splice(idx, 1); db.ref('gameState/tasks').set(currentTasks); } }
-function setBdayHero(idx) { db.ref('gameState/config/bdayHero').transaction(curr => curr === idx ? null : idx); }
-function adminToggleCooldown(idx) { db.ref(`gameState/players/${idx}/cooldown`).set(!allPlayers[idx].cooldown); }
+function removeTask(idx) { if(confirm("Poista tehtävä kirjastosta?")) { currentTasks.splice(idx, 1); db.ref('gameState/tasks').set(currentTasks); } }
 function updateConfig(key, val) { db.ref(`gameState/config/${key}`).set(val); }
-function adjustScore(idx, amt) { db.ref('gameState/players/' + idx + '/score').transaction(s => Math.max(0, (s || 0) + amt)); }
-function removePlayer(idx) { if(confirm("Poista?")) { allPlayers.splice(idx, 1); db.ref('gameState/players').set(allPlayers); } }
 function toggleParticipant(name) {
     db.ref('gameState/participants').transaction(list => {
         list = list || []; const idx = list.findIndex(r => r.name === name);
