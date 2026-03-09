@@ -1,22 +1,23 @@
 {
   "short_name": "Arimon Approt",
-  "name": "Arimon Approt",
+  "name": "Arimon Approt - Peli",
+  "description": "PWA peli appro-iltoihin.",
   "display": "standalone",
   "start_url": "index.html",
-  "theme_color": "#050507",
-  "background_color": "#050507",
+  "theme_color": "#000000",
+  "background_color": "#000000",
   "icons": [
     {
       "src": "https://img.icons8.com/fluency/192/beer.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     },
     {
       "src": "https://img.icons8.com/fluency/512/beer.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     }
   ]
 }
