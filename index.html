@@ -7,9 +7,9 @@
     <meta name="apple-mobile-web-app-title" content="Arimon Approt">
     <meta name="application-name" content="Arimon Approt">
     
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=3">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#050507">
+    <meta name="theme-color" content="#000000">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
 
@@ -121,7 +121,7 @@
                         <input type="checkbox" id="visBday" onchange="updateVisConfig('bday', this.checked)"> 
                         <label for="visBday" style="color:var(--gm-accent)">Synttärisankaribonus</label>
                     </div>
-                    <p style="font-size:0.6rem; color:var(--muted); margin-top:10px;">Huom: Tämä asetus koskee myös Game Masteria. Kuvaukset ja ohjeet näkyvät aina valituille pelaajille, kun tehtävä on lukittu, tai GM:lle "SPEKSIT"-napista.</p>
+                    <p style="font-size:0.6rem; color:var(--muted); margin-top:10px;">Huom: Game Master näkee kaikki tiedot painamalla "SPEKSIT". Pelaajille kaikki tiedot paljastuvat automaattisesti, kun tehtävä on lukittu.</p>
                 </div>
                 
                 <h2 style="margin-top:20px;">Valitse tehtävä manuaalisesti</h2>
@@ -162,7 +162,7 @@
                             <label class="minus-label" style="color:var(--gm-accent);">
                                 <input type="checkbox" id="newTaskBday"> <span>Synttärisankari-XP</span>
                             </label>
-                            <label class="minus-label" style="color:#ffd700;">
+                            <label class="minus-label" style="color:var(--hero-gold);">
                                 <input type="checkbox" id="newTaskIsHero"> <span>Kultainen Sankaritehtävä</span>
                             </label>
                         </div>
