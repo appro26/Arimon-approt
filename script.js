@@ -6,9 +6,7 @@ const db = firebase.database();
 // --- PWA ASENNUSLOGIIKKA ---
 let deferredPrompt;
 window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    checkInstallStatus();
+    e.preventDefault(); deferredPrompt = e; checkInstallStatus();
 });
 
 function checkInstallStatus() {
@@ -53,12 +51,6 @@ window.dismissInstallPrompt = function() {
     if (installCard) installCard.style.display = 'none';
 };
 
-// KORJAUS: Varmistetaan että kirjautumisruutu piirretään HETI, vaikkei nettiä olisikaan
-document.addEventListener('DOMContentLoaded', () => {
-    checkInstallStatus();
-    updateIdentityUI(); 
-});
-
 // --- GLOBAALIT MUUTTUJAT ---
 let myName = localStorage.getItem('appro_name') || null;
 let currentResetId = localStorage.getItem('appro_reset_id') || null;
@@ -68,12 +60,9 @@ let localSpyState = {};
 let lastMyScore = null;
 let lastKnownTasks = {}; 
 let taskHistory = [];
-
 let wasInGame = false; 
-
 let isPlayerCompactMode = false;
 let isGMCompactMode = false;
-
 let pendingWinnerTasks = [];
 let winnerTimeout = null;
 let pendingXP = 0;
@@ -82,7 +71,7 @@ let xpTimeout = null;
 const APP_NAME = "Arimon Approt";
 document.title = APP_NAME;
 
-// --- TEHTÄVÄPAKKA ---
+// OLETUSTEHTÄVÄT
 const defaultTasks = [
     { id: 1, n: "Mise en place", d: "Varmista, että kaikilla pöytäseurueen jäsenillä on lasissa juotavaa (myös vettä). Jos jollain on tyhjää, täytä se.", p: 2, m: 2, b: false, r: 2 },
     { id: 2, n: "Uudelleenkäynnistys (Reboot)", d: "Kaikkien suorittajien on juotava lasi vettä yhdeltä istumalta 'järjestelmän vakauttamiseksi'.", p: 1, m: 3, b: false, r: 3 },
@@ -166,8 +155,6 @@ const defaultTasks = [
     { id: 80, n: "Kiekon palautus", d: "Käy viemässä tyhjä lasi tiskille (itse valitsemasi) mahdollisimman tyylikkäästi.", p: 1, m: 0, b: false, r: 1 },
     { id: 81, n: "Admin-komento", d: "Sankari saa päättää, kuka suorittajista joutuu kertomaan vitsin tai juomaan lasin vettä.", p: 2, m: 0, b: true, r: 2 },
     { id: 82, n: "Victory Dance", d: "Tee lyhyt ja energinen voittotanssi baarin lattialla (PUBG tyyliin).", p: 3, m: 1, b: false, r: 1 },
-    
-    // --- SANKARITEHTÄVÄT ---
     { id: 83, n: "Admin-huolto (Sankari)", d: "Sankarin on kerättävä seurueen kaikki tyhjät tölkit/lasit ja vietävä ne tiskille yksin.", p: 2, m: 1, b: true, r: 1, isHero: true },
     { id: 84, n: "Kiekon etsintä (Sankari)", d: "Sankari joutuu nousemaan ylös ja kävelemään baarin ympäri etsimässä 'kadonnutta kiekkoa' silmät kiinni ohjattuna.", p: 2, m: 1, b: true, r: 1, isHero: true },
     { id: 85, n: "PUBG Emote (Sankari)", d: "Sankarin on esitettävä jokin PUBG-pelin tuuletus tai liike baarin keskellä mahdollisimman näyttävästi.", p: 3, m: 1, b: true, r: 1, isHero: true },
@@ -190,66 +177,56 @@ const defaultTasks = [
     { id: 102, n: "System Overload (Sankari)", d: "Sankarin on lueteltava 10 IT-termiä, 10 frisbeegolf-termiä tai 10 PUBG-termiä 30 sekunnissa.", p: 3, m: 1, b: true, r: 1, isHero: true }
 ];
 
-function logEvent(msg) {
-    const time = new Date().toLocaleTimeString('fi-FI');
-    db.ref('gameState/eventLog').push({ time, msg });
-}
+// --- OFFLINE-MOOTTORI (UUSI) ---
+let localGameState = null;
 
-window.toggleGMCompactMode = function() {
-    isGMCompactMode = !isGMCompactMode;
-    const btn = document.getElementById('gmCompactToggleBtn');
-    if (btn) btn.innerText = isGMCompactMode ? 'LAAJENNA NÄKYMÄ' : 'SUPISTA NÄKYMÄ';
-    triggerRender();
-};
-
-window.togglePlayerCompactMode = function() {
-    isPlayerCompactMode = !isPlayerCompactMode;
-    const btn = document.getElementById('playerCompactToggleBtn');
-    if (btn) btn.innerText = isPlayerCompactMode ? 'LAAJENNA NÄKYMÄ' : 'SUPISTA NÄKYMÄ';
-    triggerRender();
-};
-
-function triggerRender() {
-    db.ref('gameState').once('value', snap => {
-        const d = snap.val();
-        renderActiveTasks(d.activeTasks || {}, d.config || {});
-    });
-}
-
-// KORJATTU NOLLAUS: Tyhjentää ruudun heti ja jonottaa tietokannan nollauksen
-window.resetGame = function() {
-    if (confirm("VAROITUS: Tämä poistaa kaikki tiedot. Jatketaanko?")) {
-        const newResetId = Date.now().toString();
-        const resetData = {
-            players: [],
-            tasks: defaultTasks,
-            usedTaskIds: [],
-            activeTasks: {},
-            history: [],
-            eventLog: {},
-            resetId: newResetId,
-            config: { 
-                useCooldowns: true, 
-                strictVolunteer: false,
-                excludeUsedTasks: true, 
-                bdayHero: null,
-                visibility: { title: true, points: true, drawCount: false, desc: false, minus: true, bday: true },
-                heroDraw: { include: true, weighted: false, interval: 4, drawCount: 0 }
-            }
+document.addEventListener('DOMContentLoaded', () => {
+    checkInstallStatus();
+    
+    // Lataa peli heti muistista vaikkei nettiä ole
+    const savedBackup = localStorage.getItem('arimon_backup');
+    if (savedBackup) {
+        try {
+            localGameState = JSON.parse(savedBackup);
+            processGameState(localGameState);
+        } catch(e){}
+    } else {
+        // Ensimmäinen avaus koskaan ilman nettiä - luodaan tyhjä peli
+        localGameState = {
+            players: [], tasks: defaultTasks, activeTasks: {}, history: {}, eventLog: {},
+            config: { useCooldowns: true, strictVolunteer: false, excludeUsedTasks: true, bdayHero: null, visibility: { title: true, points: true, drawCount: false, desc: false, minus: true, bday: true }, heroDraw: { include: true, weighted: false, interval: 4, drawCount: 0 } }
         };
-        
-        db.ref('gameState').set(resetData).catch(err => console.log("Offline nollaus odottaa verkkoa."));
-        localStorage.clear(); 
-        location.reload();
+        processGameState(localGameState);
     }
-};
+    updateIdentityUI(); 
+});
 
+function triggerLocalRender() {
+    if (localGameState) {
+        localStorage.setItem('arimon_backup', JSON.stringify(localGameState));
+        processGameState(localGameState);
+    }
+}
+
+// --- FIREBASE SYNKRONOINTI ---
 db.ref('gameState').on('value', (snap) => {
     const data = snap.val();
     if(!data) return;
 
-    if (currentResetId && data.resetId !== currentResetId) { localStorage.clear(); location.reload(); return; }
-    if (!currentResetId) { currentResetId = data.resetId; localStorage.setItem('appro_reset_id', data.resetId); }
+    // Ohitetaan Firebasen "osittaiset" offline-päivitykset, jotta ruutu ei tyhjene
+    if (!data.tasks || !data.config) return;
+
+    localGameState = data;
+    localStorage.setItem('arimon_backup', JSON.stringify(data));
+    processGameState(data);
+});
+
+// Pää-renderöintifunktio
+function processGameState(data) {
+    if(!data) return;
+
+    if (currentResetId && data.resetId && data.resetId !== currentResetId) { localStorage.clear(); location.reload(); return; }
+    if (!currentResetId && data.resetId) { currentResetId = data.resetId; localStorage.setItem('appro_reset_id', data.resetId); }
 
     allPlayers = data.players || [];
     
@@ -320,7 +297,45 @@ db.ref('gameState').on('value', (snap) => {
     checkForNewWinnerPopups(data.activeTasks || {});
     renderActiveTasks(data.activeTasks || {}, config);
     lastKnownTasks = JSON.parse(JSON.stringify(data.activeTasks || {}));
-});
+}
+
+// --- TOIMINNOT (Kaikki nyt suojattu Lokaalilla tilalla) ---
+
+function logEvent(msg) {
+    const time = new Date().toLocaleTimeString('fi-FI');
+    const lId = "l_" + Date.now();
+    if(!localGameState.eventLog) localGameState.eventLog = {};
+    localGameState.eventLog[lId] = { time, msg };
+    db.ref(`gameState/eventLog/${lId}`).set({ time, msg });
+    triggerLocalRender();
+}
+
+window.toggleGMCompactMode = function() {
+    isGMCompactMode = !isGMCompactMode;
+    const btn = document.getElementById('gmCompactToggleBtn');
+    if (btn) btn.innerText = isGMCompactMode ? 'LAAJENNA NÄKYMÄ' : 'SUPISTA NÄKYMÄ';
+    triggerLocalRender();
+};
+
+window.togglePlayerCompactMode = function() {
+    isPlayerCompactMode = !isPlayerCompactMode;
+    const btn = document.getElementById('playerCompactToggleBtn');
+    if (btn) btn.innerText = isPlayerCompactMode ? 'LAAJENNA NÄKYMÄ' : 'SUPISTA NÄKYMÄ';
+    triggerLocalRender();
+};
+
+window.resetGame = function() {
+    if (confirm("VAROITUS: Tämä poistaa kaikki tiedot. Jatketaanko?")) {
+        const newResetId = Date.now().toString();
+        const resetData = {
+            players: [], tasks: defaultTasks, usedTaskIds: [], activeTasks: {}, history: {}, eventLog: {}, resetId: newResetId,
+            config: { useCooldowns: true, strictVolunteer: false, excludeUsedTasks: true, bdayHero: null, visibility: { title: true, points: true, drawCount: false, desc: false, minus: true, bday: true }, heroDraw: { include: true, weighted: false, interval: 4, drawCount: 0 } }
+        };
+        db.ref('gameState').set(resetData).catch(err => console.log("Offline nollaus odottaa verkkoa."));
+        localStorage.clear(); 
+        location.reload();
+    }
+};
 
 function checkForNewWinnerPopups(newTasks) {
     if (!myName) return;
@@ -389,7 +404,10 @@ function showXPAnimation(points) {
 }
 
 window.updateTaskDrawCount = function(taskId, val) {
-    db.ref(`gameState/activeTasks/${taskId}/r`).set(parseInt(val));
+    if(localGameState.activeTasks && localGameState.activeTasks[taskId]) {
+        localGameState.activeTasks[taskId].r = parseInt(val);
+        db.ref(`gameState/activeTasks/${taskId}/r`).set(parseInt(val));
+    }
 };
 
 function renderActiveTasks(tasksObj, config) {
@@ -590,57 +608,53 @@ function renderActiveTasks(tasksObj, config) {
 }
 
 function drawAllTasks() {
-    db.ref('gameState/activeTasks').once('value', snap => {
-        const tasks = snap.val() || {};
-        let drawsTriggered = 0;
-        Object.keys(tasks).forEach(taskId => {
-            const taskData = tasks[taskId];
-            if (!taskData.locked && !taskData.isHero && (taskData.participants || []).length > 0 && !taskData.drawn) {
-                drawRandom(taskId, true);
-                drawsTriggered++;
-            }
-        });
-        if (drawsTriggered > 0) logEvent(`Massatoiminto: Arvottu pelaajat ${drawsTriggered} tehtävään.`);
-        else alert("Ei arvottavia tehtäviä.");
+    let drawsTriggered = 0;
+    if(!localGameState.activeTasks) return;
+    Object.keys(localGameState.activeTasks).forEach(taskId => {
+        const taskData = localGameState.activeTasks[taskId];
+        if (!taskData.locked && !taskData.isHero && (taskData.participants || []).length > 0 && !taskData.drawn) {
+            drawRandom(taskId, true);
+            drawsTriggered++;
+        }
     });
+    if (drawsTriggered > 0) logEvent(`Massatoiminto: Arvottu pelaajat ${drawsTriggered} tehtävään.`);
+    else alert("Ei arvottavia tehtäviä.");
 }
 
 function lockAllTasks() {
-    db.ref('gameState/activeTasks').once('value', snap => {
-        const tasks = snap.val() || {};
-        let count = 0;
-        Object.keys(tasks).forEach(taskId => {
-            const taskData = tasks[taskId];
-            if (!taskData.locked && !taskData.isHero && (taskData.participants || []).length > 0) {
-                lockParticipants(taskId, true);
-                count++;
-            }
-        });
-        if (count > 0) logEvent(`Massatoiminto: Lukittu ${count} tehtävää.`);
-        else alert("Ei lukittavia tehtäviä.");
+    let count = 0;
+    if(!localGameState.activeTasks) return;
+    Object.keys(localGameState.activeTasks).forEach(taskId => {
+        const taskData = localGameState.activeTasks[taskId];
+        if (!taskData.locked && !taskData.isHero && (taskData.participants || []).length > 0) {
+            lockParticipants(taskId, true);
+            count++;
+        }
     });
+    if (count > 0) logEvent(`Massatoiminto: Lukittu ${count} tehtävää.`);
+    else alert("Ei lukittavia tehtäviä.");
 }
 
 function finishAllTasks() {
-    db.ref('gameState/activeTasks').once('value', snap => {
-        const tasks = snap.val() || {};
-        let finishTriggered = 0;
-        Object.keys(tasks).forEach(taskId => {
-            const taskData = tasks[taskId];
-            if (taskData.locked || taskData.isHero) {
-                showScoring(taskId, true); 
-                finishTriggered++;
-            }
-        });
-        if (finishTriggered > 0) logEvent(`Massatoiminto: Merkitty ${finishTriggered} tehtävää valmiiksi.`);
-        else alert("Ei valmiita tehtäviä odottamassa pisteytystä.");
+    let finishTriggered = 0;
+    if(!localGameState.activeTasks) return;
+    Object.keys(localGameState.activeTasks).forEach(taskId => {
+        const taskData = localGameState.activeTasks[taskId];
+        if (taskData.locked || taskData.isHero) {
+            showScoring(taskId, true); 
+            finishTriggered++;
+        }
     });
+    if (finishTriggered > 0) logEvent(`Massatoiminto: Merkitty ${finishTriggered} tehtävää valmiiksi.`);
+    else alert("Ei valmiita tehtäviä odottamassa pisteytystä.");
 }
 
 function deleteActiveTask(taskId) {
     if (confirm("Haluatko varmasti poistaa tämän aktiivisen tehtävän?")) {
+        delete localGameState.activeTasks[taskId];
         db.ref('gameState/activeTasks/' + taskId).remove();
         logEvent("Aktiivinen tehtävä poistettu manuaalisesti.");
+        triggerLocalRender();
     }
 }
 
@@ -648,21 +662,26 @@ function drawRandom(taskId, isMassAction = false) {
     const sel = document.getElementById(`drawCount-${taskId}`);
     const count = sel ? (parseInt(sel.value) || 1) : 1;
     
-    db.ref(`gameState/activeTasks/${taskId}`).once('value', s => {
-        const taskData = s.val();
-        let list = taskData.participants || [];
-        if(list.length === 0) return;
+    let taskData = localGameState.activeTasks[taskId];
+    if(!taskData) return;
+    let list = taskData.participants || [];
+    if(list.length === 0) return;
 
-        db.ref(`gameState/activeTasks/${taskId}`).update({ isLotteryRunning: true });
+    taskData.isLotteryRunning = true;
+    triggerLocalRender();
+    
+    setTimeout(() => {
+        let shuffled = [...list].sort(() => 0.5 - Math.random());
+        let winners = shuffled.slice(0, count).map(p => ({ ...p, win: true }));
         
-        setTimeout(() => {
-            let shuffled = [...list].sort(() => 0.5 - Math.random());
-            let winners = shuffled.slice(0, count).map(p => ({ ...p, win: true }));
-            
-            db.ref(`gameState/activeTasks/${taskId}`).update({ participants: winners, isLotteryRunning: false, drawn: true });
-            if (!isMassAction) logEvent(`Arvottu ${count} suorittajaa tehtävään: ${taskData.n}`);
-        }, 2000); 
-    });
+        taskData.participants = winners;
+        taskData.isLotteryRunning = false;
+        taskData.drawn = true;
+        
+        db.ref(`gameState/activeTasks/${taskId}`).update({ participants: winners, isLotteryRunning: false, drawn: true });
+        if (!isMassAction) logEvent(`Arvottu ${count} suorittajaa tehtävään: ${taskData.n}`);
+        triggerLocalRender();
+    }, 2000); 
 }
 
 function renderGMGrid(taskId, results, isLocked, isShuffling, showCD, taskData) {
@@ -680,7 +699,6 @@ function renderGMGrid(taskId, results, isLocked, isShuffling, showCD, taskData) 
     allPlayers.forEach((p, index) => {
         const btn = grid.children[index];
         const isInc = results.some(r => r.name === p.name);
-        
         const isBannedFromThis = showCD && taskData.bannedPlayers && taskData.bannedPlayers.includes(p.name);
         
         btn.className = `btn ${isInc ? 'btn-primary selected-participant' : 'btn-secondary'} ${isBannedFromThis ? 'on-cooldown' : ''}`;
@@ -712,14 +730,14 @@ function renderGMGrid(taskId, results, isLocked, isShuffling, showCD, taskData) 
 
 function toggleGMSpy(taskId) {
     localSpyState[taskId] = !localSpyState[taskId];
-    triggerRender();
+    triggerLocalRender();
 }
 
 function setRole(r) {
     document.body.className = r + '-mode';
     document.getElementById('btnPlayer').classList.toggle('active', r === 'player');
     document.getElementById('btnGM').classList.toggle('active', r === 'gm');
-    triggerRender();
+    triggerLocalRender();
 }
 
 let gmHoldTimer;
@@ -733,405 +751,369 @@ if(gmBtn) {
     gmBtn.addEventListener('touchend', endPress);
 }
 
-// KORJAUS: Kirjautuminen tekee tallennuksen OFFLINE-turvallisella tavalla
 function claimIdentity() {
     const n = document.getElementById('playerNameInput').value.trim();
     if(!n) return; 
     myName = n; 
     localStorage.setItem('appro_name', n);
-    updateIdentityUI(); // Pakottaa ruudun päivittymään ja kirjautumaan sisään
+    updateIdentityUI(); 
 
-    // Tallenna kantaan. Jos offline, tämä jää kiltisti odottamaan verkkoa kaatamatta peliä
-    db.ref('gameState/players').once('value').then(snap => {
-        let p = snap.val() || []; 
-        if(!p.find(x => x.name === n)) {
-            p.push({ name: n, score: 0, cooldown: false }); 
-            db.ref('gameState/players').set(p);
-            logEvent(`Uusi pelaaja liittyi: ${n}`);
-        }
-    }).catch(err => console.log("Offline: Pelaaja tallennetaan pilveen kun netti palaa."));
+    if(!localGameState.players) localGameState.players = [];
+    if(!localGameState.players.find(x => x.name === n)) {
+        localGameState.players.push({ name: n, score: 0, cooldown: 0 }); 
+        db.ref('gameState/players').set(localGameState.players);
+        logEvent(`Uusi pelaaja liittyi: ${n}`);
+    }
 }
 
-// KORJAUS: Kaikki transaktiot muutettu offline-kestäviksi .once -> .set
 function volunteer(taskId) {
     if(!myName) return;
-    db.ref('gameState').once('value', snap => {
-        const data = snap.val();
-        
-        if (data.config?.useCooldowns && data.activeTasks[taskId].bannedPlayers && data.activeTasks[taskId].bannedPlayers.includes(myName)) {
-            alert("Olet jäähyllä tästä tehtävästä!"); return;
-        }
-        
-        if (data.config?.strictVolunteer) {
-            let inOther = Object.keys(data.activeTasks).some(id => {
-                if (id === taskId) return false;
-                const t = data.activeTasks[id];
-                return !t.locked && (t.participants || []).some(r => r.name === myName);
-            });
-            if (inOther) {
-                alert("Jäähy: Olet jo ilmoittautunut toiseen avoimeen tehtävään!"); return;
-            }
-        }
-
-        if(data.activeTasks[taskId].locked) return;
-        
-        const taskName = data.activeTasks[taskId].n;
-
-        db.ref(`gameState/activeTasks/${taskId}/participants`).once('value', pSnap => {
-            let list = pSnap.val() || []; 
-            let joined = false;
-            const idx = list.findIndex(r => r.name === myName);
-            
-            if(idx > -1) {
-                list.splice(idx, 1);
-                joined = false;
-            } else {
-                list.push({ name: myName, win: true });
-                joined = true;
-            }
-            
-            db.ref(`gameState/activeTasks/${taskId}/participants`).set(list);
-            logEvent(joined ? `${myName} ilmoittautui: ${taskName}` : `${myName} perui osallistumisen: ${taskName}`);
+    
+    if (localGameState.config?.useCooldowns && localGameState.activeTasks[taskId].bannedPlayers && localGameState.activeTasks[taskId].bannedPlayers.includes(myName)) {
+        alert("Olet jäähyllä tästä tehtävästä!"); return;
+    }
+    
+    if (localGameState.config?.strictVolunteer) {
+        let inOther = Object.keys(localGameState.activeTasks).some(id => {
+            if (id === taskId) return false;
+            const t = localGameState.activeTasks[id];
+            return !t.locked && (t.participants || []).some(r => r.name === myName);
         });
-    });
+        if (inOther) {
+            alert("Jäähy: Olet jo ilmoittautunut toiseen avoimeen tehtävään!"); return;
+        }
+    }
+
+    let task = localGameState.activeTasks[taskId];
+    if(task.locked) return;
+    
+    let list = task.participants || []; 
+    let joined = false;
+    const idx = list.findIndex(r => r.name === myName);
+    
+    if(idx > -1) {
+        list.splice(idx, 1);
+        joined = false;
+    } else {
+        list.push({ name: myName, win: true });
+        joined = true;
+    }
+    
+    task.participants = list;
+    db.ref(`gameState/activeTasks/${taskId}/participants`).set(list);
+    logEvent(joined ? `${myName} ilmoittautui: ${task.n}` : `${myName} perui osallistumisen: ${task.n}`);
+    triggerLocalRender();
 }
 
 function toggleParticipant(taskId, name) {
-    const taskName = lastKnownTasks[taskId] ? lastKnownTasks[taskId].n : "Tehtävä";
+    let task = localGameState.activeTasks[taskId];
+    if(!task) return;
     
-    db.ref(`gameState/activeTasks/${taskId}/participants`).once('value', snap => {
-        let list = snap.val() || []; 
-        let added = false;
-        const idx = list.findIndex(r => r.name === name);
-        
-        if(idx > -1) {
-            list.splice(idx, 1);
-            added = false;
-        } else {
-            list.push({ name: name, win: true });
-            added = true;
-        }
-        
-        db.ref(`gameState/activeTasks/${taskId}/participants`).set(list);
-        logEvent(added ? `GM lisäsi pelaajan ${name}: ${taskName}` : `GM poisti pelaajan ${name}: ${taskName}`);
-    });
+    let list = task.participants || []; 
+    let added = false;
+    const idx = list.findIndex(r => r.name === name);
+    
+    if(idx > -1) {
+        list.splice(idx, 1);
+        added = false;
+    } else {
+        list.push({ name: name, win: true });
+        added = true;
+    }
+    
+    task.participants = list;
+    db.ref(`gameState/activeTasks/${taskId}/participants`).set(list);
+    logEvent(added ? `GM lisäsi pelaajan ${name}: ${task.n}` : `GM poisti pelaajan ${name}: ${task.n}`);
+    triggerLocalRender();
 }
 
 function lockParticipants(taskId, isMassAction = false) { 
-    db.ref('gameState').once('value', snap => {
-        const d = snap.val();
-        const taskInstance = d.activeTasks[taskId];
-        const res = taskInstance.participants || [];
-        const drawnNames = res.map(r => r.name);
-        
-        if (d.config?.useCooldowns) {
-            const updatedPlayers = allPlayers.map(p => {
-                if (drawnNames.includes(p.name)) p.cooldown = true; 
-                return p;
-            });
-            db.ref('gameState/players').set(updatedPlayers);
-        }
-        db.ref(`gameState/activeTasks/${taskId}/locked`).set(true); 
-        localSpyState[taskId] = false;
-        if (!isMassAction) logEvent(`Lukitut suorittajat tehtävään ${taskInstance.n}: ${drawnNames.join(', ')}`);
-    });
+    const taskInstance = localGameState.activeTasks[taskId];
+    const res = taskInstance.participants || [];
+    const drawnNames = res.map(r => r.name);
+    
+    if (localGameState.config?.useCooldowns) {
+        localGameState.players = (localGameState.players || []).map(p => {
+            if (drawnNames.includes(p.name)) p.cooldown = true; 
+            return p;
+        });
+        db.ref('gameState/players').set(localGameState.players);
+    }
+    
+    taskInstance.locked = true;
+    db.ref(`gameState/activeTasks/${taskId}/locked`).set(true); 
+    localSpyState[taskId] = false;
+    
+    if (!isMassAction) logEvent(`Lukitut suorittajat tehtävään ${taskInstance.n}: ${drawnNames.join(', ')}`);
+    triggerLocalRender();
 }
 
 function showScoring(taskId, isMassAction = false) {
-    db.ref('gameState').once('value', snap => {
-        const d = snap.val();
-        const taskInstance = d.activeTasks[taskId];
-        if(!taskInstance) return;
-        
-        const res = taskInstance.participants || [];
-        const heroId = d.config?.bdayHero;
-        let used = d.usedTaskIds || [];
-        used.push(taskInstance.id);
-        
-        let winnersNames = [];
-        let taskCompletedBySomeone = res.some(r => r.win);
-        
-        const updatedPlayers = allPlayers.map((p, idx) => {
-            let earned = 0;
-            if (taskInstance.isHero) {
-                if (idx === heroId) {
-                    const heroWon = taskInstance.heroWin !== false;
-                    if (heroWon) earned += taskInstance.p;
-                    else if (taskInstance.m) earned -= taskInstance.p;
-                    winnersNames.push(p.name);
-                }
-            } else {
-                const part = res.find(r => r.name === p.name);
-                if(part) {
-                    if(part.win) { 
-                        earned += taskInstance.p; 
-                        winnersNames.push(p.name); 
-                    } else if(taskInstance.m) {
-                        earned -= taskInstance.p;
-                    }
-                } else if (idx === heroId && taskInstance.b) {
-                    if (taskCompletedBySomeone) earned += 1; 
-                }
+    const d = localGameState;
+    const taskInstance = d.activeTasks[taskId];
+    if(!taskInstance) return;
+    
+    const res = taskInstance.participants || [];
+    const heroId = d.config?.bdayHero;
+    let used = d.usedTaskIds || [];
+    used.push(taskInstance.id);
+    d.usedTaskIds = used;
+    
+    let winnersNames = [];
+    let taskCompletedBySomeone = res.some(r => r.win);
+    
+    d.players = (d.players || []).map((p, idx) => {
+        let earned = 0;
+        if (taskInstance.isHero) {
+            if (idx === heroId) {
+                const heroWon = taskInstance.heroWin !== false;
+                if (heroWon) earned += taskInstance.p;
+                else if (taskInstance.m) earned -= taskInstance.p;
+                winnersNames.push(p.name);
             }
-            p.score = Math.max(0, (p.score || 0) + earned);
-            return p;
-        });
-
-        db.ref('gameState/history').push({
-            taskName: taskInstance.n,
-            winners: winnersNames.length > 0 ? winnersNames : ["Ei onnistujia"],
-            timestamp: new Date().toLocaleTimeString('fi-FI')
-        });
-
-        const newActiveTasks = { ...d.activeTasks };
-        delete newActiveTasks[taskId];
-        db.ref('gameState').update({ players: updatedPlayers, activeTasks: newActiveTasks, usedTaskIds: used });
-        if (!isMassAction) logEvent(`Tehtävä valmis: ${taskInstance.n}. Pisteet jaettu.`);
+        } else {
+            const part = res.find(r => r.name === p.name);
+            if(part) {
+                if(part.win) { 
+                    earned += taskInstance.p; 
+                    winnersNames.push(p.name); 
+                } else if(taskInstance.m) {
+                    earned -= taskInstance.p;
+                }
+            } else if (idx === heroId && taskInstance.b) {
+                if (taskCompletedBySomeone) earned += 1; 
+            }
+        }
+        p.score = Math.max(0, (p.score || 0) + earned);
+        return p;
     });
+
+    const histItem = {
+        taskName: taskInstance.n,
+        winners: winnersNames.length > 0 ? winnersNames : ["Ei onnistujia"],
+        timestamp: new Date().toLocaleTimeString('fi-FI')
+    };
+    if(!d.history) d.history = {};
+    const hId = "h_" + Date.now();
+    d.history[hId] = histItem;
+    
+    db.ref(`gameState/history/${hId}`).set(histItem);
+    delete d.activeTasks[taskId];
+    
+    db.ref('gameState').update({ players: d.players, activeTasks: d.activeTasks || {}, usedTaskIds: d.usedTaskIds });
+    if (!isMassAction) logEvent(`Tehtävä valmis: ${taskInstance.n}. Pisteet jaettu.`);
+    triggerLocalRender();
 }
 
 window.toggleHeroTaskWin = function(taskId) {
-    db.ref(`gameState/activeTasks/${taskId}/heroWin`).once('value', s => {
-        const current = s.val();
+    if(localGameState.activeTasks && localGameState.activeTasks[taskId]) {
+        const current = localGameState.activeTasks[taskId].heroWin;
         const newVal = current === false ? true : false;
+        localGameState.activeTasks[taskId].heroWin = newVal;
         db.ref(`gameState/activeTasks/${taskId}/heroWin`).set(newVal);
-    });
+        triggerLocalRender();
+    }
 };
 
-function renderScoringArea(taskId, results, isHeroTask, heroWinState) {
-    const sArea = document.getElementById(`scoring-${taskId}`);
-    if(!sArea) return; 
-    
-    sArea.innerHTML = '';
-    
-    const box = document.createElement('div');
-    box.style.border = "2px dashed var(--hero-gold)";
-    box.style.background = "rgba(197, 161, 77, 0.08)";
-    box.style.padding = "15px";
-    box.style.borderRadius = "10px";
-    box.style.marginTop = "15px";
-    box.className = "scoring-box"; 
-    
-    if (isHeroTask) {
-        box.innerHTML = `<p style="font-size:0.75rem; color:var(--hero-gold); margin:0 0 12px 0; text-align:center; font-weight:900; letter-spacing:1px;">⚠️ PISTEYTÄ SANKARIN SUORITUS ⚠️</p>`;
-        const isWin = heroWinState !== false; 
-        const row = document.createElement('div');
-        row.className = 'player-row is-hero'; 
-        row.style.padding = '8px';
-        row.innerHTML = `
-            <span>🎂 SYNTTÄRISANKARI</span>
-            <button class="btn" style="width:70px; margin:0; padding:5px; background:${isWin?'var(--success)':'var(--danger)'}; color:#ffffff;" 
-                onclick='toggleHeroTaskWin("${taskId}")'>${isWin?'WIN':'FAIL'}</button>
-        `;
-        box.appendChild(row);
-    } else {
-        box.innerHTML = `<p style="font-size:0.75rem; color:var(--hero-gold); margin:0 0 12px 0; text-align:center; font-weight:900; letter-spacing:1px;">⚠️ PISTEYTÄ SUORITUKSET ⚠️</p>`;
-        if (results.length === 0) box.innerHTML += `<p style="font-size:0.6rem; color:var(--muted); text-align:center;">Ei suorittajia.</p>`;
-        
-        results.forEach((r, i) => {
-            const row = document.createElement('div');
-            row.className = 'player-row'; row.style.padding = '8px';
-            row.innerHTML = `<span>${r.name}</span><button class="btn" style="width:70px; margin:0; padding:5px; background:${r.win?'var(--success)':'var(--danger)'}; color:#ffffff;" onclick='toggleWin("${taskId}", ${i})'>${r.win?'WIN':'FAIL'}</button>`;
-            box.appendChild(row);
-        });
-    }
-    sArea.appendChild(box);
-}
-
-function updateDrawCountSelect(taskId, task) {
-    const sel = document.getElementById(`drawCount-${taskId}`);
-    if (!sel || sel.options.length > 0) return; 
-    const max = Math.max(allPlayers.length, 1);
-    for (let i = 1; i <= max; i++) {
-        const opt = document.createElement('option');
-        opt.value = i; opt.innerText = i;
-        if(i === (task.r || 1)) opt.selected = true;
-        sel.appendChild(opt);
-    }
-}
-
 function toggleWin(taskId, i) { 
-    db.ref(`gameState/activeTasks/${taskId}/participants/${i}/win`).once('value', snap => {
-        db.ref(`gameState/activeTasks/${taskId}/participants/${i}/win`).set(!snap.val());
-    });
+    if(localGameState.activeTasks && localGameState.activeTasks[taskId]) {
+        const p = localGameState.activeTasks[taskId].participants[i];
+        p.win = !p.win;
+        db.ref(`gameState/activeTasks/${taskId}/participants/${i}/win`).set(p.win);
+        triggerLocalRender();
+    }
 }
 
 function confirmRandomize() {
-    db.ref('gameState').once('value', snap => {
-        const d = snap.val();
-        const config = d.config || {};
-        const heroDraw = config.heroDraw || { include: true, weighted: false, interval: 4, drawCount: 0 };
-        const used = d.usedTaskIds || [];
+    const d = localGameState;
+    const config = d.config || {};
+    const heroDraw = config.heroDraw || { include: true, weighted: false, interval: 4, drawCount: 0 };
+    const used = d.usedTaskIds || [];
 
-        let bannedFromThisTask = [];
-        
-        if (config.useCooldowns) {
-            const updatedPlayers = allPlayers.map(p => {
-                if (p.cooldown) {
-                    bannedFromThisTask.push(p.name);
-                }
-                return { ...p, cooldown: false }; 
-            });
-            db.ref('gameState/players').set(updatedPlayers);
-        }
-
-        let newDrawCount = heroDraw.drawCount || 0;
-        let isForcedHero = false;
-
-        if (heroDraw.weighted) {
-            newDrawCount++;
-            if (newDrawCount >= (heroDraw.interval || 4)) {
-                isForcedHero = true;
-                newDrawCount = 0; 
+    let bannedFromThisTask = [];
+    
+    if (config.useCooldowns) {
+        d.players = (d.players || []).map(p => {
+            if (p.cooldown) {
+                bannedFromThisTask.push(p.name);
             }
-        }
-
-        let pool = [];
-        const normalTasks = taskLibrary.filter(t => !t.isHero && !used.includes(t.id));
-        const heroTasks = taskLibrary.filter(t => t.isHero && !used.includes(t.id));
-        
-        let finalNormal = normalTasks.length > 0 ? normalTasks : taskLibrary.filter(t => !t.isHero);
-        let finalHero = heroTasks.length > 0 ? heroTasks : taskLibrary.filter(t => t.isHero);
-
-        if (isForcedHero && finalHero.length > 0) {
-            pool = finalHero;
-        } else if (heroDraw.include && !heroDraw.weighted) {
-            pool = finalNormal.concat(finalHero); 
-        } else {
-            pool = finalNormal; 
-        }
-
-        if(pool.length === 0) pool = finalHero; 
-
-        const t = pool[Math.floor(Math.random() * pool.length)];
-        const instanceId = "t_" + Date.now();
-        
-        let updates = {};
-        updates[`gameState/activeTasks/${instanceId}`] = { 
-            ...t, 
-            locked: false, 
-            participants: [], 
-            drawn: false,
-            bannedPlayers: bannedFromThisTask 
-        };
-        if (heroDraw.weighted) updates[`gameState/config/heroDraw/drawCount`] = newDrawCount;
-
-        db.ref().update(updates).then(() => {
-            logEvent(`Arvottu uusi tehtävä: ${t.n}`);
+            return { ...p, cooldown: false }; 
         });
-    });
+        db.ref('gameState/players').set(d.players);
+    }
+
+    let newDrawCount = heroDraw.drawCount || 0;
+    let isForcedHero = false;
+
+    if (heroDraw.weighted) {
+        newDrawCount++;
+        if (newDrawCount >= (heroDraw.interval || 4)) {
+            isForcedHero = true;
+            newDrawCount = 0; 
+        }
+    }
+
+    let pool = [];
+    const normalTasks = taskLibrary.filter(t => !t.isHero && !used.includes(t.id));
+    const heroTasks = taskLibrary.filter(t => t.isHero && !used.includes(t.id));
+    
+    let finalNormal = normalTasks.length > 0 ? normalTasks : taskLibrary.filter(t => !t.isHero);
+    let finalHero = heroTasks.length > 0 ? heroTasks : taskLibrary.filter(t => t.isHero);
+
+    if (isForcedHero && finalHero.length > 0) pool = finalHero;
+    else if (heroDraw.include && !heroDraw.weighted) pool = finalNormal.concat(finalHero); 
+    else pool = finalNormal; 
+
+    if(pool.length === 0) pool = finalHero; 
+
+    const t = pool[Math.floor(Math.random() * pool.length)];
+    const instanceId = "t_" + Date.now();
+    
+    const newTaskObj = { 
+        ...t, 
+        locked: false, 
+        participants: [], 
+        drawn: false,
+        bannedPlayers: bannedFromThisTask 
+    };
+
+    if(!d.activeTasks) d.activeTasks = {};
+    d.activeTasks[instanceId] = newTaskObj;
+    
+    let updates = {};
+    updates[`gameState/activeTasks/${instanceId}`] = newTaskObj;
+    
+    if (heroDraw.weighted) {
+        d.config.heroDraw.drawCount = newDrawCount;
+        updates[`gameState/config/heroDraw/drawCount`] = newDrawCount;
+    }
+
+    db.ref().update(updates).then(() => { logEvent(`Arvottu uusi tehtävä: ${t.n}`); });
+    triggerLocalRender();
 }
 
 function selectManualTask(idx) {
     if (idx === "") return;
-    db.ref('gameState').once('value', snap => {
-        const d = snap.val();
-        
-        let bannedFromThisTask = [];
-        if (d.config?.useCooldowns) {
-            const updatedPlayers = allPlayers.map(p => {
-                if (p.cooldown) {
-                    bannedFromThisTask.push(p.name);
-                }
-                return { ...p, cooldown: false }; 
-            });
-            db.ref('gameState/players').set(updatedPlayers);
-        }
-        
-        const t = taskLibrary[idx];
-        const instanceId = "t_" + Date.now();
-        db.ref(`gameState/activeTasks/${instanceId}`).set({ 
-            ...t, 
-            locked: false, 
-            participants: [], 
-            drawn: false,
-            bannedPlayers: bannedFromThisTask 
+    const d = localGameState;
+    
+    let bannedFromThisTask = [];
+    if (d.config?.useCooldowns) {
+        d.players = (d.players || []).map(p => {
+            if (p.cooldown) {
+                bannedFromThisTask.push(p.name);
+            }
+            return { ...p, cooldown: false }; 
         });
-        logEvent(`Valittu manuaalinen tehtävä: ${t.n}`);
-        document.getElementById('manualTaskSelect').value = ""; 
-    });
-}
+        db.ref('gameState/players').set(d.players);
+    }
+    
+    const t = taskLibrary[idx];
+    const instanceId = "t_" + Date.now();
+    const newTaskObj = { 
+        ...t, 
+        locked: false, 
+        participants: [], 
+        drawn: false,
+        bannedPlayers: bannedFromThisTask 
+    };
+    
+    if(!d.activeTasks) d.activeTasks = {};
+    d.activeTasks[instanceId] = newTaskObj;
 
-function renderEventLog(logData) {
-    const container = document.getElementById('adminEventLog');
-    if(!container) return;
-    container.innerHTML = "";
-    const logs = Object.values(logData || {}).reverse().slice(0, 30);
-    logs.forEach(l => {
-        const div = document.createElement('div');
-        div.className = 'log-entry';
-        div.innerHTML = `<span class="time">[${l.time}]</span> ${l.msg}`;
-        container.appendChild(div);
-    });
-}
-
-function renderHistory() {
-    const container = document.getElementById('taskHistoryList');
-    if(!container) return;
-    container.innerHTML = taskHistory.length === 0 ? '<p style="font-size:0.7rem; color:var(--muted);">Ei vielä historiaa...</p>' : "";
-    taskHistory.forEach(h => {
-        const div = document.createElement('div');
-        div.className = 'history-item';
-        div.innerHTML = `
-            <div>
-                <span class="task-name" style="display:block;">${h.taskName}</span>
-                <span style="font-size:0.65rem; color:var(--success); font-weight:700;">${h.winners.join(', ')}</span>
-            </div>
-            <span class="task-time">${h.timestamp}</span>
-        `;
-        container.appendChild(div);
-    });
+    db.ref(`gameState/activeTasks/${instanceId}`).set(newTaskObj);
+    logEvent(`Valittu manuaalinen tehtävä: ${t.n}`);
+    document.getElementById('manualTaskSelect').value = ""; 
+    triggerLocalRender();
 }
 
 function adminAddPlayer() {
     const input = document.getElementById('adminNewPlayerName');
     const n = input.value.trim();
     if(!n) return;
-    db.ref('gameState/players').once('value', snap => {
-        let p = snap.val() || [];
-        if(!p.find(x => x.name === n)) { 
-            p.push({ name: n, score: 0, cooldown: false }); 
-            db.ref('gameState/players').set(p); 
-            input.value = ''; 
-            logEvent(`Admin lisäsi pelaajan: ${n}`);
-        } else { alert("Pelaaja on jo listalla!"); }
-    });
+    
+    if(!localGameState.players) localGameState.players = [];
+    if(!localGameState.players.find(x => x.name === n)) { 
+        localGameState.players.push({ name: n, score: 0, cooldown: 0 }); 
+        db.ref('gameState/players').set(localGameState.players); 
+        input.value = ''; 
+        logEvent(`Admin lisäsi pelaajan: ${n}`);
+        triggerLocalRender();
+    } else { alert("Pelaaja on jo listalla!"); }
 }
 
 function adjustScore(idx, amt) { 
-    db.ref('gameState/players/' + idx + '/score').once('value', snap => {
-        db.ref('gameState/players/' + idx + '/score').set(Math.max(0, (snap.val() || 0) + amt)); 
-        logEvent(`Admin muutti pelaajan ${allPlayers[idx].name} pisteitä: ${amt > 0 ? '+' : ''}${amt} XP`);
-    });
+    if(localGameState.players && localGameState.players[idx]) {
+        localGameState.players[idx].score = Math.max(0, (localGameState.players[idx].score || 0) + amt);
+        db.ref(`gameState/players/${idx}/score`).set(localGameState.players[idx].score); 
+        logEvent(`Admin muutti pelaajan ${localGameState.players[idx].name} pisteitä: ${amt > 0 ? '+' : ''}${amt} XP`);
+        triggerLocalRender();
+    }
 }
 
 function removePlayer(idx) { 
     if(confirm("Poista pelaaja?")) { 
-        logEvent(`Admin poisti pelaajan: ${allPlayers[idx].name}`);
-        allPlayers.splice(idx, 1); 
-        db.ref('gameState/players').set(allPlayers); 
+        logEvent(`Admin poisti pelaajan: ${localGameState.players[idx].name}`);
+        localGameState.players.splice(idx, 1); 
+        db.ref('gameState/players').set(localGameState.players); 
+        triggerLocalRender();
     } 
 }
 
 function setBdayHero(idx) { 
-    db.ref('gameState/config/bdayHero').once('value', snap => {
-        const newVal = snap.val() === idx ? null : idx;
+    if(localGameState.config) {
+        const newVal = localGameState.config.bdayHero === idx ? null : idx;
+        localGameState.config.bdayHero = newVal;
         db.ref('gameState/config/bdayHero').set(newVal);
-        if(newVal !== null) logEvent(`Asetettu synttärisankari: ${allPlayers[newVal].name}`);
-    }); 
+        if(newVal !== null) logEvent(`Asetettu synttärisankari: ${localGameState.players[newVal].name}`);
+        triggerLocalRender();
+    }
 }
 
 function adminToggleCooldown(idx) { 
-    const newState = !allPlayers[idx].cooldown;
-    db.ref(`gameState/players/${idx}/cooldown`).set(newState); 
+    if(localGameState.players && localGameState.players[idx]) {
+        const newState = !localGameState.players[idx].cooldown;
+        localGameState.players[idx].cooldown = newState;
+        db.ref(`gameState/players/${idx}/cooldown`).set(newState); 
+        triggerLocalRender();
+    }
 }
 
-function updateConfig(key, val) { db.ref(`gameState/config/${key}`).set(val); }
-function updateVisConfig(key, val) { db.ref(`gameState/config/visibility/${key}`).set(val); }
-window.updateHeroConfig = function(key, val) { db.ref(`gameState/config/heroDraw/${key}`).set(val); };
+function updateConfig(key, val) { 
+    if(!localGameState.config) localGameState.config = {};
+    localGameState.config[key] = val;
+    db.ref(`gameState/config/${key}`).set(val); 
+    triggerLocalRender();
+}
 
-function updateTaskInLib(idx, field, val) { db.ref(`gameState/tasks/${idx}/${field}`).set(val); }
-function removeTask(idx) { if(confirm("Poista tehtävä kirjastosta?")) { taskLibrary.splice(idx, 1); db.ref('gameState/tasks').set(taskLibrary); } }
+function updateVisConfig(key, val) { 
+    if(!localGameState.config.visibility) localGameState.config.visibility = {};
+    localGameState.config.visibility[key] = val;
+    db.ref(`gameState/config/visibility/${key}`).set(val); 
+    triggerLocalRender();
+}
+
+window.updateHeroConfig = function(key, val) { 
+    if(!localGameState.config.heroDraw) localGameState.config.heroDraw = {};
+    localGameState.config.heroDraw[key] = val;
+    db.ref(`gameState/config/heroDraw/${key}`).set(val); 
+    triggerLocalRender();
+};
+
+function updateTaskInLib(idx, field, val) { 
+    if(localGameState.tasks && localGameState.tasks[idx]) {
+        localGameState.tasks[idx][field] = val;
+        db.ref(`gameState/tasks/${idx}/${field}`).set(val); 
+        triggerLocalRender();
+    }
+}
+
+function removeTask(idx) { 
+    if(confirm("Poista tehtävä kirjastosta?")) { 
+        localGameState.tasks.splice(idx, 1); 
+        db.ref('gameState/tasks').set(localGameState.tasks); 
+        triggerLocalRender();
+    } 
+}
 
 window.toggleLibraryVisibility = function() {
     const lib = document.getElementById('taskLibraryEditor');
@@ -1149,21 +1131,33 @@ function adminCreateTask() {
     if(!n || !d) return;
     
     const newTask = { id: Date.now(), n, d, p, m, b, r, isHero: hero };
+    if(!localGameState.tasks) localGameState.tasks = [];
+    localGameState.tasks.push(newTask);
     
-    db.ref('gameState/tasks').once('value', snap => {
-        let list = snap.val() || []; 
-        list.push(newTask); 
-        db.ref('gameState/tasks').set(list);
-        logEvent(`Luotu uusi tehtävä kirjastoon: ${n}`);
-    });
+    db.ref('gameState/tasks').set(localGameState.tasks);
+    logEvent(`Luotu uusi tehtävä kirjastoon: ${n}`);
     
     document.getElementById('newTaskName').value = ''; 
     document.getElementById('newTaskDesc').value = '';
     document.getElementById('newTaskIsHero').checked = false;
+    triggerLocalRender();
+}
+
+function updateIdentityUI() { 
+    const identityCard = document.getElementById('identityCard');
+    const idTag = document.getElementById('idTag');
+    if(identityCard) identityCard.style.display = myName ? 'none' : 'block'; 
+    if(idTag) idTag.innerText = myName ? "PROFIILI: " + myName : "KIRJAUDU SISÄÄN"; 
+}
+
+function toggleAdminPanel() { 
+    const p = document.getElementById('adminPanel'); const isOpening = p.style.display === 'none'; p.style.display = isOpening ? 'block' : 'none'; 
+    if(isOpening) { renderAdminPlayerList(localGameState?.config?.bdayHero || null); renderTaskLibrary(); }
 }
 
 function renderLeaderboard(showCD, heroId) {
     const list = document.getElementById('playerList');
+    if(!list) return;
     list.innerHTML = '';
     [...allPlayers].sort((a,b) => b.score - a.score).forEach((p) => {
         const pIdx = allPlayers.findIndex(x => x.name === p.name);
@@ -1250,16 +1244,4 @@ function updateManualTaskSelect() {
     const sel = document.getElementById('manualTaskSelect');
     if (!sel) return; sel.innerHTML = '<option value="">VALITSE TEHTÄVÄ...</option>';
     taskLibrary.forEach((t, i) => { sel.innerHTML += `<option value="${i}">${t.n}</option>`; });
-}
-
-function updateIdentityUI() { 
-    const identityCard = document.getElementById('identityCard');
-    const idTag = document.getElementById('idTag');
-    if(identityCard) identityCard.style.display = myName ? 'none' : 'block'; 
-    if(idTag) idTag.innerText = myName ? "PROFIILI: " + myName : "KIRJAUDU SISÄÄN"; 
-}
-
-function toggleAdminPanel() { 
-    const p = document.getElementById('adminPanel'); const isOpening = p.style.display === 'none'; p.style.display = isOpening ? 'block' : 'none'; 
-    if(isOpening) { renderAdminPlayerList(null); renderTaskLibrary(); }
 }
