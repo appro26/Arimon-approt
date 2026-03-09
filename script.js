@@ -15,7 +15,10 @@ let taskHistory = [];
 
 let popupQueue = [];
 let isPopupShowing = false;
-let wasInGame = false; // UUSI TARKISTUSMUUTTUJA POISTOJA VARTEN
+let wasInGame = false; 
+
+// UUSI: Supistetun näkymän tila
+let isCompactMode = false;
 
 const APP_NAME = "Arimon Approt";
 document.title = APP_NAME;
@@ -134,6 +137,19 @@ function logEvent(msg) {
     db.ref('gameState/eventLog').push({ time, msg });
 }
 
+// --- SUPISTETUN NÄKYMÄN TOGGLE ---
+window.toggleCompactMode = function() {
+    isCompactMode = !isCompactMode;
+    const btn = document.getElementById('compactToggleBtn');
+    if (btn) btn.innerText = isCompactMode ? 'LAAJENNA NÄKYMÄ' : 'SUPISTA NÄKYMÄ';
+    
+    const container = document.getElementById('activeTasksContainer');
+    if (container) {
+        if (isCompactMode) container.classList.add('compact-view');
+        else container.classList.remove('compact-view');
+    }
+};
+
 // --- NOLLAUS ---
 window.resetGame = function() {
     if (confirm("VAROITUS: Tämä poistaa kaikki tiedot. Jatketaanko?")) {
@@ -167,9 +183,7 @@ db.ref('gameState').on('value', (snap) => {
 
     allPlayers = data.players || [];
     
-    // KORJAUS 1: Pelaajan uloskirjaus, jos Admin on poistanut nimen
     const me = allPlayers.find(p => p.name === myName);
-    
     if (myName) {
         if (me) {
             wasInGame = true;
@@ -207,19 +221,25 @@ db.ref('gameState').on('value', (snap) => {
     renderHistory();
     
     if(document.getElementById('adminPanel').style.display === 'block') {
-        renderAdminPlayerList(heroId);
-        renderTaskLibrary();
+        // SUOJAUS: Älä päivitä näitä DOM elementtejä jos GM sattuu kirjoittamaan niihin
+        const adminPlayerList = document.getElementById('adminPlayerList');
+        if (adminPlayerList && !adminPlayerList.contains(document.activeElement)) {
+            renderAdminPlayerList(heroId);
+        }
+        const taskLib = document.getElementById('taskLibraryEditor');
+        if (taskLib && !taskLib.contains(document.activeElement)) {
+            renderTaskLibrary();
+        }
+
         renderEventLog(data.eventLog);
         
         document.getElementById('useCooldowns').checked = !!config.useCooldowns;
         document.getElementById('excludeUsedTasks').checked = !!config.excludeUsedTasks;
-        
         document.getElementById('visTitle').checked = !!vis.title;
         document.getElementById('visPoints').checked = !!vis.points;
         document.getElementById('visDesc').checked = !!vis.desc;
         document.getElementById('visMinus').checked = !!vis.minus;
         document.getElementById('visBday').checked = !!vis.bday;
-
         document.getElementById('incHero').checked = !!heroDrawConfig.include;
         document.getElementById('weightHero').checked = !!heroDrawConfig.weighted;
         document.getElementById('heroInterval').value = heroDrawConfig.interval || 4;
@@ -262,7 +282,7 @@ function triggerWinnerOverlay(tasksHtml) {
     setTimeout(() => { overlay.style.display = 'none'; }, 3500); 
 }
 
-// --- RENDERÖINTI: AKTIIVISET TEHTÄVÄT ---
+// --- RENDERÖINTI: AKTIIVISET TEHTÄVÄT (TÄYDELLINEN ANTI-FLICKER) ---
 function renderActiveTasks(tasksObj, config) {
     const container = document.getElementById('activeTasksContainer');
     const isGM = document.body.className.includes('gm');
@@ -270,6 +290,9 @@ function renderActiveTasks(tasksObj, config) {
     
     container.style.display = 'flex';
     container.style.flexDirection = 'column';
+    
+    if (isCompactMode) container.classList.add('compact-view');
+    else container.classList.remove('compact-view');
     
     const globalControls = document.getElementById('gmGlobalControls');
     if (globalControls) {
@@ -292,10 +315,11 @@ function renderActiveTasks(tasksObj, config) {
         const results = taskData.participants || [];
         const isMePart = results.some(r => r.name === myName);
         const isHeroTask = !!taskData.isHero; 
-        
         const showFull = isLocked || isHeroTask || (isGM && localSpyState[taskId]);
         
         let card = container.querySelector(`[data-task-id="${taskId}"]`);
+        
+        // KORJAUS: DOM append tapahtuu tasan kerran kortin syntyessä! Tämä estää välkkymisen.
         if (!card) {
             card = document.createElement('div');
             card.className = 'card task-box active-task-item';
@@ -309,8 +333,6 @@ function renderActiveTasks(tasksObj, config) {
             `;
             container.appendChild(card);
         }
-        
-        container.appendChild(card); 
 
         let flexOrder = 10;
         if (!isGM && myName) {
@@ -600,13 +622,12 @@ if(gmBtn) {
     gmBtn.addEventListener('touchend', endPress);
 }
 
-// KORJAUS 1: Välitön UI päivitys ettei kortti vilku
 function claimIdentity() {
     const n = document.getElementById('playerNameInput').value.trim();
     if(!n) return; 
     myName = n; 
     localStorage.setItem('appro_name', n);
-    updateIdentityUI();
+    updateIdentityUI(); // Välitön päivitys
 
     db.ref('gameState/players').transaction(p => {
         p = p || []; 
@@ -619,30 +640,55 @@ function claimIdentity() {
     });
 }
 
+// UUSI LOKILOGIIKKA JA OSALLISTUMINEN
 function volunteer(taskId) {
     if(!myName) return;
     db.ref('gameState').once('value', snap => {
         const data = snap.val();
         const meData = (data.players || []).find(p => p.name === myName);
-        
         if (data.config?.useCooldowns && meData?.cooldown) {
-            alert("Olet jäähyllä!");
-            return;
+            alert("Olet jäähyllä!"); return;
         }
         if(data.activeTasks[taskId].locked) return;
+        
+        const taskName = data.activeTasks[taskId].n;
+        let joined = false;
+
         db.ref(`gameState/activeTasks/${taskId}/participants`).transaction(list => {
             list = list || []; const idx = list.findIndex(r => r.name === myName);
-            if(idx > -1) list.splice(idx, 1); else list.push({ name: myName, win: true });
+            if(idx > -1) {
+                list.splice(idx, 1);
+                joined = false;
+            } else {
+                list.push({ name: myName, win: true });
+                joined = true;
+            }
             return list;
+        }).then((res) => {
+            if(res.committed) {
+                logEvent(joined ? `${myName} ilmoittautui: ${taskName}` : `${myName} perui osallistumisen: ${taskName}`);
+            }
         });
     });
 }
 
 function toggleParticipant(taskId, name) {
+    const taskName = lastKnownTasks[taskId] ? lastKnownTasks[taskId].n : "Tehtävä";
+    let added = false;
     db.ref(`gameState/activeTasks/${taskId}/participants`).transaction(list => {
         list = list || []; const idx = list.findIndex(r => r.name === name);
-        if(idx > -1) list.splice(idx, 1); else list.push({ name: name, win: true });
+        if(idx > -1) {
+            list.splice(idx, 1);
+            added = false;
+        } else {
+            list.push({ name: name, win: true });
+            added = true;
+        }
         return list;
+    }).then((res) => {
+        if(res.committed) {
+            logEvent(added ? `GM lisäsi pelaajan ${name}: ${taskName}` : `GM poisti pelaajan ${name}: ${taskName}`);
+        }
     });
 }
 
