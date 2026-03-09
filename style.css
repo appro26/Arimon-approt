@@ -96,7 +96,8 @@ body {
     left: 0;
     height: 4px;
     background: var(--gm-accent);
-    animation: hold-progress 1.2s linear forwards;
+    /* GM Nappulan painallusaika lyhennetty 0.8s */
+    animation: hold-progress 0.8s linear forwards;
 }
 
 @keyframes hold-progress {
@@ -107,6 +108,11 @@ body {
 /* ==========================================
    3. KORTIT JA MULTI-TASK
    ========================================== */
+#activeTasksContainer {
+    display: flex;
+    flex-direction: column;
+}
+
 .card { 
     background: var(--surface); 
     border-radius: var(--radius); 
@@ -189,7 +195,7 @@ body {
     padding: 16px; 
     text-transform: uppercase; 
     cursor: pointer; 
-    transition: transform 0.1s, filter 0.2s, background 0.3s; 
+    transition: transform 0.15s ease-out, background 0.15s ease-out, box-shadow 0.15s ease-out; 
     width: 100%; 
     margin-bottom: 10px; 
     display: flex; 
@@ -283,7 +289,7 @@ body {
 }
 
 /* ==========================================
-   7. LOMAKEYKSIKÖT JA LOPUT OPTIMOINNIT
+   7. LOMAKEYKSIKÖT
    ========================================== */
 input:not([type="checkbox"]), textarea, select { 
     background: var(--surface-light); 
@@ -307,7 +313,7 @@ input[type="checkbox"] {
 }
 
 /* ==========================================
-   8. ADMIN JA GM TYÖKALUT - FLEXBOX KORJAUKSET
+   8. ADMIN JA GM TYÖKALUT
    ========================================== */
 .admin-grid-layout {
     display: flex; 
@@ -333,7 +339,6 @@ input[type="checkbox"] {
     border: 1px solid rgba(255,255,255,0.05);
 }
 
-/* Skaalautuva asetus Tehtävän lisäykselle */
 .admin-add-task-form {
     background: rgba(255, 255, 255, 0.02);
     padding: 15px;
@@ -426,32 +431,20 @@ input[type="checkbox"] {
    9. ANIMAATIOT JA VOITTAJA-ILMOITUS
    ========================================== */
 
-/* UUSI HIENOSTUNUT ARVONTA-ANIMAATIO */
-.shuffling {
-    animation: lottery-pulse 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite alternate !important;
-    position: relative;
-    z-index: 5;
-    border: 1px solid var(--accent) !important;
+/* Uusi tyylikäs JS-ohjattu ruletti-animaatio */
+.roulette-focus {
+    background: var(--accent) !important;
+    color: #000 !important;
+    transform: scale(1.1) !important;
+    box-shadow: 0 0 25px var(--accent-glow), inset 0 0 8px rgba(255,255,255,0.6) !important;
+    border: 1px solid #fff !important;
+    z-index: 10;
 }
 
-@keyframes lottery-pulse {
-    0% { 
-        background: var(--surface-light); 
-        color: var(--text); 
-        transform: scale(0.95); 
-        box-shadow: 0 0 0 rgba(0, 229, 255, 0);
-    }
-    100% { 
-        background: var(--accent); 
-        color: #000; 
-        transform: scale(1.08); 
-        box-shadow: 0 0 18px var(--accent-glow), inset 0 0 8px rgba(255,255,255,0.5);
-        border-color: #fff !important;
-    }
-}
-
+/* Uusi kimmoisa XP-animaatio */
 .xp-popup {
-    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    position: fixed; top: 50%; left: 50%; 
+    transform: translate(-50%, -50%);
     font-weight: 900; font-size: 4rem;
     z-index: 3100; pointer-events: none; display: none;
     text-shadow: 0 0 30px rgba(0,0,0,0.8);
@@ -459,15 +452,19 @@ input[type="checkbox"] {
 
 .xp-animate {
     display: block !important;
-    animation: xp-float 1.8s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+    animation: xp-bouncy-float 2.2s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
 
-@keyframes xp-float {
-    0% { opacity: 0; transform: translate(-50%, 40%) scale(0.3); }
-    20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
-    100% { opacity: 0; transform: translate(-50%, -250%) scale(0.8); }
+@keyframes xp-bouncy-float {
+    0% { opacity: 0; transform: translate(-50%, calc(-50% + 60px)) scale(0.3); }
+    15% { opacity: 1; transform: translate(-50%, calc(-50% - 30px)) scale(1.25); } /* Ponnistus yli */
+    30% { opacity: 1; transform: translate(-50%, calc(-50% + 10px)) scale(0.95); } /* Kimmahduksen palautus */
+    45% { opacity: 1; transform: translate(-50%, -50%) scale(1); } /* Asettuminen paikoilleen */
+    80% { opacity: 1; transform: translate(-50%, -50%) scale(1); } /* Pysyy hetken */
+    100% { opacity: 0; transform: translate(-50%, calc(-50% - 150px)) scale(0.8); } /* Häipyy ylös */
 }
 
+/* Voittaja-popup */
 .winner-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.9); z-index: 4000;
@@ -483,8 +480,7 @@ input[type="checkbox"] {
 
 .winner-content h1 { color: var(--success); font-size: 3rem; margin-bottom: 10px; text-shadow: 0 0 20px var(--success); }
 
-/* Skaalautuvuus voittajapopupissa */
-#winnerTaskName {
+#winnerTaskNames {
     font-size: 2rem;
     color: var(--accent);
     margin: 0 0 20px 0;
@@ -497,7 +493,7 @@ input[type="checkbox"] {
 
 .winner-content p { font-size: 1.5rem; color: #fff; }
 
-.timer-bar { animation: shrink 3s linear forwards; }
+.timer-bar { animation: shrink 4.5s linear forwards; } /* Synkronoitu JS-ajastimen kanssa (4.5s) */
 
 @keyframes shrink { from { width: 100%; } to { width: 0%; } }
 @keyframes winner-pop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -525,7 +521,7 @@ input[type="checkbox"] {
     .container { padding-top: 100px; }
     
     .winner-content h1 { font-size: 2.2rem; }
-    #winnerTaskName { font-size: 1.6rem; }
+    #winnerTaskNames { font-size: 1.6rem; }
     
     .admin-row-stack { flex-direction: column; align-items: stretch; }
     .admin-row-stack .btn { width: 100%; }
