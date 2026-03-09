@@ -12,6 +12,10 @@ let localSpyState = {};
 let lastMyScore = null;
 let lastKnownTasks = {}; 
 
+// UUDET GLOBAALIT: Historia, Palkinnot ja Loki
+let taskHistory = [];
+let rewards = {};
+
 const APP_NAME = "Arimon Approt";
 document.title = APP_NAME;
 
@@ -121,6 +125,12 @@ const defaultTasks = [
     { id: 102, n: "System Overload (Sankari)", d: "Sankarin on lueteltava 10 IT-termiä, 10 frisbeegolf-termiä tai 10 PUBG-termiä 30 sekunnissa.", p: 3, m: 1, b: true, r: 1 }
 ];
 
+// --- UUSI: TAPAHTUMALOKI FUNKTIO ---
+function logEvent(msg) {
+    const time = new Date().toLocaleTimeString('fi-FI');
+    db.ref('gameState/eventLog').push({ time, msg });
+}
+
 // --- NOLLAUS ---
 window.resetGame = function() {
     if (confirm("VAROITUS: Tämä poistaa kaikki tiedot. Jatketaanko?")) {
@@ -130,6 +140,9 @@ window.resetGame = function() {
             tasks: defaultTasks,
             usedTaskIds: [],
             activeTasks: {},
+            history: [],
+            rewards: {},
+            eventLog: {},
             resetId: newResetId,
             config: { useCooldowns: true, excludeUsedTasks: true, bdayHero: null }
         }).then(() => { localStorage.clear(); location.reload(); });
@@ -146,6 +159,8 @@ db.ref('gameState').on('value', (snap) => {
 
     allPlayers = data.players || [];
     taskLibrary = data.tasks || [];
+    taskHistory = Object.values(data.history || {}).reverse().slice(0, 10);
+    rewards = data.rewards || {};
     const config = data.config || {};
     const heroId = config.bdayHero;
 
@@ -158,10 +173,13 @@ db.ref('gameState').on('value', (snap) => {
     updateIdentityUI();
     renderLeaderboard(config.useCooldowns, heroId);
     updateManualTaskSelect();
+    renderHistory();
     
     if(document.getElementById('adminPanel').style.display === 'block') {
         renderAdminPlayerList(heroId);
         renderTaskLibrary();
+        renderAdminRewardList();
+        renderEventLog(data.eventLog);
     }
 
     checkForNewWinnerPopups(data.activeTasks || {});
@@ -301,6 +319,7 @@ function drawRandom(taskId) {
         setTimeout(() => {
             let winners = [...list].sort(() => 0.5 - Math.random()).slice(0, count).map(p => ({ ...p, win: true }));
             db.ref(`gameState/activeTasks/${taskId}`).update({ participants: winners, isLotteryRunning: false });
+            logEvent(`Arvottu ${count} suorittajaa tehtävään: ${taskData.n}`);
         }, 1500);
     });
 }
@@ -361,7 +380,10 @@ function claimIdentity() {
     const n = document.getElementById('playerNameInput').value.trim();
     if(!n) return; myName = n; localStorage.setItem('appro_name', n);
     db.ref('gameState/players').transaction(p => {
-        p = p || []; if(!p.find(x => x.name === n)) p.push({ name: n, score: 0, cooldown: false });
+        p = p || []; if(!p.find(x => x.name === n)) {
+            p.push({ name: n, score: 0, cooldown: false, earnedRewards: {} });
+            logEvent(`Uusi pelaaja liittyi: ${n}`);
+        }
         return p;
     });
 }
@@ -410,6 +432,7 @@ function lockParticipants(taskId) {
         }
         db.ref(`gameState/activeTasks/${taskId}/locked`).set(true); 
         localSpyState[taskId] = false;
+        logEvent(`Lukitut suorittajat tehtävään ${taskInstance.n}: ${winnersNames.join(', ')}`);
     });
 }
 
@@ -422,6 +445,8 @@ function showScoring(taskId) {
         let used = d.usedTaskIds || [];
         used.push(taskInstance.id);
         
+        const winnersNames = res.filter(r => r.win).map(r => r.name);
+
         const updatedPlayers = allPlayers.map((p, idx) => {
             const part = res.find(r => r.name === p.name);
             let earned = 0;
@@ -432,9 +457,18 @@ function showScoring(taskId) {
             p.score = Math.max(0, (p.score || 0) + earned);
             return p;
         });
+
+        // Lisää historiaan
+        db.ref('gameState/history').push({
+            taskName: taskInstance.n,
+            winners: winnersNames,
+            timestamp: new Date().toLocaleTimeString('fi-FI')
+        });
+
         const newActiveTasks = { ...d.activeTasks };
         delete newActiveTasks[taskId];
         db.ref('gameState').update({ players: updatedPlayers, activeTasks: newActiveTasks, usedTaskIds: used });
+        logEvent(`Tehtävä valmis: ${taskInstance.n}. Pisteet jaettu.`);
     });
 }
 
@@ -479,6 +513,7 @@ function confirmRandomize() {
         const t = pool[Math.floor(Math.random() * pool.length)];
         const instanceId = "t_" + Date.now();
         db.ref(`gameState/activeTasks/${instanceId}`).set({ ...t, locked: false, participants: [] });
+        logEvent(`Arvottu uusi tehtävä: ${t.n}`);
     });
 }
 
@@ -493,23 +528,109 @@ function selectManualTask(idx) {
         const t = taskLibrary[idx];
         const instanceId = "t_" + Date.now();
         db.ref(`gameState/activeTasks/${instanceId}`).set({ ...t, locked: false, participants: [] });
+        logEvent(`Valittu manuaalinen tehtävä: ${t.n}`);
     });
 }
 
+// --- UUDET: PALKINTO TOIMINNOT ---
+function adminAddReward() {
+    const n = document.getElementById('newRewardName').value.trim();
+    if(!n) return;
+    db.ref('gameState/rewards').push({ n });
+    document.getElementById('newRewardName').value = '';
+    logEvent(`Luotu uusi palkinto: ${n}`);
+}
+
+function giveReward(playerIdx, rewardId) {
+    const reward = rewards[rewardId];
+    db.ref(`gameState/players/${playerIdx}/earnedRewards/${rewardId}`).set({ n: reward.n, time: Date.now() });
+    logEvent(`Palkinto annettu pelaajalle ${allPlayers[playerIdx].name}: ${reward.n}`);
+}
+
+function renderAdminRewardList() {
+    const list = document.getElementById('adminRewardList');
+    if(!list) return; list.innerHTML = "";
+    Object.entries(rewards).forEach(([id, data]) => {
+        const div = document.createElement('div');
+        div.className = 'reward-row';
+        div.innerHTML = `
+            <span class="reward-name">${data.n}</span>
+            <button class="btn btn-danger" style="width:auto; margin:0;" onclick="db.ref('gameState/rewards/${id}').remove()">X</button>
+        `;
+        list.appendChild(div);
+    });
+}
+
+function renderEventLog(logData) {
+    const container = document.getElementById('adminEventLog');
+    if(!container) return;
+    container.innerHTML = "";
+    const logs = Object.values(logData || {}).reverse().slice(0, 30);
+    logs.forEach(l => {
+        const div = document.createElement('div');
+        div.className = 'log-entry';
+        div.innerHTML = `<span class="time">[${l.time}]</span> ${l.msg}`;
+        container.appendChild(div);
+    });
+}
+
+function renderHistory() {
+    const container = document.getElementById('taskHistoryList');
+    if(!container) return;
+    container.innerHTML = taskHistory.length === 0 ? '<p style="font-size:0.7rem; color:var(--muted);">Ei vielä historiaa...</p>' : "";
+    taskHistory.forEach(h => {
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        div.innerHTML = `
+            <span class="task-name">${h.taskName}</span>
+            <span class="task-time">${h.timestamp}</span>
+        `;
+        container.appendChild(div);
+    });
+}
+
+// --- PERUS ADMIN TOIMINNOT ---
 function adminAddPlayer() {
     const input = document.getElementById('adminNewPlayerName');
     const n = input.value.trim();
     if(!n) return;
     db.ref('gameState/players').once('value', snap => {
         let p = snap.val() || [];
-        if(!p.find(x => x.name === n)) { p.push({ name: n, score: 0, cooldown: false }); db.ref('gameState/players').set(p); input.value = ''; } else { alert("Pelaaja on jo listalla!"); }
+        if(!p.find(x => x.name === n)) { 
+            p.push({ name: n, score: 0, cooldown: false, earnedRewards: {} }); 
+            db.ref('gameState/players').set(p); 
+            input.value = ''; 
+            logEvent(`Admin lisäsi pelaajan: ${n}`);
+        } else { alert("Pelaaja on jo listalla!"); }
     });
 }
 
-function adjustScore(idx, amt) { db.ref('gameState/players/' + idx + '/score').transaction(s => Math.max(0, (s || 0) + amt)); }
-function removePlayer(idx) { if(confirm("Poista pelaaja?")) { allPlayers.splice(idx, 1); db.ref('gameState/players').set(allPlayers); } }
-function setBdayHero(idx) { db.ref('gameState/config/bdayHero').transaction(curr => curr === idx ? null : idx); }
-function adminToggleCooldown(idx) { db.ref(`gameState/players/${idx}/cooldown`).set(!allPlayers[idx].cooldown); }
+function adjustScore(idx, amt) { 
+    db.ref('gameState/players/' + idx + '/score').transaction(s => Math.max(0, (s || 0) + amt)); 
+    logEvent(`Admin muutti pelaajan ${allPlayers[idx].name} pisteitä: ${amt > 0 ? '+' : ''}${amt} XP`);
+}
+
+function removePlayer(idx) { 
+    if(confirm("Poista pelaaja?")) { 
+        logEvent(`Admin poisti pelaajan: ${allPlayers[idx].name}`);
+        allPlayers.splice(idx, 1); 
+        db.ref('gameState/players').set(allPlayers); 
+    } 
+}
+
+function setBdayHero(idx) { 
+    db.ref('gameState/config/bdayHero').transaction(curr => {
+        const newVal = curr === idx ? null : idx;
+        if(newVal !== null) logEvent(`Asetettu synttärisankari: ${allPlayers[newVal].name}`);
+        return newVal;
+    }); 
+}
+
+function adminToggleCooldown(idx) { 
+    const newState = !allPlayers[idx].cooldown;
+    db.ref(`gameState/players/${idx}/cooldown`).set(newState); 
+}
+
 function updateConfig(key, val) { db.ref(`gameState/config/${key}`).set(val); }
 function updateTaskInLib(idx, field, val) { db.ref(`gameState/tasks/${idx}/${field}`).set(val); }
 function removeTask(idx) { if(confirm("Poista tehtävä kirjastosta?")) { taskLibrary.splice(idx, 1); db.ref('gameState/tasks').set(taskLibrary); } }
@@ -525,6 +646,7 @@ function adminCreateTask() {
     const newTask = { id: Date.now(), n, d, p, m, b, r };
     db.ref('gameState/tasks').transaction(list => { list = list || []; list.push(newTask); return list; });
     document.getElementById('newTaskName').value = ''; document.getElementById('newTaskDesc').value = '';
+    logEvent(`Luotu uusi tehtävä kirjastoon: ${n}`);
 }
 
 function renderLeaderboard(showCD, heroId) {
@@ -533,9 +655,16 @@ function renderLeaderboard(showCD, heroId) {
     [...allPlayers].sort((a,b) => b.score - a.score).forEach((p) => {
         const pIdx = allPlayers.findIndex(x => x.name === p.name);
         const isHero = heroId !== null && pIdx === heroId;
+        
+        // Palkinto-ikonit
+        let rewardIcons = "";
+        if(p.earnedRewards) {
+            Object.values(p.earnedRewards).forEach(() => { rewardIcons += "🏆"; });
+        }
+
         const div = document.createElement('div');
         div.className = `player-row ${p.name === myName ? 'me' : ''} ${isHero ? 'is-hero' : ''} ${p.cooldown ? 'on-cooldown' : ''}`;
-        div.innerHTML = `<span>${p.name}${isHero?'🎂':''}${(showCD&&p.cooldown)?' <small style="color:var(--danger)">[JÄÄHY]</small>':''}</span><span class="xp-badge">${p.score} XP</span>`;
+        div.innerHTML = `<span>${isHero?'🎂 ':''}${p.name}${rewardIcons}${(showCD&&p.cooldown)?' <small style="color:var(--danger)">[JÄÄHY]</small>':''}</span><span class="xp-badge">${p.score} XP</span>`;
         list.appendChild(div);
     });
 }
@@ -546,7 +675,27 @@ function renderAdminPlayerList(heroId) {
     allPlayers.forEach((p, i) => {
         const div = document.createElement('div');
         div.className = 'player-row'; div.style.padding = '8px';
-        div.innerHTML = `<span style="font-size:0.8rem;">${p.name} (${p.score})</span><div style="display:flex; gap:4px;"><button class="btn" style="width:32px; padding:5px; margin:0; background:${i===heroId?'var(--gm-accent)':'#333'}" onclick="setBdayHero(${i})">🎂</button><button class="btn ${p.cooldown ? 'btn-success' : 'btn-secondary'}" style="width:auto; font-size:0.5rem; padding:5px; margin:0;" onclick="adminToggleCooldown(${i})">${p.cooldown ? 'VAP' : 'J'}</button><button class="btn btn-secondary" style="width:28px; padding:5px; margin:0;" onclick="adjustScore(${i}, 1)">+</button><button class="btn btn-secondary" style="width:28px; padding:5px; margin:0;" onclick="adjustScore(${i}, -1)">-</button><button class="btn btn-danger" style="width:28px; padding:5px; margin:0;" onclick="removePlayer(${i})">X</button></div>`;
+        
+        // Palkinnon antopainikkeet
+        let rewardBtns = "";
+        Object.entries(rewards).forEach(([rId, rData]) => {
+            rewardBtns += `<button class="btn" style="width:auto; font-size:0.5rem; padding:4px; margin:0 2px; background:gold; color:black;" onclick="giveReward(${i}, '${rId}')">🏆 ${rData.n.slice(0,3)}</button>`;
+        });
+
+        div.innerHTML = `
+            <div style="width:100%">
+                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                    <span style="font-size:0.8rem; font-weight:bold;">${p.name} (${p.score})</span>
+                    <div style="display:flex; gap:4px;">
+                        <button class="btn" style="width:32px; padding:5px; margin:0; background:${i===heroId?'var(--gm-accent)':'#333'}" onclick="setBdayHero(${i})">🎂</button>
+                        <button class="btn ${p.cooldown ? 'btn-success' : 'btn-secondary'}" style="width:auto; font-size:0.5rem; padding:5px; margin:0;" onclick="adminToggleCooldown(${i})">${p.cooldown ? 'VAP' : 'J'}</button>
+                        <button class="btn btn-secondary" style="width:28px; padding:5px; margin:0;" onclick="adjustScore(${i}, 1)">+</button>
+                        <button class="btn btn-secondary" style="width:28px; padding:5px; margin:0;" onclick="adjustScore(${i}, -1)">-</button>
+                        <button class="btn btn-danger" style="width:28px; padding:5px; margin:0;" onclick="removePlayer(${i})">X</button>
+                    </div>
+                </div>
+                <div style="display:flex; flex-wrap:wrap; gap:2px;">${rewardBtns}</div>
+            </div>`;
         list.appendChild(div);
     });
 }
@@ -587,5 +736,5 @@ function triggerWinnerOverlay(taskName) {
 
 function toggleAdminPanel() { 
     const p = document.getElementById('adminPanel'); const isOpening = p.style.display === 'none'; p.style.display = isOpening ? 'block' : 'none'; 
-    if(isOpening) { renderAdminPlayerList(null); renderTaskLibrary(); }
+    if(isOpening) { renderAdminPlayerList(null); renderTaskLibrary(); renderAdminRewardList(); }
 }
