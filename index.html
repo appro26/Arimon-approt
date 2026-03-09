@@ -49,18 +49,13 @@
 
         <div id="liveTask" style="display:none;"></div>
 
-        <div class="card" id="historyCard">
-            <h2>Viimeisimmät tehtävät</h2>
-            <div id="taskHistoryList" style="font-size: 0.8rem; color: var(--muted);"></div>
-        </div>
-
         <div class="card">
             <h2>Leaderboard</h2>
             <div id="playerList"></div>
         </div>
 
         <div class="gm-only">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+            <div class="admin-grid-layout">
                 <button class="btn btn-gm" onclick="confirmRandomize()">ARVO UUSI TEHTÄVÄ</button>
                 <button class="btn btn-secondary" onclick="toggleAdminPanel()">ADMIN-PANEELI</button>
             </div>
@@ -68,14 +63,14 @@
             <div id="adminPanel" class="card" style="display:none; margin-top:15px;">
                 <h2>Pelin säännöt</h2>
                 <div class="admin-settings-list">
-                    <label class="minus-label">
+                    <div class="checkbox-group">
                         <input type="checkbox" id="useCooldowns" onchange="updateConfig('useCooldowns', this.checked)"> 
-                        <span>Käytä jäähyä (Cooldown)</span>
-                    </label>
-                    <label class="minus-label">
+                        <label for="useCooldowns">Käytä jäähyä (Cooldown)</label>
+                    </div>
+                    <div class="checkbox-group">
                         <input type="checkbox" id="excludeUsedTasks" onchange="updateConfig('excludeUsedTasks', this.checked)"> 
-                        <span>Poista käytetyt pakasta</span>
-                    </label>
+                        <label for="excludeUsedTasks">Poista käytetyt pakasta</label>
+                    </div>
                 </div>
                 
                 <h2 style="margin-top:20px;">Valitse tehtävä manuaalisesti</h2>
@@ -89,7 +84,7 @@
                 
                 <div class="admin-row-stack" style="margin-top:15px;">
                     <input type="text" id="adminNewPlayerName" placeholder="Pelaajan nimi...">
-                    <button class="btn btn-success" onclick="adminAddPlayer()">LISÄÄ PELAAJA</button>
+                    <button class="btn btn-success" id="addPlayerBtn" onclick="adminAddPlayer()">LISÄÄ PELAAJA</button>
                 </div>
 
                 <h2 style="margin-top:20px;">Palkinnot & Saavutukset</h2>
@@ -112,12 +107,15 @@
                             <label style="font-size:0.7rem; color:var(--muted);">Pisteet (XP):</label>
                             <input type="number" id="newTaskPoints" value="2">
 
-                            <div style="display: flex; gap: 15px; margin-top: 5px;">
+                            <div class="checkbox-stack" style="margin-top: 10px;">
                                 <label class="minus-label">
                                     <input type="checkbox" id="newTaskMinus"> <span>Pistemiinus epäonnistuessa</span>
                                 </label>
                                 <label class="minus-label" style="color:var(--gm-accent);">
                                     <input type="checkbox" id="newTaskBday"> <span>Synttärisankari-XP</span>
+                                </label>
+                                <label class="minus-label" style="color:#ffd700;">
+                                    <input type="checkbox" id="newTaskIsHero"> <span>Kultainen Sankaritehtävä</span>
                                 </label>
                             </div>
                         </div>
@@ -133,6 +131,11 @@
 
                 <hr style="border: 0; border-top: 1px solid #333; margin: 30px 0;">
                 <button class="btn btn-danger" style="width:100%;" onclick="window.resetGame()">NOLLAA KOKO PELI (DATABASE RESET)</button>
+            </div>
+
+            <div class="card" id="historyCard" style="margin-top: 20px;">
+                <h2>Aiemmat tehtävät</h2>
+                <div id="taskHistoryList" style="font-size: 0.8rem; color: var(--muted);"></div>
             </div>
         </div>
     </div>
