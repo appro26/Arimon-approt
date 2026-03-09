@@ -55,100 +55,82 @@
         </div>
 
         <div class="gm-only">
-            <div class="admin-main-controls">
-                <div class="draw-controls-wrapper">
-                    <div class="draw-count-selector">
-                        <span id="drawCountDisplay">1</span>
-                        <input type="range" id="drawCountSlider" min="1" max="5" value="1" oninput="document.getElementById('drawCountDisplay').innerText = this.value">
-                    </div>
-                    <button class="btn btn-gm" onclick="confirmRandomize()">ARVO UUSI TEHTÄVÄ</button>
-                </div>
+            <div class="admin-grid-layout">
+                <button class="btn btn-gm" onclick="confirmRandomize()">ARVO UUSI TEHTÄVÄ</button>
                 <button class="btn btn-secondary" onclick="toggleAdminPanel()">ADMIN-PANEELI</button>
             </div>
             
             <div id="adminPanel" class="card" style="display:none; margin-top:15px;">
-                <div class="compact-admin-section">
-                    <h2>Pelin säännöt</h2>
-                    <div class="admin-settings-list">
-                        <div class="checkbox-align-row">
-                            <label for="useCooldowns">Käytä jäähyä (Cooldown)</label>
-                            <input type="checkbox" id="useCooldowns" onchange="updateConfig('useCooldowns', this.checked)"> 
-                        </div>
-                        <div class="checkbox-align-row">
-                            <label for="excludeUsedTasks">Poista käytetyt pakasta</label>
-                            <input type="checkbox" id="excludeUsedTasks" onchange="updateConfig('excludeUsedTasks', this.checked)"> 
-                        </div>
+                <h2>Pelin säännöt</h2>
+                <div class="admin-settings-list">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="useCooldowns" onchange="updateConfig('useCooldowns', this.checked)"> 
+                        <label for="useCooldowns">Käytä jäähyä (Cooldown)</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="excludeUsedTasks" onchange="updateConfig('excludeUsedTasks', this.checked)"> 
+                        <label for="excludeUsedTasks">Poista käytetyt pakasta</label>
                     </div>
                 </div>
                 
-                <div class="compact-admin-section">
-                    <h2>Valitse tehtävä manuaalisesti</h2>
-                    <select id="manualTaskSelect" onchange="selectManualTask(this.value)"></select>
+                <h2 style="margin-top:20px;">Valitse tehtävä manuaalisesti</h2>
+                <select id="manualTaskSelect" onchange="selectManualTask(this.value)"></select>
+
+                <h2 style="margin-top:20px;">Pelaajien hallinta</h2>
+                <p style="font-size:0.6rem; color:var(--gm-accent); margin-bottom:10px; font-weight:700;">
+                    🎂 = SYNTTÄRISANKARI | J = JÄÄHYLLÄ
+                </p>
+                <div id="adminPlayerList"></div>
+                
+                <div class="admin-row-stack" style="margin-top:15px;">
+                    <input type="text" id="adminNewPlayerName" placeholder="Pelaajan nimi...">
+                    <button class="btn btn-success" id="addPlayerBtn" onclick="adminAddPlayer()">LISÄÄ PELAAJA</button>
                 </div>
 
-                <div class="compact-admin-section">
-                    <h2>Pelaajien hallinta</h2>
-                    <p style="font-size:0.6rem; color:var(--gm-accent); margin-bottom:10px; font-weight:700;">
-                        🎂 = SYNTTÄRISANKARI | J = JÄÄHYLLÄ
-                    </p>
-                    <div id="adminPlayerList"></div>
+                <h2 style="margin-top:20px;">Palkinnot & Saavutukset</h2>
+                <div class="admin-row-stack">
+                    <input type="text" id="newRewardName" placeholder="Palkinnon nimi (esim. Kultainen muki)">
+                    <button class="btn btn-primary" onclick="adminAddReward()">LISÄÄ PALKINTO</button>
+                </div>
+                <div id="adminRewardList" style="margin-top:10px;"></div>
+
+                <h2 style="margin-top:20px;">Lisää uusi tehtävä pakkaan</h2>
+                <div class="admin-row-stack">
+                    <input type="text" id="newTaskName" placeholder="Tehtävän nimi">
+                    <textarea id="newTaskDesc" placeholder="Kuvaus/Ohjeet"></textarea>
                     
-                    <div class="admin-row-stack" style="margin-top:10px;">
-                        <input type="text" id="adminNewPlayerName" placeholder="Pelaajan nimi...">
-                        <button class="btn btn-success" id="addPlayerBtn" onclick="adminAddPlayer()">LISÄÄ</button>
-                    </div>
-                </div>
+                    <div class="admin-task-controls">
+                        <div class="point-input-group">
+                            <label style="font-size:0.7rem; color:var(--muted);">Suositeltu pelaajamäärä:</label>
+                            <input type="number" id="newTaskRecommendedPlayers" value="1" min="1" max="10">
+                            
+                            <label style="font-size:0.7rem; color:var(--muted);">Pisteet (XP):</label>
+                            <input type="number" id="newTaskPoints" value="2">
 
-                <div class="compact-admin-section">
-                    <h2>Lisää uusi tehtävä</h2>
-                    <div class="admin-row-stack">
-                        <input type="text" id="newTaskName" placeholder="Tehtävän nimi">
-                        <textarea id="newTaskDesc" placeholder="Kuvaus/Ohjeet"></textarea>
-                        
-                        <div class="admin-task-controls">
-                            <div class="point-input-group">
-                                <div class="input-inline-label">
-                                    <label>Suositeltu pelaajamäärä:</label>
-                                    <input type="number" id="newTaskRecommendedPlayers" value="1" min="1" max="10">
-                                </div>
-                                
-                                <div class="input-inline-label">
-                                    <label>Pisteet (XP):</label>
-                                    <input type="number" id="newTaskPoints" value="2">
-                                </div>
-
-                                <div class="checkbox-stack-compact">
-                                    <div class="checkbox-align-row">
-                                        <label>Pistemiinus epäonnistuessa</label>
-                                        <input type="checkbox" id="newTaskMinus">
-                                    </div>
-                                    <div class="checkbox-align-row" style="color:var(--gm-accent);">
-                                        <label>Synttärisankari-XP</label>
-                                        <input type="checkbox" id="newTaskBday">
-                                    </div>
-                                    <div class="checkbox-align-row" style="color:#ffd700;">
-                                        <label>Kultainen Sankaritehtävä</label>
-                                        <input type="checkbox" id="newTaskIsHero">
-                                    </div>
-                                </div>
+                            <div class="checkbox-stack" style="margin-top: 10px;">
+                                <label class="minus-label">
+                                    <input type="checkbox" id="newTaskMinus"> <span>Pistemiinus epäonnistuessa</span>
+                                </label>
+                                <label class="minus-label" style="color:var(--gm-accent);">
+                                    <input type="checkbox" id="newTaskBday"> <span>Synttärisankari-XP</span>
+                                </label>
+                                <label class="minus-label" style="color:#ffd700;">
+                                    <input type="checkbox" id="newTaskIsHero"> <span>Kultainen Sankaritehtävä</span>
+                                </label>
                             </div>
-                            <button class="btn btn-success" style="width:100%; margin-top:10px;" onclick="adminCreateTask()">TALLENNA PAKKAAN</button>
                         </div>
+                        <button class="btn btn-success" style="width:100%; margin-top:10px;" onclick="adminCreateTask()">TALLENNA TEHTÄVÄ PAKKAAN</button>
                     </div>
                 </div>
                 
-                <div class="compact-admin-section">
-                    <h2>Tehtäväkirjasto</h2>
-                    <div id="taskLibraryEditor" style="max-height:300px; overflow-y:auto; margin-top:10px; border-top:1px solid #333; padding-top:10px;"></div>
-                </div>
+                <h2 style="margin-top:20px;">Tehtäväkirjasto (Muokkaa pakkaa)</h2>
+                <div id="taskLibraryEditor" style="max-height:400px; overflow-y:auto; margin-top:10px; border-top:1px solid #333; padding-top:10px;"></div>
 
-                <div class="compact-admin-section">
-                    <h2>Tapahtumaloki</h2>
-                    <div id="adminEventLog" style="max-height:150px; overflow-y:auto; font-size:0.6rem; background:#000; padding:10px; border-radius:5px; border:1px solid #222; font-family:monospace;"></div>
-                </div>
+                <h2 style="margin-top:20px;">Tapahtumaloki</h2>
+                <div id="adminEventLog" style="max-height:200px; overflow-y:auto; font-size:0.6rem; background:#000; padding:10px; border-radius:5px; border:1px solid #222; font-family:monospace;"></div>
 
-                <hr style="border: 0; border-top: 1px solid #333; margin: 20px 0;">
-                <button class="btn btn-danger" style="width:100%; font-size: 0.7rem;" onclick="window.resetGame()">NOLLAA KOKO PELI (RESET)</button>
+                <hr style="border: 0; border-top: 1px solid #333; margin: 30px 0;">
+                <button class="btn btn-danger" style="width:100%;" onclick="window.resetGame()">NOLLAA KOKO PELI (DATABASE RESET)</button>
             </div>
 
             <div class="card" id="historyCard" style="margin-top: 20px;">
