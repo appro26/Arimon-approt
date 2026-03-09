@@ -47,8 +47,9 @@
 
         <div class="gm-only" id="gmGlobalControls" style="display:none; margin-bottom: 15px;">
             <div class="admin-grid-layout" style="flex-wrap: wrap;">
-                <button class="btn btn-gm" onclick="drawAllTasks()" style="font-size: 0.65rem; padding: 12px;">ARVO KAIKKIIN</button>
-                <button class="btn btn-primary" onclick="lockAllTasks()" style="font-size: 0.65rem; padding: 12px;">LUKITSE KAIKKI</button>
+                <button class="btn btn-gm" onclick="drawAllTasks()" style="font-size: 0.65rem; padding: 12px; flex: 1;">ARVO KAIKKIIN</button>
+                <button class="btn btn-primary" onclick="lockAllTasks()" style="font-size: 0.65rem; padding: 12px; flex: 1;">LUKITSE KAIKKI</button>
+                <button class="btn btn-secondary" id="compactToggleBtn" onclick="toggleCompactMode()" style="font-size: 0.65rem; padding: 12px; flex: 1;">SUPISTA NÄKYMÄ</button>
                 <button class="btn btn-success" onclick="finishAllTasks()" style="font-size: 0.65rem; padding: 12px; flex-basis: 100%;">MERKITSE VALMIIT KERRALLA</button>
             </div>
         </div>
@@ -120,7 +121,7 @@
                         <input type="checkbox" id="visBday" onchange="updateVisConfig('bday', this.checked)"> 
                         <label for="visBday" style="color:var(--gm-accent)">Synttärisankaribonus</label>
                     </div>
-                    <p style="font-size:0.6rem; color:var(--muted); margin-top:10px;">Huom: Game Master näkee kaikki tiedot painamalla "SPEKSIT". Pelaajille kaikki tiedot paljastuvat automaattisesti, kun tehtävä on lukittu.</p>
+                    <p style="font-size:0.6rem; color:var(--muted); margin-top:10px;">Huom: Tämä asetus koskee myös Game Masteria. Kuvaukset ja ohjeet näkyvät aina valituille pelaajille, kun tehtävä on lukittu, tai GM:lle "SPEKSIT"-napista.</p>
                 </div>
                 
                 <h2 style="margin-top:20px;">Valitse tehtävä manuaalisesti</h2>
