@@ -303,7 +303,7 @@ input[type="checkbox"] {
     margin: 0;
     cursor: pointer;
     accent-color: var(--accent);
-    flex-shrink: 0; /* Estää checkboxia menemästä kasaan pienellä ruudulla */
+    flex-shrink: 0; 
 }
 
 /* ==========================================
@@ -319,7 +319,7 @@ input[type="checkbox"] {
 .admin-row-stack {
     display: flex;
     gap: 10px;
-    align-items: center; /* Keskittää tekstit ja painikkeet pystysuunnassa */
+    align-items: center;
     margin-bottom: 10px;
 }
 .admin-row-stack input, .admin-row-stack textarea { margin-bottom: 0; flex: 1; }
@@ -333,9 +333,39 @@ input[type="checkbox"] {
     border: 1px solid rgba(255,255,255,0.05);
 }
 
+/* Uusi: Skaalautuva asetus Tehtävän lisäykselle */
+.admin-add-task-form {
+    background: rgba(255, 255, 255, 0.02);
+    padding: 15px;
+    border-radius: 12px;
+    margin-top: 10px;
+}
+
+.number-inputs-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.number-input-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.number-input-item label {
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-bottom: 5px;
+}
+
+.number-input-item input {
+    margin-bottom: 0;
+}
+
 .checkbox-group {
     display: flex;
-    align-items: center; /* Korjaa asettelun mobiilissa */
+    align-items: center; 
     gap: 12px;
     margin-bottom: 12px;
 }
@@ -349,16 +379,7 @@ input[type="checkbox"] {
 }
 
 .admin-task-controls {
-    background: rgba(255, 255, 255, 0.02);
-    padding: 15px;
-    border-radius: 12px;
     margin-top: 10px;
-}
-
-.point-input-group {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
 }
 
 .checkbox-stack {
@@ -442,10 +463,23 @@ input[type="checkbox"] {
 .winner-content {
     animation: winner-pop 0.5s cubic-bezier(0.17, 0.89, 0.32, 1.49);
     width: 100%;
-    max-width: 320px;
+    max-width: 90%; /* Levennetty, jotta teksti mahtuu paremmin */
 }
 
 .winner-content h1 { color: var(--success); font-size: 3rem; margin-bottom: 10px; text-shadow: 0 0 20px var(--success); }
+
+/* Korjattu tehtävän nimen skaalautuvuus voittajapopupissa */
+#winnerTaskName {
+    font-size: 2rem;
+    color: var(--accent);
+    margin: 0 0 20px 0;
+    text-transform: uppercase;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    line-height: 1.2;
+}
+
 .winner-content p { font-size: 1.5rem; color: #fff; }
 
 .timer-bar { animation: shrink 3s linear forwards; }
@@ -474,15 +508,17 @@ input[type="checkbox"] {
 @media (max-width: 480px) {
     .volunteer-selector-grid { grid-template-columns: repeat(2, 1fr); }
     .container { padding-top: 100px; }
-    .winner-content h1 { font-size: 2.2rem; }
     
-    /* Varmistetaan että pinoautuvat asettelut skaalautuvat puhelimella nätisti */
+    /* Responsiivinen otsikko voittajapopuppiin */
+    .winner-content h1 { font-size: 2.2rem; }
+    #winnerTaskName { font-size: 1.6rem; }
+    
     .admin-row-stack { flex-direction: column; align-items: stretch; }
     .admin-row-stack .btn { width: 100%; }
 }
 
 /* ==========================================
-   11. HISTORIA, LOKI JA PALKINNOT
+   11. HISTORIA JA LOKI
    ========================================== */
 #taskHistoryList {
     display: flex;
@@ -507,21 +543,6 @@ input[type="checkbox"] {
 .history-item .task-name { font-weight: 700; font-size: 0.9rem; color: var(--text); }
 .history-item .task-time { font-size: 0.65rem; color: var(--muted); }
 
-.reward-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: var(--surface-light);
-    padding: 12px;
-    border-radius: 12px;
-    margin-bottom: 8px;
-    border: 1px solid rgba(255, 159, 67, 0.2);
-    transition: transform 0.2s;
-}
-
-.reward-row:hover { transform: translateX(5px); }
-.reward-name { font-weight: 800; color: var(--gm-accent); font-size: 0.9rem; }
-
 #adminEventLog {
     background: #000;
     border-radius: 8px;
@@ -537,14 +558,3 @@ input[type="checkbox"] {
 .log-entry .time { color: var(--muted); margin-right: 8px; }
 
 #historyCard { min-height: auto; }
-
-.reward-earned {
-    animation: reward-shimmer 2s infinite;
-    border: 2px solid gold !important;
-}
-
-@keyframes reward-shimmer {
-    0% { box-shadow: 0 0 5px gold; filter: brightness(1); }
-    50% { box-shadow: 0 0 20px gold; filter: brightness(1.2); }
-    100% { box-shadow: 0 0 5px gold; filter: brightness(1); }
-}
