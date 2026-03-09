@@ -163,7 +163,6 @@ function triggerRender() {
     });
 }
 
-// NOLLAUS: Asettaa uudet oletukset
 window.resetGame = function() {
     if (confirm("VAROITUS: Tämä poistaa kaikki tiedot. Jatketaanko?")) {
         const newResetId = Date.now().toString();
@@ -264,6 +263,7 @@ db.ref('gameState').on('value', (snap) => {
     lastKnownTasks = JSON.parse(JSON.stringify(data.activeTasks || {}));
 });
 
+// KORJAUS: Lyhennetty ilmoituksen kesto (Nyt 2500ms aiemman 4000ms sijaan)
 function checkForNewWinnerPopups(newTasks) {
     if (!myName) return;
     let addedNew = false;
@@ -298,8 +298,18 @@ function triggerWinnerOverlay(tasksHtml) {
     if(!overlay) return;
     document.getElementById('winnerTaskNames').innerHTML = tasksHtml; 
     overlay.style.display = 'flex';
+    
+    // Nollataan CSS-animaatio väkisin, jotta se toistuu oikein myös peräkkäisissä popup-ilmoituksissa
+    const bar = overlay.querySelector('.timer-bar');
+    if (bar) {
+        bar.style.animation = 'none';
+        void bar.offsetWidth; 
+        bar.style.animation = 'shrink 2.2s linear forwards';
+    }
+
     if (navigator.vibrate) navigator.vibrate([200, 100, 200]); 
-    setTimeout(() => { overlay.style.display = 'none'; }, 4000); 
+    // KORJAUS 2: Popup katoaa nyt nopeammin
+    setTimeout(() => { overlay.style.display = 'none'; }, 2500); 
 }
 
 function showXPAnimation(points) {
@@ -321,6 +331,11 @@ function showXPAnimation(points) {
         setTimeout(() => { pop.style.display = 'none'; }, 2200);
     }, 400);
 }
+
+// UUSI FUNKTIO: Päivittää arvottavien määrän reaaliajassa tietokantaan, kun GM vaihtaa lukua
+window.updateTaskDrawCount = function(taskId, val) {
+    db.ref(`gameState/activeTasks/${taskId}/r`).set(parseInt(val));
+};
 
 // --- RENDERÖINTI: AKTIIVISET TEHTÄVÄT ---
 function renderActiveTasks(tasksObj, config) {
@@ -423,8 +438,9 @@ function renderActiveTasks(tasksObj, config) {
             tagsHtml += `<div class="xp-badge" style="display:inline-block; margin-bottom:10px; margin-right:5px;">${taskData.p} XP</div>`;
         }
         
+        // KORJAUS 1: Pilleri heijastaa nyt aina MAX-arvoa, joka päivittyy livenä kun GM vaihtaa numeroa
         if (!isHeroTask && (showFull || vis.drawCount)) {
-            tagsHtml += `<div class="xp-badge" style="display:inline-block; margin-bottom:10px; background:rgba(255,255,255,0.1); color:var(--text); border-color:rgba(255,255,255,0.2); margin-right:5px;">👥 ${taskData.r || 1} SUORITTAJAA</div>`;
+            tagsHtml += `<div class="xp-badge" style="display:inline-block; margin-bottom:10px; background:rgba(255,255,255,0.1); color:var(--text); border-color:rgba(255,255,255,0.2); margin-right:5px;">👥 MAX ${taskData.r || 1} SUORITTAJAA</div>`;
         }
 
         if ((showFull || vis.minus) && taskData.m) {
@@ -460,10 +476,9 @@ function renderActiveTasks(tasksObj, config) {
             descHtml += `<p class="task-description" style="opacity:0.5; font-size:1.1rem;">Tehtävä paljastetaan valituille pelaajille...</p>`;
         }
 
-        // --- 4. ACTION (TÄSSÄ ESTETÄÄN PÄÄSY TEHTÄVÄKOHTAISELLA JÄÄHYLLÄ) ---
+        // --- 4. ACTION ---
         let actionHtml = '';
         if (!isGM && !isLocked && !isHeroTask) {
-            // Tehtäväkohtainen bänni (Sukupolvi-Jäähy)
             const isBannedFromThis = config.useCooldowns && taskData.bannedPlayers && taskData.bannedPlayers.includes(myName);
             const amIIn = results.some(r => r.name === myName);
 
@@ -487,7 +502,7 @@ function renderActiveTasks(tasksObj, config) {
                     <div class="volunteer-selector-grid" id="grid-${taskId}"></div>
                     <div class="admin-row-stack">
                         <div style="display:flex; gap:10px; flex:1;">
-                            <select id="drawCount-${taskId}" style="flex:1; margin:0;"></select>
+                            <select id="drawCount-${taskId}" style="flex:1; margin:0;" onchange="updateTaskDrawCount('${taskId}', this.value)"></select>
                             <button class="btn btn-gm" style="flex:2; margin:0;" onclick="drawRandom('${taskId}')">ARVO PELAAJAT</button>
                         </div>
                         <button class="btn btn-success" style="margin:0; font-size:0.75rem; padding:12px;" onclick="lockParticipants('${taskId}')">LUKITSE VALINNAT</button>
@@ -526,7 +541,7 @@ function renderActiveTasks(tasksObj, config) {
     });
 }
 
-window.drawAllTasks = function() {
+function drawAllTasks() {
     db.ref('gameState/activeTasks').once('value', snap => {
         const tasks = snap.val() || {};
         let drawsTriggered = 0;
@@ -540,9 +555,9 @@ window.drawAllTasks = function() {
         if (drawsTriggered > 0) logEvent(`Massatoiminto: Arvottu pelaajat ${drawsTriggered} tehtävään.`);
         else alert("Ei arvottavia tehtäviä.");
     });
-};
+}
 
-window.lockAllTasks = function() {
+function lockAllTasks() {
     db.ref('gameState/activeTasks').once('value', snap => {
         const tasks = snap.val() || {};
         let count = 0;
@@ -556,9 +571,9 @@ window.lockAllTasks = function() {
         if (count > 0) logEvent(`Massatoiminto: Lukittu ${count} tehtävää.`);
         else alert("Ei lukittavia tehtäviä.");
     });
-};
+}
 
-window.finishAllTasks = function() {
+function finishAllTasks() {
     db.ref('gameState/activeTasks').once('value', snap => {
         const tasks = snap.val() || {};
         let finishTriggered = 0;
@@ -572,7 +587,7 @@ window.finishAllTasks = function() {
         if (finishTriggered > 0) logEvent(`Massatoiminto: Merkitty ${finishTriggered} tehtävää valmiiksi.`);
         else alert("Ei valmiita tehtäviä odottamassa pisteytystä.");
     });
-};
+}
 
 function deleteActiveTask(taskId) {
     if (confirm("Haluatko varmasti poistaa tämän aktiivisen tehtävän?")) {
@@ -618,11 +633,10 @@ function renderGMGrid(taskId, results, isLocked, isShuffling, showCD, taskData) 
         const btn = grid.children[index];
         const isInc = results.some(r => r.name === p.name);
         
-        // GM näkee, ketkä on estetty TÄSTÄ tehtävästä (Punainen väri)
         const isBannedFromThis = showCD && taskData.bannedPlayers && taskData.bannedPlayers.includes(p.name);
         
         btn.className = `btn ${isInc ? 'btn-primary selected-participant' : 'btn-secondary'} ${isBannedFromThis ? 'on-cooldown' : ''}`;
-        btn.disabled = isLocked || isShuffling; // GM voi silti lisätä pelaajan väkisin ohittaen jäähyn!
+        btn.disabled = isLocked || isShuffling; 
         btn.innerHTML = `${p.name}${isBannedFromThis ? ' <small>(J)</small>' : ''}`;
         btn.onclick = () => toggleParticipant(taskId, p.name);
     });
@@ -694,12 +708,10 @@ function volunteer(taskId) {
     db.ref('gameState').once('value', snap => {
         const data = snap.val();
         
-        // Tarkista onko pelaaja estetty TÄSTÄ tehtävästä
         if (data.config?.useCooldowns && data.activeTasks[taskId].bannedPlayers && data.activeTasks[taskId].bannedPlayers.includes(myName)) {
             alert("Olet jäähyllä tästä tehtävästä!"); return;
         }
         
-        // Tarkista tiukka ilmoittautumisjäähy (jos päällä)
         if (data.config?.strictVolunteer) {
             let inOther = Object.keys(data.activeTasks).some(id => {
                 if (id === taskId) return false;
@@ -754,7 +766,6 @@ function toggleParticipant(taskId, name) {
     });
 }
 
-// UUSI JÄÄHYLOGIIKKA (Vaihe 1: Lukituksesta tulee aktiivinen jäähy 'true')
 function lockParticipants(taskId, isMassAction = false) { 
     db.ref('gameState').once('value', snap => {
         const d = snap.val();
@@ -878,7 +889,7 @@ function renderScoringArea(taskId, results, isHeroTask, heroWinState) {
 
 function updateDrawCountSelect(taskId, task) {
     const sel = document.getElementById(`drawCount-${taskId}`);
-    if (!sel || sel.options.length > 0) return;
+    if (!sel || sel.options.length > 0) return; // Estetään vaihtoehtojen päällekirjoitus jos jo olemassa
     const max = Math.max(allPlayers.length, 1);
     for (let i = 1; i <= max; i++) {
         const opt = document.createElement('option');
@@ -890,7 +901,6 @@ function updateDrawCountSelect(taskId, task) {
 
 function toggleWin(taskId, i) { db.ref(`gameState/activeTasks/${taskId}/participants/${i}/win`).transaction(w => !w); }
 
-// UUSI JÄÄHYLOGIIKKA (Vaihe 2 & 3: Kun arvotaan uutta, jäähyllä olijat leimataan tähän tehtävään, ja heidän oma jäähynsä nollautuu)
 function confirmRandomize() {
     db.ref('gameState').once('value', snap => {
         const d = snap.val();
@@ -900,7 +910,6 @@ function confirmRandomize() {
 
         let bannedFromThisTask = [];
         
-        // Pelaajat, jotka ovat jäähyllä, leimataan estolistalle JA heidän globaali jäähynsä nollataan
         if (config.useCooldowns) {
             const updatedPlayers = allPlayers.map(p => {
                 if (p.cooldown) {
@@ -948,7 +957,7 @@ function confirmRandomize() {
             locked: false, 
             participants: [], 
             drawn: false,
-            bannedPlayers: bannedFromThisTask // Asetetaan estolista juuri tälle arvotulle tehtävälle
+            bannedPlayers: bannedFromThisTask 
         };
         if (heroDraw.weighted) updates[`gameState/config/heroDraw/drawCount`] = newDrawCount;
 
@@ -981,7 +990,7 @@ function selectManualTask(idx) {
             locked: false, 
             participants: [], 
             drawn: false,
-            bannedPlayers: bannedFromThisTask // Asetetaan estolista myös manuaalisesti nostettuihin
+            bannedPlayers: bannedFromThisTask 
         });
         logEvent(`Valittu manuaalinen tehtävä: ${t.n}`);
         document.getElementById('manualTaskSelect').value = ""; 
@@ -1099,7 +1108,6 @@ function renderLeaderboard(showCD, heroId) {
         const div = document.createElement('div');
         div.className = `player-row ${p.name === myName ? 'me' : ''} ${isHero ? 'is-hero' : ''} ${p.cooldown ? 'on-cooldown' : ''}`;
         
-        // Pelaajan perässä oleva J-merkki kertoo "Tulee saamaan rangaistuksen seuraavaan arvottavaan"
         const cdText = (showCD && p.cooldown) ? ' <small style="color:var(--danger)">[JÄÄHY]</small>' : '';
         div.innerHTML = `<span>${isHero?'🎂 ':''}${p.name}${cdText}</span><span class="xp-badge">${p.score} XP</span>`;
         list.appendChild(div);
