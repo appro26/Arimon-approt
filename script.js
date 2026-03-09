@@ -108,7 +108,7 @@ const defaultTasks = [
     { id: 89, n: "Putti-haaste (Sankari)", d: "Sankarin on heitettävä lasinalunen pystyasennossa olevaan tyhjään tuoppiin. Kolme yritystä.", p: 2, m: true, b: true, r: 1 },
     { id: 90, n: "Blue Zone -juoksu (Sankari)", d: "Sankarin on käytävä koskettamassa baarin ulko-ovea ja palattava 15 sekunnissa takaisin.", p: 2, m: true, b: true, r: 1 },
     { id: 91, n: "Hardware Troubleshooting (Sankari)", d: "Sankarin on selitettävä jollekin tuntemattomalle asiakkaalle, miten frisbeegolfin pituusdraivi tai IT-tuki toimii.", p: 3, m: true, b: true, r: 1 },
-    { id: 92, n: "Chef's Special (Sankari)", d: "Sankarin on loihdittava 'annos' eli koottava pöydän snacks-kulhosta näyttävä taideteos ja syötävä se.", p: 1, m: false, b: true, r: 1 }
+    { id: 92, n: "Chef's Special (Sankari)", d: "Sankarin on loihdittava 'annos' eli koottava pöydän snacks-kulhosta näyttävä taideteos ja syötävä se.", p: 1, m: false, b: true, r: 1 },
     { id: 93, n: "Palvelinhuoneen hämärä (Sankari)", d: "Sankarin on suoritettava seuraava tilauksensa tai keskustelunsa kuiskaamalla, kuin hän olisi salaisessa palvelinruumissa.", p: 1, m: true, b: true, r: 1 },
     { id: 94, n: "Range-treeni (Sankari)", d: "Sankarin on 'heitettävä' (matkittava heittoa) viisi erilaista frisbeegolf-kiekkoa (putteri, midari, draiveri jne.) ja selitettävä niiden lentoradat seurueelle.", p: 2, m: false, b: true, r: 1 },
     { id: 95, n: "Loot-varkaus (Sankari)", d: "Sankarin on onnistuttava ottamaan yksi hörppy jonkun muun lasista niin, ettei kukaan huomaa (stealth mode).", p: 3, m: true, b: true, r: 1 },
