@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/192/beer.png">
 
-    <link rel="stylesheet" href="style.css?v=7">
+    <link rel="stylesheet" href="style.css?v=8">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
 
@@ -38,10 +38,12 @@
 
     <div class="container">
         
-        <div id="installCard" class="card" style="display:none; text-align:center; padding: 15px; border-color: var(--accent);">
-            <h2 style="color:var(--text); font-size:1rem; margin-bottom: 10px;">Sovellus puuttuu!</h2>
-            <p id="installInstruction" style="font-size:0.8rem; color:var(--muted); margin-bottom: 15px;"></p>
+        <div id="installCard" class="card" style="display:none; text-align:center; padding: 20px; border-color: var(--accent); position: relative;">
+            <button onclick="dismissInstallPrompt()" style="position:absolute; top:10px; right:15px; background:none; border:none; color:var(--muted); font-size:1.5rem; cursor:pointer; padding:5px;">&times;</button>
+            <h2 style="color:var(--text); font-size:1.1rem; margin-bottom: 10px; margin-top: 0;">Pelaa sovelluksena!</h2>
+            <p id="installInstruction" style="font-size:0.85rem; color:var(--muted); margin-bottom: 15px; line-height: 1.4;"></p>
             <button id="installBtn" class="btn btn-primary" style="display:none;">ASENNA PUHELIMEEN</button>
+            <div onclick="dismissInstallPrompt()" style="font-size:0.7rem; color:var(--muted); text-decoration:underline; cursor:pointer; margin-top:15px; text-transform: uppercase; font-weight: 700;">Ei kiitos, pelaan selaimella</div>
         </div>
 
         <div id="identityCard" class="card" style="display:none;">
