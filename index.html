@@ -46,9 +46,10 @@
         </div>
 
         <div class="gm-only" id="gmGlobalControls" style="display:none; margin-bottom: 15px;">
-            <div class="admin-grid-layout">
-                <button class="btn btn-gm" onclick="drawAllTasks()" style="font-size: 0.7rem;">ARVO PELAAJAT KAIKKIIN</button>
-                <button class="btn btn-success" onclick="finishAllTasks()" style="font-size: 0.7rem;">MERKITSE VALMIIT KERRALLA</button>
+            <div class="admin-grid-layout" style="flex-wrap: wrap;">
+                <button class="btn btn-gm" onclick="drawAllTasks()" style="font-size: 0.65rem; padding: 12px;">ARVO KAIKKIIN</button>
+                <button class="btn btn-primary" onclick="lockAllTasks()" style="font-size: 0.65rem; padding: 12px;">LUKITSE KAIKKI</button>
+                <button class="btn btn-success" onclick="finishAllTasks()" style="font-size: 0.65rem; padding: 12px; flex-basis: 100%;">MERKITSE VALMIIT KERRALLA</button>
             </div>
         </div>
 
@@ -78,6 +79,31 @@
                         <input type="checkbox" id="excludeUsedTasks" onchange="updateConfig('excludeUsedTasks', this.checked)"> 
                         <label for="excludeUsedTasks">Poista käytetyt pakasta</label>
                     </div>
+                </div>
+
+                <h2 style="margin-top:20px;">Tehtävien näkyvyys pelaajille (ennen lukitusta)</h2>
+                <div class="admin-settings-list">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="visTitle" onchange="updateVisConfig('title', this.checked)"> 
+                        <label for="visTitle">Tehtävän otsikko</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="visPoints" onchange="updateVisConfig('points', this.checked)"> 
+                        <label for="visPoints">Pistemäärä (XP)</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="visDesc" onchange="updateVisConfig('desc', this.checked)"> 
+                        <label for="visDesc">Tehtävän kuvaus/ohjeet</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="visMinus" onchange="updateVisConfig('minus', this.checked)"> 
+                        <label for="visMinus" style="color:var(--danger)">Miinuspiste-uhka</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="visBday" onchange="updateVisConfig('bday', this.checked)"> 
+                        <label for="visBday" style="color:var(--gm-accent)">Synttärisankaribonus</label>
+                    </div>
+                    <p style="font-size:0.6rem; color:var(--muted); margin-top:10px;">Huom: Kuvaukset ja ohjeet näkyvät aina valituille pelaajille, kun tehtävä on lukittu.</p>
                 </div>
                 
                 <h2 style="margin-top:20px;">Valitse tehtävä manuaalisesti</h2>
@@ -128,7 +154,8 @@
                 </div>
                 
                 <h2 style="margin-top:20px;">Tehtäväkirjasto (Muokkaa pakkaa)</h2>
-                <div id="taskLibraryEditor" class="task-library-container"></div>
+                <button class="btn btn-secondary" onclick="toggleLibraryVisibility()">NÄYTÄ/PIILOTA TEHTÄVÄKIRJASTO</button>
+                <div id="taskLibraryEditor" class="task-library-container" style="display:none;"></div>
 
                 <h2 style="margin-top:20px;">Tapahtumaloki</h2>
                 <div id="adminEventLog" style="max-height:200px; overflow-y:auto; font-size:0.6rem; background:#000; padding:10px; border-radius:5px; border:1px solid #222; font-family:monospace;"></div>
