@@ -7,11 +7,13 @@
     <meta name="apple-mobile-web-app-title" content="Arimon Approt">
     <meta name="application-name" content="Arimon Approt">
     
-    <link rel="stylesheet" href="style.css?v=6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/192/beer.png">
+
+    <link rel="stylesheet" href="style.css?v=7">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
 
     <script>
       if ('serviceWorker' in navigator) {
@@ -35,6 +37,13 @@
     </div>
 
     <div class="container">
+        
+        <div id="installCard" class="card" style="display:none; text-align:center; padding: 15px; border-color: var(--accent);">
+            <h2 style="color:var(--text); font-size:1rem; margin-bottom: 10px;">Sovellus puuttuu!</h2>
+            <p id="installInstruction" style="font-size:0.8rem; color:var(--muted); margin-bottom: 15px;"></p>
+            <button id="installBtn" class="btn btn-primary" style="display:none;">ASENNA PUHELIMEEN</button>
+        </div>
+
         <div id="identityCard" class="card" style="display:none;">
             <h2>Tunnistautuminen</h2>
             <input type="text" id="playerNameInput" placeholder="Syötä nimesi...">
