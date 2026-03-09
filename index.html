@@ -103,7 +103,7 @@
                         <input type="checkbox" id="visBday" onchange="updateVisConfig('bday', this.checked)"> 
                         <label for="visBday" style="color:var(--gm-accent)">Synttärisankaribonus</label>
                     </div>
-                    <p style="font-size:0.6rem; color:var(--muted); margin-top:10px;">Huom: Kuvaukset ja ohjeet näkyvät aina valituille pelaajille, kun tehtävä on lukittu.</p>
+                    <p style="font-size:0.6rem; color:var(--muted); margin-top:10px;">Huom: Tämä asetus koskee myös Game Masteria. Kuvaukset ja ohjeet näkyvät aina valituille pelaajille, kun tehtävä on lukittu, tai GM:lle "SPEKSIT"-napista.</p>
                 </div>
                 
                 <h2 style="margin-top:20px;">Valitse tehtävä manuaalisesti</h2>
@@ -177,7 +177,7 @@
         <div class="winner-content">
             <h1 style="margin:0;">🎉 SINUT VALITTIIN!</h1>
             <p style="font-size:1.1rem; color:var(--muted); margin:10px 0;">TEHTÄVÄN NIMI:</p>
-            <h2 id="winnerTaskName" style="color:var(--accent); margin:0 0 20px 0; text-transform: uppercase;">Tehtävän nimi</h2>
+            <div id="winnerTaskNames" style="color:var(--accent); font-size:1.5rem; margin:0 0 20px 0; text-transform: uppercase; line-height:1.3; font-weight:900;"></div>
             <div class="timer-bar" style="background:var(--accent); height:4px; width:100%; border-radius:2px;"></div>
             <p style="font-size:0.8rem; color:var(--muted); margin-top:15px; font-weight:900;">VALMISTAUDU SUORITTAMAAN</p>
         </div>
