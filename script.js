@@ -13,6 +13,9 @@ let lastMyScore = null;
 let lastKnownTasks = {}; 
 let taskHistory = [];
 
+let popupQueue = [];
+let isPopupShowing = false;
+
 const APP_NAME = "Arimon Approt";
 document.title = APP_NAME;
 
@@ -146,7 +149,8 @@ window.resetGame = function() {
                 useCooldowns: true, 
                 excludeUsedTasks: true, 
                 bdayHero: null,
-                visibility: { title: true, points: true, desc: false, minus: false, bday: false }
+                visibility: { title: true, points: true, desc: false, minus: false, bday: false },
+                heroDraw: { include: false, weighted: false, interval: 4, drawCount: 0 }
             }
         }).then(() => { localStorage.clear(); location.reload(); });
     }
@@ -162,10 +166,20 @@ db.ref('gameState').on('value', (snap) => {
 
     allPlayers = data.players || [];
     
+    // KORJAUS 1: Tarkista onko pelaaja poistettu
+    const me = allPlayers.find(p => p.name === myName);
+    if (myName && !me) {
+        myName = null;
+        localStorage.removeItem('appro_name');
+        alert("Game Master on poistanut sinut pelistä. Voit kirjautua sisään uudelleen.");
+        updateIdentityUI();
+    } else if (me) {
+        if (lastMyScore !== null && me.score !== lastMyScore) { showXPAnimation(me.score - lastMyScore); }
+        lastMyScore = me.score;
+    }
+    
     taskLibrary = (data.tasks || []).map(t => {
-        if (t.id >= 83 && t.id <= 102) {
-            return { ...t, isHero: true };
-        }
+        if (t.id >= 83 && t.id <= 102) return { ...t, isHero: true };
         return t;
     });
 
@@ -173,12 +187,7 @@ db.ref('gameState').on('value', (snap) => {
     const config = data.config || {};
     const heroId = config.bdayHero;
     const vis = config.visibility || { title: true, points: true, desc: false, minus: false, bday: false };
-
-    const me = allPlayers.find(p => p.name === myName);
-    if (me) {
-        if (lastMyScore !== null && me.score !== lastMyScore) { showXPAnimation(me.score - lastMyScore); }
-        lastMyScore = me.score;
-    }
+    const heroDrawConfig = config.heroDraw || { include: false, weighted: false, interval: 4, drawCount: 0 };
 
     updateIdentityUI();
     renderLeaderboard(config.useCooldowns, heroId);
@@ -198,6 +207,10 @@ db.ref('gameState').on('value', (snap) => {
         document.getElementById('visDesc').checked = !!vis.desc;
         document.getElementById('visMinus').checked = !!vis.minus;
         document.getElementById('visBday').checked = !!vis.bday;
+
+        document.getElementById('incHero').checked = !!heroDrawConfig.include;
+        document.getElementById('weightHero').checked = !!heroDrawConfig.weighted;
+        document.getElementById('heroInterval').value = heroDrawConfig.interval || 4;
     }
 
     checkForNewWinnerPopups(data.activeTasks || {});
@@ -205,7 +218,7 @@ db.ref('gameState').on('value', (snap) => {
     lastKnownTasks = JSON.parse(JSON.stringify(data.activeTasks || {}));
 });
 
-// --- POP-UP TARKISTUS (Yhdistetty & Nopeutettu) ---
+// --- POP-UP TARKISTUS (Bullet points & Nopeutettu) ---
 function checkForNewWinnerPopups(newTasks) {
     if (!myName) return;
     let wonTaskNames = [];
@@ -216,14 +229,15 @@ function checkForNewWinnerPopups(newTasks) {
         if (wasJustLocked && !newTask.isHero) {
             const results = newTask.participants || [];
             const isMeSelected = results.some(r => r.name === myName);
-            if (isMeSelected) {
-                wonTaskNames.push(newTask.n);
-            }
+            if (isMeSelected) wonTaskNames.push(newTask.n);
         }
     });
     
     if (wonTaskNames.length > 0) {
-        triggerWinnerOverlay(wonTaskNames.join('<br><br>'));
+        const html = wonTaskNames.length > 1 
+            ? wonTaskNames.map(n => `&bull; ${n}`).join('<br>') 
+            : wonTaskNames[0];
+        triggerWinnerOverlay(html);
     }
 }
 
@@ -233,18 +247,15 @@ function triggerWinnerOverlay(tasksHtml) {
     document.getElementById('winnerTaskNames').innerHTML = tasksHtml; 
     overlay.style.display = 'flex';
     if (navigator.vibrate) navigator.vibrate([200, 100, 200]); 
-    setTimeout(() => { 
-        overlay.style.display = 'none'; 
-    }, 4500); // Hieman pidempi aika lukea useampi tehtävä
+    setTimeout(() => { overlay.style.display = 'none'; }, 3500); 
 }
 
-// --- RENDERÖINTI: AKTIIVISET TEHTÄVÄT (FLEXBOX ANTI-FLICKER) ---
+// --- RENDERÖINTI: AKTIIVISET TEHTÄVÄT ---
 function renderActiveTasks(tasksObj, config) {
     const container = document.getElementById('activeTasksContainer');
     const isGM = document.body.className.includes('gm');
     const vis = config.visibility || { title: true, points: true, desc: false, minus: false, bday: false };
     
-    // Varmistetaan että container käyttää flexboxia lajittelua varten
     container.style.display = 'flex';
     container.style.flexDirection = 'column';
     
@@ -270,12 +281,11 @@ function renderActiveTasks(tasksObj, config) {
         const isMePart = results.some(r => r.name === myName);
         const isHeroTask = !!taskData.isHero; 
         
-        // Pelaajan näkyvyyssäännöt pätevät nyt myös GM:lle, paitsi jos "SPEKSIT" on painettu!
+        // KORJAUS 2: Jos lukittu TAI "Speksit" painettu TAI Sankaritehtävä, paljastetaan kaikki tagit GM:lle
         const showFull = isLocked || isHeroTask || (isGM && localSpyState[taskId]);
         
         let card = container.querySelector(`[data-task-id="${taskId}"]`);
         if (!card) {
-            // Luodaan kuoret vain kerran!
             card = document.createElement('div');
             card.className = 'card task-box active-task-item';
             card.setAttribute('data-task-id', taskId);
@@ -289,14 +299,15 @@ function renderActiveTasks(tasksObj, config) {
             container.appendChild(card);
         }
         
-        // CSS FLEXBOX LAJITTELU (Tämä poistaa siirtely-välkkymisen!)
+        container.appendChild(card); 
+
         let flexOrder = 10;
         if (!isGM && myName) {
-            if (isLocked && isMePart && !isHeroTask) flexOrder = 1; // Omat lukitut ensin
-            else if (!isLocked && !isHeroTask) flexOrder = 2;       // Avoimet toisena
-            else flexOrder = 3;                                     // Muiden tehtävät vikana
+            if (isLocked && isMePart && !isHeroTask) flexOrder = 1;
+            else if (!isLocked && !isHeroTask) flexOrder = 2;
+            else flexOrder = 3;
         } else {
-            flexOrder = parseInt(taskId.split('_')[1] || 10);       // GM:lle aikajärjestys
+            flexOrder = parseInt(taskId.split('_')[1] || 10);
         }
         card.style.order = flexOrder;
 
@@ -327,7 +338,7 @@ function renderActiveTasks(tasksObj, config) {
             }
         }
 
-        // --- 2. HEADER (GM ja Pelaaja säännöt yhdistettynä) ---
+        // --- 2. HEADER ---
         let headerHtml = '';
         const displayTitle = (showFull || vis.title) ? taskData.n : "??? (Salainen tehtävä)";
         headerHtml += `<h1 style="margin:5px 0;">${displayTitle}</h1>`;
@@ -336,10 +347,11 @@ function renderActiveTasks(tasksObj, config) {
         if (showFull || vis.points) {
             tagsHtml += `<div class="xp-badge" style="display:inline-block; margin-bottom:10px; margin-right:5px;">${taskData.p} XP</div>`;
         }
-        if (!showFull && vis.minus && taskData.m) {
+        // KORJAUS 2 (Jatko): Kun showFull on päällä, tagit näkyvät aina jos tehtävässä on ominaisuus.
+        if ((showFull || vis.minus) && taskData.m) {
             tagsHtml += `<div class="xp-badge" style="display:inline-block; margin-bottom:10px; background:var(--danger); color:#000; border-color:var(--danger); margin-right:5px;">⚠️ MIINUS-UHKA</div>`;
         }
-        if (!showFull && vis.bday && taskData.b) {
+        if ((showFull || vis.bday) && taskData.b) {
             tagsHtml += `<div class="xp-badge" style="display:inline-block; margin-bottom:10px; background:var(--gm-accent); color:#000; border-color:var(--gm-accent);">🎂 SANKARIBONUS</div>`;
         }
         headerHtml += `<div>${tagsHtml}</div>`;
@@ -382,7 +394,6 @@ function renderActiveTasks(tasksObj, config) {
         let gmHtml = '';
         if (isGM) {
             gmHtml += `<div style="margin-top:20px; border-top:1px solid #333; padding-top:15px;">`;
-            
             if (!isHeroTask) {
                 gmHtml += `
                     <div class="volunteer-selector-grid" id="grid-${taskId}"></div>
@@ -395,7 +406,6 @@ function renderActiveTasks(tasksObj, config) {
                     </div>
                 `;
             }
-
             gmHtml += `<div id="scoring-${taskId}"></div>`;
             gmHtml += `
                 <div style="display:flex; gap:10px; margin-top:10px;">
@@ -405,7 +415,6 @@ function renderActiveTasks(tasksObj, config) {
             </div>`;
         }
 
-        // Päivitä vain ne lohkot joiden HTML oikeasti muuttui
         const updateNode = (selector, newHtml) => {
             const node = card.querySelector(selector);
             if (node && node.innerHTML !== newHtml) node.innerHTML = newHtml;
@@ -503,11 +512,11 @@ function drawRandom(taskId, isMassAction = false) {
             
             db.ref(`gameState/activeTasks/${taskId}`).update({ participants: winners, isLotteryRunning: false, drawn: true });
             if (!isMassAction) logEvent(`Arvottu ${count} suorittajaa tehtävään: ${taskData.n}`);
-        }, 2000); // 2 Sekunnin ruletti
+        }, 2000); 
     });
 }
 
-// --- GM GRID (Anti-flicker & JS Ruletti) ---
+// --- GM GRID ---
 function renderGMGrid(taskId, results, isLocked, isShuffling, showCD) {
     const grid = document.getElementById(`grid-${taskId}`);
     if(!grid) return;
@@ -531,7 +540,6 @@ function renderGMGrid(taskId, results, isLocked, isShuffling, showCD) {
         btn.onclick = () => toggleParticipant(taskId, p.name);
     });
 
-    // JS-Pohjainen Rulettiefekti!
     if (isShuffling) {
         if (!window.rouletteTimers) window.rouletteTimers = {};
         if (!window.rouletteTimers[taskId]) {
@@ -542,7 +550,7 @@ function renderGMGrid(taskId, results, isLocked, isShuffling, showCD) {
                     const randomBtn = validBtns[Math.floor(Math.random() * validBtns.length)];
                     randomBtn.classList.add('roulette-focus');
                 }
-            }, 120); // Syketaajuus
+            }, 120); 
         }
     } else {
         if (window.rouletteTimers && window.rouletteTimers[taskId]) {
@@ -574,7 +582,7 @@ function setRole(r) {
 let gmHoldTimer;
 const gmBtn = document.getElementById('btnGM');
 if(gmBtn) {
-    const startPress = () => { gmHoldTimer = setTimeout(() => { setRole('gm'); if(navigator.vibrate) navigator.vibrate(80); }, 800); }; // NOPEUTETTU TÄSTÄ!
+    const startPress = () => { gmHoldTimer = setTimeout(() => { setRole('gm'); if(navigator.vibrate) navigator.vibrate(80); }, 800); };
     const endPress = () => clearTimeout(gmHoldTimer);
     gmBtn.addEventListener('mousedown', startPress);
     gmBtn.addEventListener('mouseup', endPress);
@@ -746,23 +754,59 @@ function updateDrawCountSelect(taskId, task) {
 
 function toggleWin(taskId, i) { db.ref(`gameState/activeTasks/${taskId}/participants/${i}/win`).transaction(w => !w); }
 
+// --- KORJAUS 4: Sankaritehtävien älykäs ja painotettu arvonta ---
 function confirmRandomize() {
     db.ref('gameState').once('value', snap => {
         const d = snap.val();
         const config = d.config || {};
-        
+        const heroDraw = config.heroDraw || { include: false, weighted: false, interval: 4, drawCount: 0 };
+        const used = d.usedTaskIds || [];
+
         if (config.useCooldowns) {
             const clearedPlayers = allPlayers.map(p => ({ ...p, cooldown: false }));
             db.ref('gameState/players').set(clearedPlayers);
         }
 
-        const used = d.usedTaskIds || [];
-        let pool = taskLibrary.filter(t => !used.includes(t.id));
-        if(pool.length === 0) { db.ref('gameState/usedTaskIds').set([]); pool = taskLibrary; }
+        let newDrawCount = heroDraw.drawCount || 0;
+        let isForcedHero = false;
+
+        // Jos painotettu arvonta on päällä, kasvatetaan laskuria
+        if (heroDraw.weighted) {
+            newDrawCount++;
+            if (newDrawCount >= (heroDraw.interval || 4)) {
+                isForcedHero = true;
+                newDrawCount = 0; // Nollataan kun tavoite saavutettu
+            }
+        }
+
+        let pool = [];
+        const normalTasks = taskLibrary.filter(t => !t.isHero && !used.includes(t.id));
+        const heroTasks = taskLibrary.filter(t => t.isHero && !used.includes(t.id));
+        
+        // Varmistetaan ettei peli jumiudu jos tehtävät loppuvat
+        let finalNormal = normalTasks.length > 0 ? normalTasks : taskLibrary.filter(t => !t.isHero);
+        let finalHero = heroTasks.length > 0 ? heroTasks : taskLibrary.filter(t => t.isHero);
+
+        if (isForcedHero && finalHero.length > 0) {
+            pool = finalHero;
+        } else if (heroDraw.include && !heroDraw.weighted) {
+            pool = finalNormal.concat(finalHero); // Kaikki mukana tasaisesti
+        } else {
+            pool = finalNormal; // Vain normaalit
+        }
+
+        if(pool.length === 0) pool = finalHero; // Viimeinen hätävara
+
         const t = pool[Math.floor(Math.random() * pool.length)];
         const instanceId = "t_" + Date.now();
-        db.ref(`gameState/activeTasks/${instanceId}`).set({ ...t, locked: false, participants: [], drawn: false });
-        logEvent(`Arvottu uusi tehtävä: ${t.n}`);
+        
+        let updates = {};
+        updates[`gameState/activeTasks/${instanceId}`] = { ...t, locked: false, participants: [], drawn: false };
+        if (heroDraw.weighted) updates[`gameState/config/heroDraw/drawCount`] = newDrawCount;
+
+        db.ref().update(updates).then(() => {
+            logEvent(`Arvottu uusi tehtävä: ${t.n}`);
+        });
     });
 }
 
@@ -856,6 +900,8 @@ function adminToggleCooldown(idx) {
 
 function updateConfig(key, val) { db.ref(`gameState/config/${key}`).set(val); }
 function updateVisConfig(key, val) { db.ref(`gameState/config/visibility/${key}`).set(val); }
+window.updateHeroConfig = function(key, val) { db.ref(`gameState/config/heroDraw/${key}`).set(val); };
+
 function updateTaskInLib(idx, field, val) { db.ref(`gameState/tasks/${idx}/${field}`).set(val); }
 function removeTask(idx) { if(confirm("Poista tehtävä kirjastosta?")) { taskLibrary.splice(idx, 1); db.ref('gameState/tasks').set(taskLibrary); } }
 
@@ -970,7 +1016,7 @@ function updateIdentityUI() { document.getElementById('identityCard').style.disp
 function showXPAnimation(points) {
     const pop = document.getElementById('xpPopUp');
     if(!pop || points === 0) return; pop.style.display = 'block'; pop.style.color = points > 0 ? "var(--success)" : "var(--danger)"; pop.innerText = (points > 0 ? "+" : "") + points + " XP"; pop.classList.remove('xp-animate'); void pop.offsetWidth; pop.classList.add('xp-animate');
-    setTimeout(() => { pop.style.display = 'none'; }, 2200); // Pidennetty animaation keston mukaiseksi
+    setTimeout(() => { pop.style.display = 'none'; }, 2200);
 }
 
 function toggleAdminPanel() { 
