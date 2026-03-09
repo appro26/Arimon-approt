@@ -282,7 +282,7 @@ body {
 }
 
 /* ==========================================
-   7. LOMAKKEET
+   7. LOMAKEYKSIKÖT
    ========================================== */
 input, textarea, select { 
     background: var(--surface-light); 
@@ -415,29 +415,42 @@ input, textarea, select {
    11. UUDET OMINAISUUDET (LISÄYKSET)
    ========================================== */
 
-/* Tehtävähistoria */
+/* Tehtävähistoria listaus */
 #taskHistoryList {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    max-height: 150px;
+    max-height: 200px;
     overflow-y: auto;
     padding-right: 5px;
 }
 
 .history-item {
     background: rgba(255,255,255,0.03);
-    padding: 8px 12px;
+    padding: 10px 15px;
     border-radius: 8px;
-    border-left: 2px solid var(--muted);
+    border-left: 3px solid var(--accent);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    animation: slideIn 0.3s ease-out;
 }
 
 .history-item .task-name {
     font-weight: 700;
+    font-size: 0.9rem;
     color: var(--text);
+}
+
+.history-item .task-meta {
+    text-align: right;
+}
+
+.history-item .task-winner {
+    font-size: 0.75rem;
+    color: var(--success);
+    font-weight: bold;
+    display: block;
 }
 
 .history-item .task-time {
@@ -445,16 +458,21 @@ input, textarea, select {
     color: var(--muted);
 }
 
-/* Palkintojen hallinta */
+/* Palkintojen hallinta ja kauppa */
 .reward-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
     background: var(--surface-light);
-    padding: 10px;
-    border-radius: 8px;
-    margin-bottom: 5px;
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 8px;
     border: 1px solid rgba(255, 159, 67, 0.2);
+    transition: transform 0.2s;
+}
+
+.reward-row:hover {
+    transform: translateX(5px);
 }
 
 .reward-info {
@@ -465,47 +483,55 @@ input, textarea, select {
 .reward-name {
     font-weight: 800;
     color: var(--gm-accent);
-    font-size: 0.8rem;
+    font-size: 0.9rem;
 }
 
-/* Tapahtumaloki */
+.reward-cost {
+    font-size: 0.7rem;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+/* Tapahtumaloki (Admin Event Log) */
 #adminEventLog {
-    scrollbar-width: thin;
-    scrollbar-color: var(--surface-light) transparent;
-}
-
-#adminEventLog::-webkit-scrollbar {
-    width: 4px;
-}
-
-#adminEventLog::-webkit-scrollbar-thumb {
-    background: var(--surface-light);
-    border-radius: 2px;
+    background: #000;
+    border-radius: 8px;
+    padding: 10px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid var(--surface-light);
 }
 
 .log-entry {
     padding: 4px 0;
     border-bottom: 1px solid #111;
-    word-wrap: break-word;
+    line-height: 1.4;
 }
 
-.log-entry .time { color: var(--muted); margin-right: 5px; }
+.log-entry .time { color: var(--muted); margin-right: 8px; }
 .log-entry .action { color: var(--success); font-weight: bold; }
 .log-entry .target { color: var(--accent); }
 
-/* Pieni korjaus: Varmistetaan että historia-kortti ei vie liikaa tilaa jos tyhjä */
+/* Pieni korjaus: Historia-kortin tyhjän tilan hallinta */
 #historyCard {
     min-height: auto;
 }
 
-/* Lisätty: Animaatio palkinnon saamiselle */
+/* Animaatio palkinnon saamiselle / Lunastukselle */
 .reward-earned {
     animation: reward-shimmer 2s infinite;
-    border: 1px solid gold !important;
+    border: 2px solid gold !important;
 }
 
 @keyframes reward-shimmer {
-    0% { box-shadow: 0 0 5px gold; }
-    50% { box-shadow: 0 0 15px gold; }
-    100% { box-shadow: 0 0 5px gold; }
+    0% { box-shadow: 0 0 5px gold; filter: brightness(1); }
+    50% { box-shadow: 0 0 20px gold; filter: brightness(1.2); }
+    100% { box-shadow: 0 0 5px gold; filter: brightness(1); }
 }
+
+/* Uudet tilavärit lokitapahtumille */
+.log-type-xp { color: var(--success); }
+.log-type-task { color: var(--accent); }
+.log-type-error { color: var(--danger); }
