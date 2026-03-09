@@ -410,3 +410,102 @@ input, textarea, select {
     .container { padding-top: 100px; }
     .winner-content h1 { font-size: 2.2rem; }
 }
+
+/* ==========================================
+   11. UUDET OMINAISUUDET (LISÄYKSET)
+   ========================================== */
+
+/* Tehtävähistoria */
+#taskHistoryList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 150px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.history-item {
+    background: rgba(255,255,255,0.03);
+    padding: 8px 12px;
+    border-radius: 8px;
+    border-left: 2px solid var(--muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.history-item .task-name {
+    font-weight: 700;
+    color: var(--text);
+}
+
+.history-item .task-time {
+    font-size: 0.65rem;
+    color: var(--muted);
+}
+
+/* Palkintojen hallinta */
+.reward-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--surface-light);
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 5px;
+    border: 1px solid rgba(255, 159, 67, 0.2);
+}
+
+.reward-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.reward-name {
+    font-weight: 800;
+    color: var(--gm-accent);
+    font-size: 0.8rem;
+}
+
+/* Tapahtumaloki */
+#adminEventLog {
+    scrollbar-width: thin;
+    scrollbar-color: var(--surface-light) transparent;
+}
+
+#adminEventLog::-webkit-scrollbar {
+    width: 4px;
+}
+
+#adminEventLog::-webkit-scrollbar-thumb {
+    background: var(--surface-light);
+    border-radius: 2px;
+}
+
+.log-entry {
+    padding: 4px 0;
+    border-bottom: 1px solid #111;
+    word-wrap: break-word;
+}
+
+.log-entry .time { color: var(--muted); margin-right: 5px; }
+.log-entry .action { color: var(--success); font-weight: bold; }
+.log-entry .target { color: var(--accent); }
+
+/* Pieni korjaus: Varmistetaan että historia-kortti ei vie liikaa tilaa jos tyhjä */
+#historyCard {
+    min-height: auto;
+}
+
+/* Lisätty: Animaatio palkinnon saamiselle */
+.reward-earned {
+    animation: reward-shimmer 2s infinite;
+    border: 1px solid gold !important;
+}
+
+@keyframes reward-shimmer {
+    0% { box-shadow: 0 0 5px gold; }
+    50% { box-shadow: 0 0 15px gold; }
+    100% { box-shadow: 0 0 5px gold; }
+}
