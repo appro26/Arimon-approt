@@ -19,7 +19,8 @@ let rewards = {};
 const APP_NAME = "Arimon Approt";
 document.title = APP_NAME;
 
-// --- TEHTÄVÄPAKKA (Kaikki 102 tehtävää + säästetty tila tässä viestissä, mutta koodissa mukana) ---
+// --- TEHTÄVÄPAKKA ---
+// OPTIMOINTI & KORJAUS: Sankaritehtäville (ID 83-102) on nyt lisätty oletuksena isHero: true
 const defaultTasks = [
     { id: 1, n: "Mise en place", d: "Varmista, että kaikilla pöytäseurueen jäsenillä on lasissa juotavaa (myös vettä). Jos jollain on tyhjää, täytä se.", p: 2, m: 2, b: false, r: 2 },
     { id: 2, n: "Uudelleenkäynnistys (Reboot)", d: "Kaikkien suorittajien on juotava lasi vettä yhdeltä istumalta 'järjestelmän vakauttamiseksi'.", p: 1, m: 3, b: false, r: 3 },
@@ -103,29 +104,31 @@ const defaultTasks = [
     { id: 80, n: "Kiekon palautus", d: "Käy viemässä tyhjä lasi tiskille (itse valitsemasi) mahdollisimman tyylikkäästi.", p: 1, m: 0, b: false, r: 1 },
     { id: 81, n: "Admin-komento", d: "Sankari saa päättää, kuka suorittajista joutuu kertomaan vitsin tai juomaan lasin vettä.", p: 2, m: 0, b: true, r: 2 },
     { id: 82, n: "Victory Dance", d: "Tee lyhyt ja energinen voittotanssi baarin lattialla (PUBG tyyliin).", p: 3, m: 1, b: false, r: 1 },
-    { id: 83, n: "Admin-huolto (Sankari)", d: "Sankarin on kerättävä seurueen kaikki tyhjät tölkit/lasit ja vietävä ne tiskille yksin.", p: 2, m: 1, b: true, r: 1 },
-    { id: 84, n: "Kiekon etsintä (Sankari)", d: "Sankari joutuu nousemaan ylös ja kävelemään baarin ympäri etsimässä 'kadonnutta kiekkoa' silmät kiinni ohjattuna.", p: 2, m: 1, b: true, r: 1 },
-    { id: 85, n: "PUBG Emote (Sankari)", d: "Sankarin on esitettävä jokin PUBG-pelin tuuletus tai liike baarin keskellä mahdollisimman näyttävästi.", p: 3, m: 1, b: true, r: 1 },
-    { id: 86, n: "Koodin katselmointi (Sankari)", d: "Sankarin on keksittävä jokaisesta pelaajasta yksi positiivinen 'kommentti' (kuten koodin katselmoinnissa).", p: 1, m: 0, b: true, r: 1 },
-    { id: 87, n: "Mise en place -tarkastus (Sankari)", d: "Sankarin on maistettava kolmen eri pelaajan juomaa ja arvattava niiden ainesosat.", p: 2, m: 1, b: true, r: 1 },
-    { id: 88, n: "Ping-testi (Sankari)", d: "Sankarin on vastattava 'PONG' sekunnin sisällä aina kun joku huutaa 'PING' seuraavan 10 minuutin ajan.", p: 2, m: 1, b: true, r: 1 },
-    { id: 89, n: "Putti-haaste (Sankari)", d: "Sankarin on heitettävä lasinalunen pystyasennossa olevaan tyhjään tuoppiin. Kolme yritystä.", p: 2, m: 1, b: true, r: 1 },
-    { id: 90, n: "Blue Zone -juoksu (Sankari)", d: "Sankarin on käytävä koskettamassa baarin ulko-ovea ja palattava 15 sekunnissa takaisin.", p: 2, m: 1, b: true, r: 1 },
-    { id: 91, n: "Hardware Troubleshooting (Sankari)", d: "Sankarin on selitettävä jollekin tuntemattomalle asiakkaalle, miten frisbeegolfin pituusdraivi tai IT-tuki toimii.", p: 3, m: 1, b: true, r: 1 },
-    { id: 92, n: "Chef's Special (Sankari)", d: "Sankarin on loihdittava 'annos' eli koottava pöydän snacks-kulhosta näyttävä taideteos ja syötävä se.", p: 1, m: 0, b: true, r: 1 },
-    { id: 93, n: "Palvelinhuoneen hämärä (Sankari)", d: "Sankarin on suoritettava seuraava tilauksensa tai keskustelunsa kuiskaamalla, kuin hän olisi salaisessa palvelinruumissa.", p: 1, m: 1, b: true, r: 1 },
-    { id: 94, n: "Range-treeni (Sankari)", d: "Sankarin on 'heitettävä' viisi erilaista frisbeegolf-kiekkoa ja selitettävä niiden lentoradat seurueelle.", p: 2, m: 0, b: true, r: 1 },
-    { id: 95, n: "Loot-varkaus (Sankari)", d: "Sankarin on onnistuttava ottamaan yksi hörppy jonkun muun lasista niin, ettei kukaan huomaa (stealth mode).", p: 3, m: 1, b: true, r: 1 },
-    { id: 96, n: "Käyttöjärjestelmän vaihto (Sankari)", d: "Sankarin on vaihdettava kieltä ja puhuttava seuraavat 5 minuuttia pelkkää englantia.", p: 2, m: 1, b: true, r: 1 },
-    { id: 97, n: "Spotterin virhe (Sankari)", d: "Sankarin on osoitettava baarista kolme mahdollista 'vaaran paikkaa' ja annettava niille IT-tukihenkinen korjaussuunnitelma.", p: 1, m: 0, b: true, r: 1 },
-    { id: 98, n: "C1-tason grippi (Sankari)", d: "Sankarin on pidettävä lasistaan kiinni erittäin oudolla otteella seuraavat 5 minuuttia.", p: 2, m: 1, b: true, r: 1 },
-    { id: 99, n: "Bug Bounty (Sankari)", d: "Sankarin on etsittävä muiden pelaajien vaatetuksesta yksi 'bugi' ja kerrottava, miten se korjataan (esim. vino kaulus).", p: 1, m: 0, b: true, r: 1 },
-    { id: 100, n: "Air Drop Defense (Sankari)", d: "Sankarin on suojeltava omaa juomaansa niin, ettei kukaan saa koskea siihen 5 minuuttiin.", p: 2, m: 1, b: true, r: 1 },
-    { id: 101, n: "Mando-kierto (Sankari)", d: "Sankarin on noustava ylös ja kierrettävä koko seurue ympäri tehden samalla frisbeegolf-lähipeliä matkivia liikkeitä.", p: 2, m: 1, b: true, r: 1 },
-    { id: 102, n: "System Overload (Sankari)", d: "Sankarin on lueteltava 10 IT-termiä, 10 frisbeegolf-termiä tai 10 PUBG-termiä 30 sekunnissa.", p: 3, m: 1, b: true, r: 1 }
+    
+    // --- SANKARITEHTÄVÄT (isHero: true lisätty automaattisesti) ---
+    { id: 83, n: "Admin-huolto (Sankari)", d: "Sankarin on kerättävä seurueen kaikki tyhjät tölkit/lasit ja vietävä ne tiskille yksin.", p: 2, m: 1, b: true, r: 1, isHero: true },
+    { id: 84, n: "Kiekon etsintä (Sankari)", d: "Sankari joutuu nousemaan ylös ja kävelemään baarin ympäri etsimässä 'kadonnutta kiekkoa' silmät kiinni ohjattuna.", p: 2, m: 1, b: true, r: 1, isHero: true },
+    { id: 85, n: "PUBG Emote (Sankari)", d: "Sankarin on esitettävä jokin PUBG-pelin tuuletus tai liike baarin keskellä mahdollisimman näyttävästi.", p: 3, m: 1, b: true, r: 1, isHero: true },
+    { id: 86, n: "Koodin katselmointi (Sankari)", d: "Sankarin on keksittävä jokaisesta pelaajasta yksi positiivinen 'kommentti' (kuten koodin katselmoinnissa).", p: 1, m: 0, b: true, r: 1, isHero: true },
+    { id: 87, n: "Mise en place -tarkastus (Sankari)", d: "Sankarin on maistettava kolmen eri pelaajan juomaa ja arvattava niiden ainesosat.", p: 2, m: 1, b: true, r: 1, isHero: true },
+    { id: 88, n: "Ping-testi (Sankari)", d: "Sankarin on vastattava 'PONG' sekunnin sisällä aina kun joku huutaa 'PING' seuraavan 10 minuutin ajan.", p: 2, m: 1, b: true, r: 1, isHero: true },
+    { id: 89, n: "Putti-haaste (Sankari)", d: "Sankarin on heitettävä lasinalunen pystyasennossa olevaan tyhjään tuoppiin. Kolme yritystä.", p: 2, m: 1, b: true, r: 1, isHero: true },
+    { id: 90, n: "Blue Zone -juoksu (Sankari)", d: "Sankarin on käytävä koskettamassa baarin ulko-ovea ja palattava 15 sekunnissa takaisin.", p: 2, m: 1, b: true, r: 1, isHero: true },
+    { id: 91, n: "Hardware Troubleshooting (Sankari)", d: "Sankarin on selitettävä jollekin tuntemattomalle asiakkaalle, miten frisbeegolfin pituusdraivi tai IT-tuki toimii.", p: 3, m: 1, b: true, r: 1, isHero: true },
+    { id: 92, n: "Chef's Special (Sankari)", d: "Sankarin on loihdittava 'annos' eli koottava pöydän snacks-kulhosta näyttävä taideteos ja syötävä se.", p: 1, m: 0, b: true, r: 1, isHero: true },
+    { id: 93, n: "Palvelinhuoneen hämärä (Sankari)", d: "Sankarin on suoritettava seuraava tilauksensa tai keskustelunsa kuiskaamalla, kuin hän olisi salaisessa palvelinruumissa.", p: 1, m: 1, b: true, r: 1, isHero: true },
+    { id: 94, n: "Range-treeni (Sankari)", d: "Sankarin on 'heitettävä' viisi erilaista frisbeegolf-kiekkoa ja selitettävä niiden lentoradat seurueelle.", p: 2, m: 0, b: true, r: 1, isHero: true },
+    { id: 95, n: "Loot-varkaus (Sankari)", d: "Sankarin on onnistuttava ottamaan yksi hörppy jonkun muun lasista niin, ettei kukaan huomaa (stealth mode).", p: 3, m: 1, b: true, r: 1, isHero: true },
+    { id: 96, n: "Käyttöjärjestelmän vaihto (Sankari)", d: "Sankarin on vaihdettava kieltä ja puhuttava seuraavat 5 minuuttia pelkkää englantia.", p: 2, m: 1, b: true, r: 1, isHero: true },
+    { id: 97, n: "Spotterin virhe (Sankari)", d: "Sankarin on osoitettava baarista kolme mahdollista 'vaaran paikkaa' ja annettava niille IT-tukihenkinen korjaussuunnitelma.", p: 1, m: 0, b: true, r: 1, isHero: true },
+    { id: 98, n: "C1-tason grippi (Sankari)", d: "Sankarin on pidettävä lasistaan kiinni erittäin oudolla otteella seuraavat 5 minuuttia.", p: 2, m: 1, b: true, r: 1, isHero: true },
+    { id: 99, n: "Bug Bounty (Sankari)", d: "Sankarin on etsittävä muiden pelaajien vaatetuksesta yksi 'bugi' ja kerrottava, miten se korjataan (esim. vino kaulus).", p: 1, m: 0, b: true, r: 1, isHero: true },
+    { id: 100, n: "Air Drop Defense (Sankari)", d: "Sankarin on suojeltava omaa juomaansa niin, ettei kukaan saa koskea siihen 5 minuuttiin.", p: 2, m: 1, b: true, r: 1, isHero: true },
+    { id: 101, n: "Mando-kierto (Sankari)", d: "Sankarin on noustava ylös ja kierrettävä koko seurue ympäri tehden samalla frisbeegolf-lähipeliä matkivia liikkeitä.", p: 2, m: 1, b: true, r: 1, isHero: true },
+    { id: 102, n: "System Overload (Sankari)", d: "Sankarin on lueteltava 10 IT-termiä, 10 frisbeegolf-termiä tai 10 PUBG-termiä 30 sekunnissa.", p: 3, m: 1, b: true, r: 1, isHero: true }
 ];
 
-// --- UUSI: TAPAHTUMALOKI FUNKTIO ---
+// --- TAPAHTUMALOKI FUNKTIO ---
 function logEvent(msg) {
     const time = new Date().toLocaleTimeString('fi-FI');
     db.ref('gameState/eventLog').push({ time, msg });
@@ -149,7 +152,7 @@ window.resetGame = function() {
     }
 };
 
-// --- DATA-KUUNTELIJA ---
+// --- DATA-KUUNTELIJA (Reaaliaikainen päivitys) ---
 db.ref('gameState').on('value', (snap) => {
     const data = snap.val();
     if(!data) return;
@@ -158,7 +161,15 @@ db.ref('gameState').on('value', (snap) => {
     if (!currentResetId) { currentResetId = data.resetId; localStorage.setItem('appro_reset_id', data.resetId); }
 
     allPlayers = data.players || [];
-    taskLibrary = data.tasks || [];
+    
+    // UUSI KORJAUS: Varmistetaan että kannassa olevat vanhat tehtävät 83-102 tunnistetaan aina sankaritehtäviksi
+    taskLibrary = (data.tasks || []).map(t => {
+        if (t.id >= 83 && t.id <= 102) {
+            return { ...t, isHero: true };
+        }
+        return t;
+    });
+
     taskHistory = Object.values(data.history || {}).reverse().slice(0, 10);
     rewards = data.rewards || {};
     const config = data.config || {};
@@ -228,7 +239,7 @@ function renderActiveTasks(tasksObj, config) {
         const isLocked = !!taskData.locked;
         const results = taskData.participants || [];
         const isMePart = results.some(r => r.name === myName && r.win);
-        const isHeroTask = !!taskData.isHero; // UUSI OMINAISUUS
+        const isHeroTask = !!taskData.isHero; 
         
         let card = container.querySelector(`[data-task-id="${taskId}"]`);
         if (!card) {
@@ -308,6 +319,7 @@ function renderActiveTasks(tasksObj, config) {
             `;
         }
 
+        // OPTIMOINTI: DOM päivitetään vain jos HTML on todella muuttunut. Estää turhan välkkymisen.
         if (card.innerHTML !== html) card.innerHTML = html;
 
         if (isGM) {
@@ -348,7 +360,6 @@ function renderGMGrid(taskId, results, isLocked, isShuffling, showCD, isHeroTask
 
     allPlayers.forEach(p => {
         const isInc = results.some(r => r.name === p.name);
-        // Jäähy näkyy vain jos se on globaalisti päällä
         const onCD = showCD && p.cooldown;
         const btn = document.createElement('button');
         
@@ -413,7 +424,6 @@ function volunteer(taskId) {
         const data = snap.val();
         const meData = (data.players || []).find(p => p.name === myName);
         
-        // Jäähy-tarkistus vain jos asetus päällä
         if (data.config?.useCooldowns && meData?.cooldown) {
             alert("Olet jäähyllä!");
             return;
@@ -442,7 +452,6 @@ function lockParticipants(taskId) {
         const res = taskInstance.participants || [];
         const winnersNames = res.filter(r => r.win).map(r => r.name);
         
-        // Cooldown asetus vain jos päällä
         if (d.config?.useCooldowns) {
             const updatedPlayers = allPlayers.map(p => {
                 if (winnersNames.includes(p.name)) {
@@ -480,7 +489,6 @@ function showScoring(taskId) {
             return p;
         });
 
-        // Lisää historiaan
         db.ref('gameState/history').push({
             taskName: taskInstance.n,
             winners: winnersNames,
@@ -532,7 +540,6 @@ function confirmRandomize() {
         const d = snap.val();
         const config = d.config || {};
         
-        // Nollaa jäähyt vain jos asetus on käytössä
         if (config.useCooldowns) {
             const clearedPlayers = allPlayers.map(p => ({ ...p, cooldown: false }));
             db.ref('gameState/players').set(clearedPlayers);
@@ -563,7 +570,7 @@ function selectManualTask(idx) {
     });
 }
 
-// --- UUDET: PALKINTO TOIMINNOT ---
+// --- PALKINTO TOIMINNOT ---
 function adminAddReward() {
     const n = document.getElementById('newRewardName').value.trim();
     if(!n) return;
@@ -672,7 +679,7 @@ function adminCreateTask() {
     const p = parseInt(document.getElementById('newTaskPoints').value);
     const m = document.getElementById('newTaskMinus').checked;
     const b = document.getElementById('newTaskBday').checked;
-    const hero = document.getElementById('newTaskIsHero').checked; // UUSI
+    const hero = document.getElementById('newTaskIsHero').checked; 
     const r = parseInt(document.getElementById('newTaskRecommendedPlayers').value) || 1;
     if(!n || !d) return;
     const newTask = { id: Date.now(), n, d, p, m, b, r, isHero: hero };
@@ -689,7 +696,6 @@ function renderLeaderboard(showCD, heroId) {
         const pIdx = allPlayers.findIndex(x => x.name === p.name);
         const isHero = heroId !== null && pIdx === heroId;
         
-        // Palkinto-ikonit
         let rewardIcons = "";
         if(p.earnedRewards) {
             Object.values(p.earnedRewards).forEach(() => { rewardIcons += "🏆"; });
@@ -698,7 +704,6 @@ function renderLeaderboard(showCD, heroId) {
         const div = document.createElement('div');
         div.className = `player-row ${p.name === myName ? 'me' : ''} ${isHero ? 'is-hero' : ''} ${p.cooldown ? 'on-cooldown' : ''}`;
         
-        // Jäähy-teksti vain jos päällä administa
         const cdText = (showCD && p.cooldown) ? ' <small style="color:var(--danger)">[JÄÄHY]</small>' : '';
         
         div.innerHTML = `<span>${isHero?'🎂 ':''}${p.name}${rewardIcons}${cdText}</span><span class="xp-badge">${p.score} XP</span>`;
@@ -713,7 +718,6 @@ function renderAdminPlayerList(heroId) {
         const div = document.createElement('div');
         div.className = 'player-row'; div.style.padding = '8px';
         
-        // Palkinnon antopainikkeet
         let rewardBtns = "";
         Object.entries(rewards).forEach(([rId, rData]) => {
             rewardBtns += `<button class="btn" style="width:auto; font-size:0.5rem; padding:4px; margin:0 2px; background:gold; color:black;" onclick="giveReward(${i}, '${rId}')">🏆 ${rData.n.slice(0,3)}</button>`;
