@@ -15,7 +15,7 @@ let taskHistory = [];
 
 let wasInGame = false; 
 
-// ERILLISET SUPISTETUT TILAT Pelaajalle ja GM:lle
+// ERILLISET SUPISTETUT TILAT
 let isPlayerCompactMode = false;
 let isGMCompactMode = false;
 
@@ -163,7 +163,7 @@ function triggerRender() {
     });
 }
 
-// KORJAUS 7: Reset palauttaa uudet oletukset
+// KORJAUS 7: Nollauksen oletusasetukset kerralla kuntoon
 window.resetGame = function() {
     if (confirm("VAROITUS: Tämä poistaa kaikki tiedot. Jatketaanko?")) {
         const newResetId = Date.now().toString();
@@ -180,7 +180,7 @@ window.resetGame = function() {
                 strictVolunteer: false,
                 excludeUsedTasks: true, 
                 bdayHero: null,
-                visibility: { title: true, points: true, desc: false, minus: true, bday: true },
+                visibility: { title: true, points: true, drawCount: false, desc: false, minus: true, bday: true },
                 heroDraw: { include: true, weighted: false, interval: 4, drawCount: 0 }
             }
         }).then(() => { localStorage.clear(); location.reload(); });
@@ -200,7 +200,6 @@ db.ref('gameState').on('value', (snap) => {
     if (myName) {
         if (me) {
             wasInGame = true;
-            // KORJAUS 4: Kutsu yhteislaskijaa jos pisteet ovat muuttuneet
             if (lastMyScore !== null && me.score !== lastMyScore) { 
                 showXPAnimation(me.score - lastMyScore); 
             }
@@ -228,7 +227,7 @@ db.ref('gameState').on('value', (snap) => {
     taskHistory = Object.values(data.history || {}).reverse().slice(0, 10);
     const config = data.config || {};
     const heroId = config.bdayHero;
-    const vis = config.visibility || { title: true, points: true, desc: false, minus: true, bday: true };
+    const vis = config.visibility || { title: true, points: true, drawCount: false, desc: false, minus: true, bday: true };
     const heroDrawConfig = config.heroDraw || { include: true, weighted: false, interval: 4, drawCount: 0 };
 
     updateIdentityUI();
@@ -247,11 +246,14 @@ db.ref('gameState').on('value', (snap) => {
         document.getElementById('useCooldowns').checked = !!config.useCooldowns;
         document.getElementById('strictVolunteer').checked = !!config.strictVolunteer;
         document.getElementById('excludeUsedTasks').checked = !!config.excludeUsedTasks;
+        
         document.getElementById('visTitle').checked = !!vis.title;
         document.getElementById('visPoints').checked = !!vis.points;
+        document.getElementById('visDrawCount').checked = !!vis.drawCount;
         document.getElementById('visDesc').checked = !!vis.desc;
         document.getElementById('visMinus').checked = !!vis.minus;
         document.getElementById('visBday').checked = !!vis.bday;
+        
         document.getElementById('incHero').checked = !!heroDrawConfig.include;
         document.getElementById('weightHero').checked = !!heroDrawConfig.weighted;
         document.getElementById('heroInterval').value = heroDrawConfig.interval || 4;
@@ -262,7 +264,7 @@ db.ref('gameState').on('value', (snap) => {
     lastKnownTasks = JSON.parse(JSON.stringify(data.activeTasks || {}));
 });
 
-// KORJAUS 3: Monivalinta-popupin yhdistäminen fiksulla viiveellä
+// KORJAUS 3: Monivalinta-popup fiksulla viiveellä, jotta kaikki ehtivät mukaan
 function checkForNewWinnerPopups(newTasks) {
     if (!myName) return;
     let addedNew = false;
@@ -282,14 +284,13 @@ function checkForNewWinnerPopups(newTasks) {
     
     if (addedNew) {
         if (winnerTimeout) clearTimeout(winnerTimeout);
-        // Odotetaan 400ms, jotta kaikki samalla sekunnilla tulleet lukitukset ehtivät mukaan
         winnerTimeout = setTimeout(() => {
             const html = pendingWinnerTasks.length > 1 
                 ? pendingWinnerTasks.map(n => `&bull; ${n}`).join('<br>') 
                 : pendingWinnerTasks[0];
             triggerWinnerOverlay(html);
             pendingWinnerTasks = []; 
-        }, 400);
+        }, 500);
     }
 }
 
@@ -302,7 +303,7 @@ function triggerWinnerOverlay(tasksHtml) {
     setTimeout(() => { overlay.style.display = 'none'; }, 4000); 
 }
 
-// KORJAUS 4: Kokoava XP-animaatio
+// KORJAUS 4: Kokoava XP-animaatio (laskee massapisteet yhteen)
 function showXPAnimation(points) {
     if (points === 0) return;
     pendingXP += points;
@@ -320,19 +321,18 @@ function showXPAnimation(points) {
         
         pendingXP = 0;
         setTimeout(() => { pop.style.display = 'none'; }, 2200);
-    }, 300);
+    }, 400);
 }
 
 // --- RENDERÖINTI: AKTIIVISET TEHTÄVÄT ---
 function renderActiveTasks(tasksObj, config) {
     const container = document.getElementById('activeTasksContainer');
     const isGM = document.body.className.includes('gm');
-    const vis = config.visibility || { title: true, points: true, desc: false, minus: true, bday: true };
+    const vis = config.visibility || { title: true, points: true, drawCount: false, desc: false, minus: true, bday: true };
     
     container.style.display = 'flex';
     container.style.flexDirection = 'column';
     
-    // KORJAUS 1 & 2: Oikeat CSS luokat laitekohtaisesti
     if (isGM && isGMCompactMode) container.classList.add('compact-view');
     else if (!isGM && isPlayerCompactMode) container.classList.add('compact-view');
     else container.classList.remove('compact-view');
@@ -424,6 +424,12 @@ function renderActiveTasks(tasksObj, config) {
         if (showFull || vis.points) {
             tagsHtml += `<div class="xp-badge" style="display:inline-block; margin-bottom:10px; margin-right:5px;">${taskData.p} XP</div>`;
         }
+        
+        // KORJAUS 1: Arvottavien määrä näkyviin pillerinä
+        if (!isHeroTask && (showFull || vis.drawCount)) {
+            tagsHtml += `<div class="xp-badge" style="display:inline-block; margin-bottom:10px; background:rgba(255,255,255,0.1); color:var(--text); border-color:rgba(255,255,255,0.2); margin-right:5px;">👥 ${taskData.r || 1} SUORITTAJAA</div>`;
+        }
+
         if ((showFull || vis.minus) && taskData.m) {
             tagsHtml += `<div class="xp-badge" style="display:inline-block; margin-bottom:10px; background:rgba(185,50,50,0.15); color:var(--danger); border-color:var(--danger); margin-right:5px;">⚠️ MIINUS-UHKA</div>`;
         }
@@ -461,7 +467,7 @@ function renderActiveTasks(tasksObj, config) {
         let actionHtml = '';
         if (!isGM && !isLocked && !isHeroTask) {
             const myD = allPlayers.find(p => p.name === myName);
-            const onCD = config.useCooldowns && myD && myD.cooldown;
+            const onCD = config.useCooldowns && myD && myD.cooldown > 0;
             const amIIn = results.some(r => r.name === myName);
 
             actionHtml += `<div class="join-action-area" style="margin-top:15px;">`;
@@ -601,7 +607,7 @@ function drawRandom(taskId, isMassAction = false) {
     });
 }
 
-// --- GM GRID (Fix 1: Piilota tyhjät supistetussa tilassa) ---
+// --- GM GRID ---
 function renderGMGrid(taskId, results, isLocked, isShuffling, showCD) {
     const grid = document.getElementById(`grid-${taskId}`);
     if(!grid) return;
@@ -617,7 +623,7 @@ function renderGMGrid(taskId, results, isLocked, isShuffling, showCD) {
     allPlayers.forEach((p, index) => {
         const btn = grid.children[index];
         const isInc = results.some(r => r.name === p.name);
-        const onCD = showCD && p.cooldown;
+        const onCD = showCD && p.cooldown > 0;
         
         btn.className = `btn ${isInc ? 'btn-primary selected-participant' : 'btn-secondary'} ${onCD ? 'on-cooldown' : ''}`;
         btn.disabled = isLocked || isShuffling;
@@ -679,7 +685,7 @@ function claimIdentity() {
     db.ref('gameState/players').transaction(p => {
         p = p || []; 
         if(!p.find(x => x.name === n)) {
-            p.push({ name: n, score: 0, cooldown: false });
+            p.push({ name: n, score: 0, cooldown: 0 }); // Asetetaan jäähy numeroksi 0
         }
         return p;
     }).then(() => {
@@ -687,15 +693,15 @@ function claimIdentity() {
     });
 }
 
-// KORJAUS 6: Tiukka "Vain 1 ilmoittautuminen" Jäähy
+// KORJAUS 6: Tiukka ilmoittautumisjäähy ("vain 1 tehtävä kerrallaan")
 function volunteer(taskId) {
     if(!myName) return;
     db.ref('gameState').once('value', snap => {
         const data = snap.val();
         const meData = (data.players || []).find(p => p.name === myName);
         
-        if (data.config?.useCooldowns && meData?.cooldown) {
-            alert("Olet jäähyllä (Suoritit edellisen tehtävän)!"); return;
+        if (data.config?.useCooldowns && meData?.cooldown > 0) {
+            alert("Olet jäähyllä (Suoritit juuri edellisen tehtävän)!"); return;
         }
         
         if (data.config?.strictVolunteer) {
@@ -705,7 +711,7 @@ function volunteer(taskId) {
                 return !t.locked && (t.participants || []).some(r => r.name === myName);
             });
             if (inOther) {
-                alert("Olet jo ilmoittautunut toiseen avoimeen tehtävään!"); return;
+                alert("Jäähy: Olet jo ilmoittautunut toiseen avoimeen tehtävään!"); return;
             }
         }
 
@@ -752,6 +758,7 @@ function toggleParticipant(taskId, name) {
     });
 }
 
+// KORJAUS 2: "Sukupolvi" Jäähy päälle kun valitaan suorittajaksi (Arvo 2)
 function lockParticipants(taskId, isMassAction = false) { 
     db.ref('gameState').once('value', snap => {
         const d = snap.val();
@@ -761,7 +768,7 @@ function lockParticipants(taskId, isMassAction = false) {
         
         if (d.config?.useCooldowns) {
             const updatedPlayers = allPlayers.map(p => {
-                if (drawnNames.includes(p.name)) p.cooldown = true;
+                if (drawnNames.includes(p.name)) p.cooldown = 2; 
                 return p;
             });
             db.ref('gameState/players').set(updatedPlayers);
@@ -772,7 +779,7 @@ function lockParticipants(taskId, isMassAction = false) {
     });
 }
 
-// KORJAUS 8: Synttärisankari saa aina tasan 1 pisteen, jos bday on päällä ja tehtävä suoritetaan
+// KORJAUS 8: Synttärisankari saa vain 1 pisteen
 function showScoring(taskId, isMassAction = false) {
     db.ref('gameState').once('value', snap => {
         const d = snap.val();
@@ -799,7 +806,6 @@ function showScoring(taskId, isMassAction = false) {
             } else {
                 const part = res.find(r => r.name === p.name);
                 if(part) {
-                    // Osallistuja saa normipisteet
                     if(part.win) { 
                         earned += taskInstance.p; 
                         winnersNames.push(p.name); 
@@ -807,10 +813,7 @@ function showScoring(taskId, isMassAction = false) {
                         earned -= taskInstance.p;
                     }
                 } else if (idx === heroId && taskInstance.b) {
-                    // Jos Sankari ei osallistunut, mutta Bday bonus on päällä ja joku onnistui
-                    if (taskCompletedBySomeone) {
-                        earned += 1; // Aina 1 piste!
-                    }
+                    if (taskCompletedBySomeone) earned += 1; 
                 }
             }
             p.score = Math.max(0, (p.score || 0) + earned);
@@ -845,7 +848,6 @@ function renderScoringArea(taskId, results, isHeroTask, heroWinState) {
     sArea.innerHTML = '';
     
     const box = document.createElement('div');
-    // Visuaalinen korostuslaatikko
     box.style.border = "2px dashed var(--hero-gold)";
     box.style.background = "rgba(197, 161, 77, 0.08)";
     box.style.padding = "15px";
@@ -893,6 +895,7 @@ function updateDrawCountSelect(taskId, task) {
 
 function toggleWin(taskId, i) { db.ref(`gameState/activeTasks/${taskId}/participants/${i}/win`).transaction(w => !w); }
 
+// KORJAUS 2 (Jatko): Kun uusi tehtävä arvotaan, Jäähy vanhenee yhdellä askeleella
 function confirmRandomize() {
     db.ref('gameState').once('value', snap => {
         const d = snap.val();
@@ -900,10 +903,13 @@ function confirmRandomize() {
         const heroDraw = config.heroDraw || { include: true, weighted: false, interval: 4, drawCount: 0 };
         const used = d.usedTaskIds || [];
 
-        // Kun uusi tehtävä arvotaan, perusjäähy ("Lukittu" jäähy) nollautuu kaikilta
         if (config.useCooldowns) {
-            const clearedPlayers = allPlayers.map(p => ({ ...p, cooldown: false }));
-            db.ref('gameState/players').set(clearedPlayers);
+            const updatedPlayers = allPlayers.map(p => {
+                let cd = p.cooldown === true ? 1 : (p.cooldown || 0);
+                if (cd > 0) cd--; // Vähentää jäähyä askel askeleelta
+                return { ...p, cooldown: cd };
+            });
+            db.ref('gameState/players').set(updatedPlayers);
         }
 
         let newDrawCount = heroDraw.drawCount || 0;
@@ -952,8 +958,12 @@ function selectManualTask(idx) {
     db.ref('gameState').once('value', snap => {
         const d = snap.val();
         if (d.config?.useCooldowns) {
-            const clearedPlayers = allPlayers.map(p => ({ ...p, cooldown: false }));
-            db.ref('gameState/players').set(clearedPlayers);
+            const updatedPlayers = allPlayers.map(p => {
+                let cd = p.cooldown === true ? 1 : (p.cooldown || 0);
+                if (cd > 0) cd--; 
+                return { ...p, cooldown: cd };
+            });
+            db.ref('gameState/players').set(updatedPlayers);
         }
         const t = taskLibrary[idx];
         const instanceId = "t_" + Date.now();
@@ -1001,7 +1011,7 @@ function adminAddPlayer() {
     db.ref('gameState/players').once('value', snap => {
         let p = snap.val() || [];
         if(!p.find(x => x.name === n)) { 
-            p.push({ name: n, score: 0, cooldown: false }); 
+            p.push({ name: n, score: 0, cooldown: 0 }); 
             db.ref('gameState/players').set(p); 
             input.value = ''; 
             logEvent(`Admin lisäsi pelaajan: ${n}`);
@@ -1031,7 +1041,8 @@ function setBdayHero(idx) {
 }
 
 function adminToggleCooldown(idx) { 
-    const newState = !allPlayers[idx].cooldown;
+    // Vaihtaa tilojen 0 (Vapaa) ja 2 (Täysi jäähy) välillä
+    const newState = allPlayers[idx].cooldown > 0 ? 0 : 2;
     db.ref(`gameState/players/${idx}/cooldown`).set(newState); 
 }
 
@@ -1072,8 +1083,8 @@ function renderLeaderboard(showCD, heroId) {
         const pIdx = allPlayers.findIndex(x => x.name === p.name);
         const isHero = heroId !== null && pIdx === heroId;
         const div = document.createElement('div');
-        div.className = `player-row ${p.name === myName ? 'me' : ''} ${isHero ? 'is-hero' : ''} ${p.cooldown ? 'on-cooldown' : ''}`;
-        const cdText = (showCD && p.cooldown) ? ' <small style="color:var(--danger)">[JÄÄHY]</small>' : '';
+        div.className = `player-row ${p.name === myName ? 'me' : ''} ${isHero ? 'is-hero' : ''} ${p.cooldown > 0 ? 'on-cooldown' : ''}`;
+        const cdText = (showCD && p.cooldown > 0) ? ' <small style="color:var(--danger)">[JÄÄHY]</small>' : '';
         div.innerHTML = `<span>${isHero?'🎂 ':''}${p.name}${cdText}</span><span class="xp-badge">${p.score} XP</span>`;
         list.appendChild(div);
     });
@@ -1097,7 +1108,7 @@ function renderAdminPlayerList(heroId) {
                     <span style="font-size:0.8rem; font-weight:bold;">${p.name} (${p.score})</span>
                     <div style="display:flex; gap:4px;">
                         <button class="btn" style="width:32px; padding:5px; margin:0; background:${heroBg}; color:${heroColor}; border:1px solid ${heroBorder};" onclick="setBdayHero(${i})">🎂</button>
-                        <button class="btn ${p.cooldown ? 'btn-success' : 'btn-secondary'}" style="width:auto; font-size:0.5rem; padding:5px; margin:0;" onclick="adminToggleCooldown(${i})">${p.cooldown ? 'VAP' : 'J'}</button>
+                        <button class="btn ${p.cooldown > 0 ? 'btn-success' : 'btn-secondary'}" style="width:auto; font-size:0.5rem; padding:5px; margin:0;" onclick="adminToggleCooldown(${i})">${p.cooldown > 0 ? 'VAP' : 'J'}</button>
                         <button class="btn btn-secondary" style="width:28px; padding:5px; margin:0;" onclick="adjustScore(${i}, 1)">+</button>
                         <button class="btn btn-secondary" style="width:28px; padding:5px; margin:0;" onclick="adjustScore(${i}, -1)">-</button>
                         <button class="btn btn-danger" style="width:28px; padding:5px; margin:0;" onclick="removePlayer(${i})">X</button>
