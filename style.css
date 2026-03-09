@@ -96,7 +96,7 @@ body {
     left: 0;
     height: 4px;
     background: var(--gm-accent);
-    /* GM Nappulan painallusaika lyhennetty 0.8s */
+    /* Lyhennetty 0.8 sekuntiin */
     animation: hold-progress 0.8s linear forwards;
 }
 
@@ -250,6 +250,12 @@ body {
     text-transform: uppercase; 
     letter-spacing: -1px; 
     margin: 10px 0; 
+    /* KORJAUS 3: Estää pitkien otsikoiden karkaamisen oikeasta reunasta */
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    max-width: 100%;
+    line-height: 1.2;
 }
 
 .active-task-item.hero-task-gold h1 { color: gold; }
@@ -457,11 +463,11 @@ input[type="checkbox"] {
 
 @keyframes xp-bouncy-float {
     0% { opacity: 0; transform: translate(-50%, calc(-50% + 60px)) scale(0.3); }
-    15% { opacity: 1; transform: translate(-50%, calc(-50% - 30px)) scale(1.25); } /* Ponnistus yli */
-    30% { opacity: 1; transform: translate(-50%, calc(-50% + 10px)) scale(0.95); } /* Kimmahduksen palautus */
-    45% { opacity: 1; transform: translate(-50%, -50%) scale(1); } /* Asettuminen paikoilleen */
-    80% { opacity: 1; transform: translate(-50%, -50%) scale(1); } /* Pysyy hetken */
-    100% { opacity: 0; transform: translate(-50%, calc(-50% - 150px)) scale(0.8); } /* Häipyy ylös */
+    15% { opacity: 1; transform: translate(-50%, calc(-50% - 30px)) scale(1.25); } 
+    30% { opacity: 1; transform: translate(-50%, calc(-50% + 10px)) scale(0.95); } 
+    45% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 
+    80% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 
+    100% { opacity: 0; transform: translate(-50%, calc(-50% - 150px)) scale(0.8); } 
 }
 
 /* Voittaja-popup */
@@ -480,20 +486,21 @@ input[type="checkbox"] {
 
 .winner-content h1 { color: var(--success); font-size: 3rem; margin-bottom: 10px; text-shadow: 0 0 20px var(--success); }
 
+/* Skaalautuvuus voittajapopupissa monelle tehtävälle */
 #winnerTaskNames {
-    font-size: 2rem;
+    font-size: 1.6rem; /* Hieman pienennetty jotta monivalinta mahtuu */
     color: var(--accent);
     margin: 0 0 20px 0;
     text-transform: uppercase;
     word-wrap: break-word;
     overflow-wrap: break-word;
     hyphens: auto;
-    line-height: 1.2;
+    line-height: 1.3;
 }
 
 .winner-content p { font-size: 1.5rem; color: #fff; }
 
-.timer-bar { animation: shrink 4.5s linear forwards; } /* Synkronoitu JS-ajastimen kanssa (4.5s) */
+.timer-bar { animation: shrink 3.5s linear forwards; } /* Synkronoitu JS-ajastimen kanssa (3.5s) */
 
 @keyframes shrink { from { width: 100%; } to { width: 0%; } }
 @keyframes winner-pop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -521,7 +528,7 @@ input[type="checkbox"] {
     .container { padding-top: 100px; }
     
     .winner-content h1 { font-size: 2.2rem; }
-    #winnerTaskNames { font-size: 1.6rem; }
+    #winnerTaskNames { font-size: 1.4rem; }
     
     .admin-row-stack { flex-direction: column; align-items: stretch; }
     .admin-row-stack .btn { width: 100%; }
