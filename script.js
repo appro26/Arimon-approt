@@ -3,7 +3,7 @@ const firebaseConfig = { databaseURL: "https://approplaybook-default-rtdb.europe
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// --- PWA ASENNUSLOGIIKKA (UUSI) ---
+// --- PWA ASENNUSLOGIIKKA ---
 let deferredPrompt;
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
@@ -12,21 +12,23 @@ window.addEventListener('beforeinstallprompt', (e) => {
 });
 
 function checkInstallStatus() {
-    // Varmistetaan, onko sovellus jo asennettu (Standalone mode)
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
     const installCard = document.getElementById('installCard');
     const instructionText = document.getElementById('installInstruction');
     const installBtn = document.getElementById('installBtn');
 
-    if (isStandalone) {
-        installCard.style.display = 'none';
-        return; // Peli on jo asennettu oikein!
+    // Tarkistetaan, onko pelaaja jo kieltäytynyt asennuksesta aiemmin
+    const isDismissed = localStorage.getItem('appro_install_dismissed') === 'true';
+
+    // Jos peli on jo asennettu TAI pelaaja on kieltäytynyt, piilotetaan kortti heti
+    if (isStandalone || isDismissed) {
+        if (installCard) installCard.style.display = 'none';
+        return; 
     }
 
-    // Tunnistetaan onko laite iOS (Apple on vaikea tapaus)
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
-    installCard.style.display = 'block';
+    if (installCard) installCard.style.display = 'block';
 
     if (isIOS) {
         instructionText.innerHTML = 'Saat pelin koko ruudulle: Paina selaimen alareunasta <b>Jaa</b>-kuvaketta (neliö ja nuoli ylös) ja valitse <b>"Lisää koti-valikkoon"</b>.';
@@ -47,7 +49,13 @@ function checkInstallStatus() {
     }
 }
 
-// Suoritetaan tarkistus heti latautuessa
+// UUSI FUNKTIO: Pelaaja ohittaa asennuksen
+window.dismissInstallPrompt = function() {
+    localStorage.setItem('appro_install_dismissed', 'true');
+    const installCard = document.getElementById('installCard');
+    if (installCard) installCard.style.display = 'none';
+};
+
 document.addEventListener('DOMContentLoaded', checkInstallStatus);
 
 // --- GLOBAALIT MUUTTUJAT ---
@@ -259,7 +267,7 @@ db.ref('gameState').on('value', (snap) => {
                 localStorage.removeItem('appro_name');
             }
             updateIdentityUI();
-            checkInstallStatus(); // Päivitetään asennusnäkymä tarvittaessa
+            checkInstallStatus(); 
         }
     }
     
@@ -374,7 +382,6 @@ function showXPAnimation(points) {
     }, 400);
 }
 
-// Uusi synkronointi funktio
 window.updateTaskDrawCount = function(taskId, val) {
     db.ref(`gameState/activeTasks/${taskId}/r`).set(parseInt(val));
 };
