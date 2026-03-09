@@ -13,12 +13,17 @@ let lastMyScore = null;
 let lastKnownTasks = {}; 
 let taskHistory = [];
 
-let popupQueue = [];
-let isPopupShowing = false;
 let wasInGame = false; 
 
-// UUSI: Supistetun näkymän tila (Paikallinen, vain tälle laitteelle)
-let isCompactMode = false;
+// ERILLISET SUPISTETUT TILAT Pelaajalle ja GM:lle
+let isPlayerCompactMode = false;
+let isGMCompactMode = false;
+
+// KOKOAJAT (Debounce) Popupeille
+let pendingWinnerTasks = [];
+let winnerTimeout = null;
+let pendingXP = 0;
+let xpTimeout = null;
 
 const APP_NAME = "Arimon Approt";
 document.title = APP_NAME;
@@ -131,26 +136,34 @@ const defaultTasks = [
     { id: 102, n: "System Overload (Sankari)", d: "Sankarin on lueteltava 10 IT-termiä, 10 frisbeegolf-termiä tai 10 PUBG-termiä 30 sekunnissa.", p: 3, m: 1, b: true, r: 1, isHero: true }
 ];
 
-// --- TAPAHTUMALOKI FUNKTIO ---
 function logEvent(msg) {
     const time = new Date().toLocaleTimeString('fi-FI');
     db.ref('gameState/eventLog').push({ time, msg });
 }
 
-// --- SUPISTETUN NÄKYMÄN TOGGLE ---
-window.toggleCompactMode = function() {
-    isCompactMode = !isCompactMode;
-    const btn = document.getElementById('compactToggleBtn');
-    if (btn) btn.innerText = isCompactMode ? 'LAAJENNA NÄKYMÄ' : 'SUPISTA NÄKYMÄ';
-    
-    const container = document.getElementById('activeTasksContainer');
-    if (container) {
-        if (isCompactMode) container.classList.add('compact-view');
-        else container.classList.remove('compact-view');
-    }
+// SUPISTUSTILAT
+window.toggleGMCompactMode = function() {
+    isGMCompactMode = !isGMCompactMode;
+    const btn = document.getElementById('gmCompactToggleBtn');
+    if (btn) btn.innerText = isGMCompactMode ? 'LAAJENNA NÄKYMÄ' : 'SUPISTA NÄKYMÄ';
+    triggerRender();
 };
 
-// --- NOLLAUS ---
+window.togglePlayerCompactMode = function() {
+    isPlayerCompactMode = !isPlayerCompactMode;
+    const btn = document.getElementById('playerCompactToggleBtn');
+    if (btn) btn.innerText = isPlayerCompactMode ? 'LAAJENNA NÄKYMÄ' : 'SUPISTA NÄKYMÄ';
+    triggerRender();
+};
+
+function triggerRender() {
+    db.ref('gameState').once('value', snap => {
+        const d = snap.val();
+        renderActiveTasks(d.activeTasks || {}, d.config || {});
+    });
+}
+
+// KORJAUS 7: Reset palauttaa uudet oletukset
 window.resetGame = function() {
     if (confirm("VAROITUS: Tämä poistaa kaikki tiedot. Jatketaanko?")) {
         const newResetId = Date.now().toString();
@@ -164,16 +177,16 @@ window.resetGame = function() {
             resetId: newResetId,
             config: { 
                 useCooldowns: true, 
+                strictVolunteer: false,
                 excludeUsedTasks: true, 
                 bdayHero: null,
-                visibility: { title: true, points: true, desc: false, minus: false, bday: false },
-                heroDraw: { include: false, weighted: false, interval: 4, drawCount: 0 }
+                visibility: { title: true, points: true, desc: false, minus: true, bday: true },
+                heroDraw: { include: true, weighted: false, interval: 4, drawCount: 0 }
             }
         }).then(() => { localStorage.clear(); location.reload(); });
     }
 };
 
-// --- DATA-KUUNTELIJA ---
 db.ref('gameState').on('value', (snap) => {
     const data = snap.val();
     if(!data) return;
@@ -187,7 +200,10 @@ db.ref('gameState').on('value', (snap) => {
     if (myName) {
         if (me) {
             wasInGame = true;
-            if (lastMyScore !== null && me.score !== lastMyScore) { showXPAnimation(me.score - lastMyScore); }
+            // KORJAUS 4: Kutsu yhteislaskijaa jos pisteet ovat muuttuneet
+            if (lastMyScore !== null && me.score !== lastMyScore) { 
+                showXPAnimation(me.score - lastMyScore); 
+            }
             lastMyScore = me.score;
         } else {
             if (wasInGame) {
@@ -212,8 +228,8 @@ db.ref('gameState').on('value', (snap) => {
     taskHistory = Object.values(data.history || {}).reverse().slice(0, 10);
     const config = data.config || {};
     const heroId = config.bdayHero;
-    const vis = config.visibility || { title: true, points: true, desc: false, minus: false, bday: false };
-    const heroDrawConfig = config.heroDraw || { include: false, weighted: false, interval: 4, drawCount: 0 };
+    const vis = config.visibility || { title: true, points: true, desc: false, minus: true, bday: true };
+    const heroDrawConfig = config.heroDraw || { include: true, weighted: false, interval: 4, drawCount: 0 };
 
     updateIdentityUI();
     renderLeaderboard(config.useCooldowns, heroId);
@@ -221,16 +237,15 @@ db.ref('gameState').on('value', (snap) => {
     renderHistory();
     
     if(document.getElementById('adminPanel').style.display === 'block') {
-        // KORJAUS 2: Estetään Admin listan piirtäminen vain, jos ollaan oikeasti kirjoittamassa tekstiä
         const activeTag = document.activeElement ? document.activeElement.tagName : '';
         if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA') {
             renderAdminPlayerList(heroId);
             renderTaskLibrary();
         }
-
         renderEventLog(data.eventLog);
         
         document.getElementById('useCooldowns').checked = !!config.useCooldowns;
+        document.getElementById('strictVolunteer').checked = !!config.strictVolunteer;
         document.getElementById('excludeUsedTasks').checked = !!config.excludeUsedTasks;
         document.getElementById('visTitle').checked = !!vis.title;
         document.getElementById('visPoints').checked = !!vis.points;
@@ -247,26 +262,34 @@ db.ref('gameState').on('value', (snap) => {
     lastKnownTasks = JSON.parse(JSON.stringify(data.activeTasks || {}));
 });
 
-// --- POP-UP TARKISTUS ---
+// KORJAUS 3: Monivalinta-popupin yhdistäminen fiksulla viiveellä
 function checkForNewWinnerPopups(newTasks) {
     if (!myName) return;
-    let wonTaskNames = [];
+    let addedNew = false;
+    
     Object.keys(newTasks).forEach(taskId => {
         const newTask = newTasks[taskId];
         const oldTask = lastKnownTasks[taskId];
         const wasJustLocked = newTask.locked && (!oldTask || !oldTask.locked);
         if (wasJustLocked && !newTask.isHero) {
-            const results = newTask.participants || [];
-            const isMeSelected = results.some(r => r.name === myName);
-            if (isMeSelected) wonTaskNames.push(newTask.n);
+            const isMeSelected = (newTask.participants || []).some(r => r.name === myName);
+            if (isMeSelected && !pendingWinnerTasks.includes(newTask.n)) {
+                pendingWinnerTasks.push(newTask.n);
+                addedNew = true;
+            }
         }
     });
     
-    if (wonTaskNames.length > 0) {
-        const html = wonTaskNames.length > 1 
-            ? wonTaskNames.map(n => `&bull; ${n}`).join('<br>') 
-            : wonTaskNames[0];
-        triggerWinnerOverlay(html);
+    if (addedNew) {
+        if (winnerTimeout) clearTimeout(winnerTimeout);
+        // Odotetaan 400ms, jotta kaikki samalla sekunnilla tulleet lukitukset ehtivät mukaan
+        winnerTimeout = setTimeout(() => {
+            const html = pendingWinnerTasks.length > 1 
+                ? pendingWinnerTasks.map(n => `&bull; ${n}`).join('<br>') 
+                : pendingWinnerTasks[0];
+            triggerWinnerOverlay(html);
+            pendingWinnerTasks = []; 
+        }, 400);
     }
 }
 
@@ -276,19 +299,42 @@ function triggerWinnerOverlay(tasksHtml) {
     document.getElementById('winnerTaskNames').innerHTML = tasksHtml; 
     overlay.style.display = 'flex';
     if (navigator.vibrate) navigator.vibrate([200, 100, 200]); 
-    setTimeout(() => { overlay.style.display = 'none'; }, 3500); 
+    setTimeout(() => { overlay.style.display = 'none'; }, 4000); 
+}
+
+// KORJAUS 4: Kokoava XP-animaatio
+function showXPAnimation(points) {
+    if (points === 0) return;
+    pendingXP += points;
+    if (xpTimeout) clearTimeout(xpTimeout);
+    
+    xpTimeout = setTimeout(() => {
+        const pop = document.getElementById('xpPopUp');
+        if(!pop) return;
+        pop.style.display = 'block';
+        pop.style.color = pendingXP > 0 ? "var(--success)" : "var(--danger)";
+        pop.innerText = (pendingXP > 0 ? "+" : "") + pendingXP + " XP";
+        pop.classList.remove('xp-animate'); 
+        void pop.offsetWidth; 
+        pop.classList.add('xp-animate');
+        
+        pendingXP = 0;
+        setTimeout(() => { pop.style.display = 'none'; }, 2200);
+    }, 300);
 }
 
 // --- RENDERÖINTI: AKTIIVISET TEHTÄVÄT ---
 function renderActiveTasks(tasksObj, config) {
     const container = document.getElementById('activeTasksContainer');
     const isGM = document.body.className.includes('gm');
-    const vis = config.visibility || { title: true, points: true, desc: false, minus: false, bday: false };
+    const vis = config.visibility || { title: true, points: true, desc: false, minus: true, bday: true };
     
     container.style.display = 'flex';
     container.style.flexDirection = 'column';
     
-    if (isCompactMode) container.classList.add('compact-view');
+    // KORJAUS 1 & 2: Oikeat CSS luokat laitekohtaisesti
+    if (isGM && isGMCompactMode) container.classList.add('compact-view');
+    else if (!isGM && isPlayerCompactMode) container.classList.add('compact-view');
     else container.classList.remove('compact-view');
     
     const globalControls = document.getElementById('gmGlobalControls');
@@ -386,11 +432,9 @@ function renderActiveTasks(tasksObj, config) {
         }
         headerHtml += `<div>${tagsHtml}</div>`;
 
-        // --- 3. DESC (Korjaus 5: Speksit pakkolaajentuvat supistetussa tilassa) ---
+        // --- 3. DESC ---
         let descHtml = '';
-        
-        // Injektoidaan dynaaminen CSS-tyyli, jos kortti on supistetussa tilassa ja speksit painettu
-        if (isSpying && isCompactMode) {
+        if (isSpying && isGMCompactMode) {
             descHtml += `<style>
                 .compact-view [data-task-id="${taskId}"] { padding: 24px !important; }
                 .compact-view [data-task-id="${taskId}"] .instruction-card { display: block !important; }
@@ -557,7 +601,7 @@ function drawRandom(taskId, isMassAction = false) {
     });
 }
 
-// --- GM GRID ---
+// --- GM GRID (Fix 1: Piilota tyhjät supistetussa tilassa) ---
 function renderGMGrid(taskId, results, isLocked, isShuffling, showCD) {
     const grid = document.getElementById(`grid-${taskId}`);
     if(!grid) return;
@@ -604,20 +648,14 @@ function renderGMGrid(taskId, results, isLocked, isShuffling, showCD) {
 
 function toggleGMSpy(taskId) {
     localSpyState[taskId] = !localSpyState[taskId];
-    db.ref('gameState').once('value', snap => {
-        const d = snap.val();
-        renderActiveTasks(d.activeTasks || {}, d.config || {});
-    });
+    triggerRender();
 }
 
 function setRole(r) {
     document.body.className = r + '-mode';
     document.getElementById('btnPlayer').classList.toggle('active', r === 'player');
     document.getElementById('btnGM').classList.toggle('active', r === 'gm');
-    db.ref('gameState').once('value', snap => {
-        const d = snap.val();
-        renderActiveTasks(d.activeTasks || {}, d.config || {});
-    });
+    triggerRender();
 }
 
 let gmHoldTimer;
@@ -649,14 +687,28 @@ function claimIdentity() {
     });
 }
 
+// KORJAUS 6: Tiukka "Vain 1 ilmoittautuminen" Jäähy
 function volunteer(taskId) {
     if(!myName) return;
     db.ref('gameState').once('value', snap => {
         const data = snap.val();
         const meData = (data.players || []).find(p => p.name === myName);
+        
         if (data.config?.useCooldowns && meData?.cooldown) {
-            alert("Olet jäähyllä!"); return;
+            alert("Olet jäähyllä (Suoritit edellisen tehtävän)!"); return;
         }
+        
+        if (data.config?.strictVolunteer) {
+            let inOther = Object.keys(data.activeTasks).some(id => {
+                if (id === taskId) return false;
+                const t = data.activeTasks[id];
+                return !t.locked && (t.participants || []).some(r => r.name === myName);
+            });
+            if (inOther) {
+                alert("Olet jo ilmoittautunut toiseen avoimeen tehtävään!"); return;
+            }
+        }
+
         if(data.activeTasks[taskId].locked) return;
         
         const taskName = data.activeTasks[taskId].n;
@@ -720,6 +772,7 @@ function lockParticipants(taskId, isMassAction = false) {
     });
 }
 
+// KORJAUS 8: Synttärisankari saa aina tasan 1 pisteen, jos bday on päällä ja tehtävä suoritetaan
 function showScoring(taskId, isMassAction = false) {
     db.ref('gameState').once('value', snap => {
         const d = snap.val();
@@ -732,6 +785,7 @@ function showScoring(taskId, isMassAction = false) {
         used.push(taskInstance.id);
         
         let winnersNames = [];
+        let taskCompletedBySomeone = res.some(r => r.win);
         
         const updatedPlayers = allPlayers.map((p, idx) => {
             let earned = 0;
@@ -745,14 +799,18 @@ function showScoring(taskId, isMassAction = false) {
             } else {
                 const part = res.find(r => r.name === p.name);
                 if(part) {
+                    // Osallistuja saa normipisteet
                     if(part.win) { 
                         earned += taskInstance.p; 
                         winnersNames.push(p.name); 
                     } else if(taskInstance.m) {
                         earned -= taskInstance.p;
                     }
-                } else { 
-                    if(taskInstance.b && idx === heroId) earned += taskInstance.p; 
+                } else if (idx === heroId && taskInstance.b) {
+                    // Jos Sankari ei osallistunut, mutta Bday bonus on päällä ja joku onnistui
+                    if (taskCompletedBySomeone) {
+                        earned += 1; // Aina 1 piste!
+                    }
                 }
             }
             p.score = Math.max(0, (p.score || 0) + earned);
@@ -780,7 +838,6 @@ window.toggleHeroTaskWin = function(taskId) {
     });
 };
 
-// KORJAUS 4: Selkeä visuaalinen korostus pisteytykselle (Dashed Gold Box)
 function renderScoringArea(taskId, results, isHeroTask, heroWinState) {
     const sArea = document.getElementById(`scoring-${taskId}`);
     if(!sArea) return; 
@@ -788,11 +845,13 @@ function renderScoringArea(taskId, results, isHeroTask, heroWinState) {
     sArea.innerHTML = '';
     
     const box = document.createElement('div');
+    // Visuaalinen korostuslaatikko
     box.style.border = "2px dashed var(--hero-gold)";
     box.style.background = "rgba(197, 161, 77, 0.08)";
     box.style.padding = "15px";
     box.style.borderRadius = "10px";
     box.style.marginTop = "15px";
+    box.className = "scoring-box"; 
     
     if (isHeroTask) {
         box.innerHTML = `<p style="font-size:0.75rem; color:var(--hero-gold); margin:0 0 12px 0; text-align:center; font-weight:900; letter-spacing:1px;">⚠️ PISTEYTÄ SANKARIN SUORITUS ⚠️</p>`;
@@ -838,9 +897,10 @@ function confirmRandomize() {
     db.ref('gameState').once('value', snap => {
         const d = snap.val();
         const config = d.config || {};
-        const heroDraw = config.heroDraw || { include: false, weighted: false, interval: 4, drawCount: 0 };
+        const heroDraw = config.heroDraw || { include: true, weighted: false, interval: 4, drawCount: 0 };
         const used = d.usedTaskIds || [];
 
+        // Kun uusi tehtävä arvotaan, perusjäähy ("Lukittu" jäähy) nollautuu kaikilta
         if (config.useCooldowns) {
             const clearedPlayers = allPlayers.map(p => ({ ...p, cooldown: false }));
             db.ref('gameState/players').set(clearedPlayers);
@@ -1019,7 +1079,6 @@ function renderLeaderboard(showCD, heroId) {
     });
 }
 
-// KORJAUS 2: Pelaajien hallinta päivittyy nyt saumattomasti ja sankarille komea kultainen tausta!
 function renderAdminPlayerList(heroId) {
     const list = document.getElementById('adminPlayerList');
     if(!list) return; list.innerHTML = "";
@@ -1096,12 +1155,6 @@ function updateManualTaskSelect() {
 }
 
 function updateIdentityUI() { document.getElementById('identityCard').style.display = myName ? 'none' : 'block'; document.getElementById('idTag').innerText = myName ? "PROFIILI: " + myName : "KIRJAUDU SISÄÄN"; }
-
-function showXPAnimation(points) {
-    const pop = document.getElementById('xpPopUp');
-    if(!pop || points === 0) return; pop.style.display = 'block'; pop.style.color = points > 0 ? "var(--success)" : "var(--danger)"; pop.innerText = (points > 0 ? "+" : "") + points + " XP"; pop.classList.remove('xp-animate'); void pop.offsetWidth; pop.classList.add('xp-animate');
-    setTimeout(() => { pop.style.display = 'none'; }, 2200);
-}
 
 function toggleAdminPanel() { 
     const p = document.getElementById('adminPanel'); const isOpening = p.style.display === 'none'; p.style.display = isOpening ? 'block' : 'none'; 
