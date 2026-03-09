@@ -13,10 +13,6 @@ let lastMyScore = null;
 let lastKnownTasks = {}; 
 let taskHistory = [];
 
-// UUSI: Popup-jono useille samanaikaisille ilmoituksille
-let popupQueue = [];
-let isPopupShowing = false;
-
 const APP_NAME = "Arimon Approt";
 document.title = APP_NAME;
 
@@ -197,7 +193,6 @@ db.ref('gameState').on('value', (snap) => {
         document.getElementById('useCooldowns').checked = !!config.useCooldowns;
         document.getElementById('excludeUsedTasks').checked = !!config.excludeUsedTasks;
         
-        // Päivitä näkyvyys-checkboxit
         document.getElementById('visTitle').checked = !!vis.title;
         document.getElementById('visPoints').checked = !!vis.points;
         document.getElementById('visDesc').checked = !!vis.desc;
@@ -210,29 +205,10 @@ db.ref('gameState').on('value', (snap) => {
     lastKnownTasks = JSON.parse(JSON.stringify(data.activeTasks || {}));
 });
 
-// --- POP-UP TARKISTUS & JONO ---
-function processPopupQueue() {
-    if (isPopupShowing || popupQueue.length === 0) return;
-    isPopupShowing = true;
-    const taskName = popupQueue.shift();
-    triggerWinnerOverlay(taskName);
-}
-
-function triggerWinnerOverlay(taskName) {
-    const overlay = document.getElementById('lotteryWinner');
-    if(!overlay) return;
-    document.getElementById('winnerTaskName').innerText = taskName; 
-    overlay.style.display = 'flex';
-    if (navigator.vibrate) navigator.vibrate([200, 100, 200]); 
-    setTimeout(() => { 
-        overlay.style.display = 'none'; 
-        isPopupShowing = false;
-        processPopupQueue(); // Käynnistä seuraava jos jonossa
-    }, 3000); 
-}
-
+// --- POP-UP TARKISTUS (Yhdistetty & Nopeutettu) ---
 function checkForNewWinnerPopups(newTasks) {
     if (!myName) return;
+    let wonTaskNames = [];
     Object.keys(newTasks).forEach(taskId => {
         const newTask = newTasks[taskId];
         const oldTask = lastKnownTasks[taskId];
@@ -241,18 +217,36 @@ function checkForNewWinnerPopups(newTasks) {
             const results = newTask.participants || [];
             const isMeSelected = results.some(r => r.name === myName);
             if (isMeSelected) {
-                popupQueue.push(newTask.n);
-                if (!isPopupShowing) processPopupQueue();
+                wonTaskNames.push(newTask.n);
             }
         }
     });
+    
+    if (wonTaskNames.length > 0) {
+        triggerWinnerOverlay(wonTaskNames.join('<br><br>'));
+    }
 }
 
-// --- RENDERÖINTI: AKTIIVISET TEHTÄVÄT (ANTI-FLICKER LOGIIKALLA) ---
+function triggerWinnerOverlay(tasksHtml) {
+    const overlay = document.getElementById('lotteryWinner');
+    if(!overlay) return;
+    document.getElementById('winnerTaskNames').innerHTML = tasksHtml; 
+    overlay.style.display = 'flex';
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200]); 
+    setTimeout(() => { 
+        overlay.style.display = 'none'; 
+    }, 4500); // Hieman pidempi aika lukea useampi tehtävä
+}
+
+// --- RENDERÖINTI: AKTIIVISET TEHTÄVÄT (FLEXBOX ANTI-FLICKER) ---
 function renderActiveTasks(tasksObj, config) {
     const container = document.getElementById('activeTasksContainer');
     const isGM = document.body.className.includes('gm');
     const vis = config.visibility || { title: true, points: true, desc: false, minus: false, bday: false };
+    
+    // Varmistetaan että container käyttää flexboxia lajittelua varten
+    container.style.display = 'flex';
+    container.style.flexDirection = 'column';
     
     const globalControls = document.getElementById('gmGlobalControls');
     if (globalControls) {
@@ -260,18 +254,6 @@ function renderActiveTasks(tasksObj, config) {
     }
     
     let currentIds = Object.keys(tasksObj);
-    
-    // Pelaajan näkymän lajittelu
-    if (!isGM && myName) {
-        currentIds.sort((a, b) => {
-            const taskA = tasksObj[a]; const taskB = tasksObj[b];
-            const isMeA = (taskA.participants || []).some(r => r.name === myName);
-            const isMeB = (taskB.participants || []).some(r => r.name === myName);
-            const aPoints = (taskA.locked && isMeA && !taskA.isHero) ? 2 : (!taskA.locked && !taskA.isHero) ? 1 : 0;
-            const bPoints = (taskB.locked && isMeB && !taskB.isHero) ? 2 : (!taskB.locked && !taskB.isHero) ? 1 : 0;
-            return bPoints - aPoints;
-        });
-    }
 
     const existingIds = Array.from(container.querySelectorAll('.active-task-item')).map(el => el.getAttribute('data-task-id'));
     existingIds.forEach(id => {
@@ -287,11 +269,13 @@ function renderActiveTasks(tasksObj, config) {
         const results = taskData.participants || [];
         const isMePart = results.some(r => r.name === myName);
         const isHeroTask = !!taskData.isHero; 
-        const showFull = isLocked || isGM || isHeroTask;
+        
+        // Pelaajan näkyvyyssäännöt pätevät nyt myös GM:lle, paitsi jos "SPEKSIT" on painettu!
+        const showFull = isLocked || isHeroTask || (isGM && localSpyState[taskId]);
         
         let card = container.querySelector(`[data-task-id="${taskId}"]`);
         if (!card) {
-            // Luodaan kuoret kerran (Anti-flicker)
+            // Luodaan kuoret vain kerran!
             card = document.createElement('div');
             card.className = 'card task-box active-task-item';
             card.setAttribute('data-task-id', taskId);
@@ -305,7 +289,16 @@ function renderActiveTasks(tasksObj, config) {
             container.appendChild(card);
         }
         
-        container.appendChild(card); // Varmistaa DOM-järjestyksen lajittelun mukaan
+        // CSS FLEXBOX LAJITTELU (Tämä poistaa siirtely-välkkymisen!)
+        let flexOrder = 10;
+        if (!isGM && myName) {
+            if (isLocked && isMePart && !isHeroTask) flexOrder = 1; // Omat lukitut ensin
+            else if (!isLocked && !isHeroTask) flexOrder = 2;       // Avoimet toisena
+            else flexOrder = 3;                                     // Muiden tehtävät vikana
+        } else {
+            flexOrder = parseInt(taskId.split('_')[1] || 10);       // GM:lle aikajärjestys
+        }
+        card.style.order = flexOrder;
 
         card.classList.toggle('hero-task-gold', isHeroTask);
         card.classList.toggle('participating', !isGM && !isHeroTask && isLocked && isMePart);
@@ -334,7 +327,7 @@ function renderActiveTasks(tasksObj, config) {
             }
         }
 
-        // --- 2. HEADER ---
+        // --- 2. HEADER (GM ja Pelaaja säännöt yhdistettynä) ---
         let headerHtml = '';
         const displayTitle = (showFull || vis.title) ? taskData.n : "??? (Salainen tehtävä)";
         headerHtml += `<h1 style="margin:5px 0;">${displayTitle}</h1>`;
@@ -353,8 +346,8 @@ function renderActiveTasks(tasksObj, config) {
 
         // --- 3. DESC ---
         let descHtml = '';
-        const showDesc = showFull || vis.desc || (isGM && localSpyState[taskId]);
-        if (showDesc) {
+        const shouldShowDesc = showFull || vis.desc;
+        if (shouldShowDesc) {
             const displayDesc = (taskData.d && taskData.d.trim() !== "") ? taskData.d : "Ei ohjeita.";
             descHtml += `<div class="instruction-card"><p><strong>OHJEET:</strong><br>${displayDesc}</p></div>`;
             if (isLocked && !isHeroTask) {
@@ -412,10 +405,10 @@ function renderActiveTasks(tasksObj, config) {
             </div>`;
         }
 
-        // --- PÄIVITÄ VAIN MUUTTUNEET LOHKOT ---
+        // Päivitä vain ne lohkot joiden HTML oikeasti muuttui
         const updateNode = (selector, newHtml) => {
             const node = card.querySelector(selector);
-            if (node.innerHTML !== newHtml) node.innerHTML = newHtml;
+            if (node && node.innerHTML !== newHtml) node.innerHTML = newHtml;
         };
 
         updateNode('.t-status', statusHtml);
@@ -424,7 +417,6 @@ function renderActiveTasks(tasksObj, config) {
         updateNode('.t-action', actionHtml);
         updateNode('.t-gm', gmHtml);
 
-        // Renderöi GM-työkalujen sisällöt fiksusti
         if (isGM) {
             if (!isHeroTask) {
                 renderGMGrid(taskId, results, isLocked, taskData.isLotteryRunning, config.useCooldowns);
@@ -493,7 +485,7 @@ function deleteActiveTask(taskId) {
     }
 }
 
-// --- ARVONTA (Animaatiokorjauksella) ---
+// --- ARVONTA ---
 function drawRandom(taskId, isMassAction = false) {
     const sel = document.getElementById(`drawCount-${taskId}`);
     const count = sel ? (parseInt(sel.value) || 1) : 1;
@@ -511,46 +503,54 @@ function drawRandom(taskId, isMassAction = false) {
             
             db.ref(`gameState/activeTasks/${taskId}`).update({ participants: winners, isLotteryRunning: false, drawn: true });
             if (!isMassAction) logEvent(`Arvottu ${count} suorittajaa tehtävään: ${taskData.n}`);
-        }, 1500); 
+        }, 2000); // 2 Sekunnin ruletti
     });
 }
 
-// --- GM GRID (Anti-flicker korjaus) ---
+// --- GM GRID (Anti-flicker & JS Ruletti) ---
 function renderGMGrid(taskId, results, isLocked, isShuffling, showCD) {
     const grid = document.getElementById(`grid-${taskId}`);
     if(!grid) return;
 
-    // Jos gridissä on jo oikea määrä nappeja, päivitetään vain niiden tilat (estää välkkymisen)
-    if (grid.children.length === allPlayers.length) {
-        allPlayers.forEach((p, index) => {
-            const btn = grid.children[index];
-            const isInc = results.some(r => r.name === p.name);
-            const onCD = showCD && p.cooldown;
-            
-            btn.className = `btn ${isInc ? 'btn-primary selected-participant' : 'btn-secondary'} ${onCD ? 'on-cooldown' : ''}`;
-            if (isShuffling && isInc) btn.classList.add('shuffling');
-            
-            btn.disabled = isLocked || isShuffling;
-            btn.innerHTML = `${p.name}${onCD ? ' <small>(J)</small>' : ''}`;
+    if (grid.children.length !== allPlayers.length) {
+        grid.innerHTML = '';
+        allPlayers.forEach(p => {
+            const btn = document.createElement('button');
+            grid.appendChild(btn);
         });
-        return;
     }
 
-    // Luodaan kerran tyhjästä
-    grid.innerHTML = '';
-    allPlayers.forEach(p => {
+    allPlayers.forEach((p, index) => {
+        const btn = grid.children[index];
         const isInc = results.some(r => r.name === p.name);
         const onCD = showCD && p.cooldown;
-        const btn = document.createElement('button');
         
         btn.className = `btn ${isInc ? 'btn-primary selected-participant' : 'btn-secondary'} ${onCD ? 'on-cooldown' : ''}`;
-        if (isShuffling && isInc) btn.classList.add('shuffling');
-
-        btn.innerHTML = `${p.name}${onCD ? ' <small>(J)</small>' : ''}`;
         btn.disabled = isLocked || isShuffling;
+        btn.innerHTML = `${p.name}${onCD ? ' <small>(J)</small>' : ''}`;
         btn.onclick = () => toggleParticipant(taskId, p.name);
-        grid.appendChild(btn);
     });
+
+    // JS-Pohjainen Rulettiefekti!
+    if (isShuffling) {
+        if (!window.rouletteTimers) window.rouletteTimers = {};
+        if (!window.rouletteTimers[taskId]) {
+            window.rouletteTimers[taskId] = setInterval(() => {
+                Array.from(grid.children).forEach(b => b.classList.remove('roulette-focus'));
+                const validBtns = Array.from(grid.children).filter(b => b.className.includes('selected-participant'));
+                if(validBtns.length > 0) {
+                    const randomBtn = validBtns[Math.floor(Math.random() * validBtns.length)];
+                    randomBtn.classList.add('roulette-focus');
+                }
+            }, 120); // Syketaajuus
+        }
+    } else {
+        if (window.rouletteTimers && window.rouletteTimers[taskId]) {
+            clearInterval(window.rouletteTimers[taskId]);
+            delete window.rouletteTimers[taskId];
+        }
+        Array.from(grid.children).forEach(b => b.classList.remove('roulette-focus'));
+    }
 }
 
 function toggleGMSpy(taskId) {
@@ -574,7 +574,7 @@ function setRole(r) {
 let gmHoldTimer;
 const gmBtn = document.getElementById('btnGM');
 if(gmBtn) {
-    const startPress = () => { gmHoldTimer = setTimeout(() => { setRole('gm'); if(navigator.vibrate) navigator.vibrate(80); }, 1200); };
+    const startPress = () => { gmHoldTimer = setTimeout(() => { setRole('gm'); if(navigator.vibrate) navigator.vibrate(80); }, 800); }; // NOPEUTETTU TÄSTÄ!
     const endPress = () => clearTimeout(gmHoldTimer);
     gmBtn.addEventListener('mousedown', startPress);
     gmBtn.addEventListener('mouseup', endPress);
@@ -970,7 +970,7 @@ function updateIdentityUI() { document.getElementById('identityCard').style.disp
 function showXPAnimation(points) {
     const pop = document.getElementById('xpPopUp');
     if(!pop || points === 0) return; pop.style.display = 'block'; pop.style.color = points > 0 ? "var(--success)" : "var(--danger)"; pop.innerText = (points > 0 ? "+" : "") + points + " XP"; pop.classList.remove('xp-animate'); void pop.offsetWidth; pop.classList.add('xp-animate');
-    setTimeout(() => { pop.style.display = 'none'; }, 1800);
+    setTimeout(() => { pop.style.display = 'none'; }, 2200); // Pidennetty animaation keston mukaiseksi
 }
 
 function toggleAdminPanel() { 
