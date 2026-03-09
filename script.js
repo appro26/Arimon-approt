@@ -3,6 +3,53 @@ const firebaseConfig = { databaseURL: "https://approplaybook-default-rtdb.europe
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
+// --- PWA ASENNUSLOGIIKKA (UUSI) ---
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    checkInstallStatus();
+});
+
+function checkInstallStatus() {
+    // Varmistetaan, onko sovellus jo asennettu (Standalone mode)
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    const installCard = document.getElementById('installCard');
+    const instructionText = document.getElementById('installInstruction');
+    const installBtn = document.getElementById('installBtn');
+
+    if (isStandalone) {
+        installCard.style.display = 'none';
+        return; // Peli on jo asennettu oikein!
+    }
+
+    // Tunnistetaan onko laite iOS (Apple on vaikea tapaus)
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+    installCard.style.display = 'block';
+
+    if (isIOS) {
+        instructionText.innerHTML = 'Saat pelin koko ruudulle: Paina selaimen alareunasta <b>Jaa</b>-kuvaketta (neliö ja nuoli ylös) ja valitse <b>"Lisää koti-valikkoon"</b>.';
+        installBtn.style.display = 'none';
+    } else {
+        instructionText.innerHTML = 'Asenna peli puhelimeesi, jotta se toimii nopeammin ja ilman selaimen yläpalkkia!';
+        installBtn.style.display = 'block';
+        installBtn.onclick = async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') { installCard.style.display = 'none'; }
+                deferredPrompt = null;
+            } else {
+                alert("Asennus ei onnistu suoraan tästä selaimesta. Käytä Chromea tai valitse valikosta 'Asenna sovellus'.");
+            }
+        };
+    }
+}
+
+// Suoritetaan tarkistus heti latautuessa
+document.addEventListener('DOMContentLoaded', checkInstallStatus);
+
 // --- GLOBAALIT MUUTTUJAT ---
 let myName = localStorage.getItem('appro_name') || null;
 let currentResetId = localStorage.getItem('appro_reset_id') || null;
@@ -15,11 +62,9 @@ let taskHistory = [];
 
 let wasInGame = false; 
 
-// ERILLISET SUPISTETUT TILAT
 let isPlayerCompactMode = false;
 let isGMCompactMode = false;
 
-// KOKOAJAT (Debounce) Popupeille
 let pendingWinnerTasks = [];
 let winnerTimeout = null;
 let pendingXP = 0;
@@ -141,7 +186,6 @@ function logEvent(msg) {
     db.ref('gameState/eventLog').push({ time, msg });
 }
 
-// SUPISTUSTILAT
 window.toggleGMCompactMode = function() {
     isGMCompactMode = !isGMCompactMode;
     const btn = document.getElementById('gmCompactToggleBtn');
@@ -215,6 +259,7 @@ db.ref('gameState').on('value', (snap) => {
                 localStorage.removeItem('appro_name');
             }
             updateIdentityUI();
+            checkInstallStatus(); // Päivitetään asennusnäkymä tarvittaessa
         }
     }
     
@@ -236,7 +281,7 @@ db.ref('gameState').on('value', (snap) => {
     
     if(document.getElementById('adminPanel').style.display === 'block') {
         const activeTag = document.activeElement ? document.activeElement.tagName : '';
-        if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA') {
+        if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA' && activeTag !== 'SELECT') {
             renderAdminPlayerList(heroId);
             renderTaskLibrary();
         }
@@ -263,7 +308,6 @@ db.ref('gameState').on('value', (snap) => {
     lastKnownTasks = JSON.parse(JSON.stringify(data.activeTasks || {}));
 });
 
-// KORJAUS: Lyhennetty ilmoituksen kesto (Nyt 2500ms aiemman 4000ms sijaan)
 function checkForNewWinnerPopups(newTasks) {
     if (!myName) return;
     let addedNew = false;
@@ -299,7 +343,6 @@ function triggerWinnerOverlay(tasksHtml) {
     document.getElementById('winnerTaskNames').innerHTML = tasksHtml; 
     overlay.style.display = 'flex';
     
-    // Nollataan CSS-animaatio väkisin, jotta se toistuu oikein myös peräkkäisissä popup-ilmoituksissa
     const bar = overlay.querySelector('.timer-bar');
     if (bar) {
         bar.style.animation = 'none';
@@ -308,7 +351,6 @@ function triggerWinnerOverlay(tasksHtml) {
     }
 
     if (navigator.vibrate) navigator.vibrate([200, 100, 200]); 
-    // KORJAUS 2: Popup katoaa nyt nopeammin
     setTimeout(() => { overlay.style.display = 'none'; }, 2500); 
 }
 
@@ -332,12 +374,11 @@ function showXPAnimation(points) {
     }, 400);
 }
 
-// UUSI FUNKTIO: Päivittää arvottavien määrän reaaliajassa tietokantaan, kun GM vaihtaa lukua
+// Uusi synkronointi funktio
 window.updateTaskDrawCount = function(taskId, val) {
     db.ref(`gameState/activeTasks/${taskId}/r`).set(parseInt(val));
 };
 
-// --- RENDERÖINTI: AKTIIVISET TEHTÄVÄT ---
 function renderActiveTasks(tasksObj, config) {
     const container = document.getElementById('activeTasksContainer');
     const isGM = document.body.className.includes('gm');
@@ -405,7 +446,6 @@ function renderActiveTasks(tasksObj, config) {
         card.classList.toggle('participating', !isGM && !isHeroTask && isLocked && isMePart);
         card.classList.toggle('not-participating', !isGM && !isHeroTask && isLocked && !isMePart);
 
-        // --- 1. STATUS ---
         let statusHtml = '';
         if (isGM) {
             statusHtml += `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">`;
@@ -428,7 +468,6 @@ function renderActiveTasks(tasksObj, config) {
             }
         }
 
-        // --- 2. HEADER ---
         let headerHtml = '';
         const displayTitle = (showFull || vis.title) ? taskData.n : "??? (Salainen tehtävä)";
         headerHtml += `<h1 style="margin:5px 0;">${displayTitle}</h1>`;
@@ -438,7 +477,6 @@ function renderActiveTasks(tasksObj, config) {
             tagsHtml += `<div class="xp-badge" style="display:inline-block; margin-bottom:10px; margin-right:5px;">${taskData.p} XP</div>`;
         }
         
-        // KORJAUS 1: Pilleri heijastaa nyt aina MAX-arvoa, joka päivittyy livenä kun GM vaihtaa numeroa
         if (!isHeroTask && (showFull || vis.drawCount)) {
             tagsHtml += `<div class="xp-badge" style="display:inline-block; margin-bottom:10px; background:rgba(255,255,255,0.1); color:var(--text); border-color:rgba(255,255,255,0.2); margin-right:5px;">👥 MAX ${taskData.r || 1} SUORITTAJAA</div>`;
         }
@@ -451,7 +489,6 @@ function renderActiveTasks(tasksObj, config) {
         }
         headerHtml += `<div>${tagsHtml}</div>`;
 
-        // --- 3. DESC ---
         let descHtml = '';
         if (isSpying && isGMCompactMode) {
             descHtml += `<style>
@@ -476,7 +513,6 @@ function renderActiveTasks(tasksObj, config) {
             descHtml += `<p class="task-description" style="opacity:0.5; font-size:1.1rem;">Tehtävä paljastetaan valituille pelaajille...</p>`;
         }
 
-        // --- 4. ACTION ---
         let actionHtml = '';
         if (!isGM && !isLocked && !isHeroTask) {
             const isBannedFromThis = config.useCooldowns && taskData.bannedPlayers && taskData.bannedPlayers.includes(myName);
@@ -493,7 +529,6 @@ function renderActiveTasks(tasksObj, config) {
             actionHtml += `<p style="font-size: 0.7rem; color: var(--hero-gold); text-align: center; margin-top: 10px; font-weight: 700;">GM MERKITSEE PISTEET SUORITUKSEN JÄLKEEN</p>`;
         }
 
-        // --- 5. GM CONTROLS ---
         let gmHtml = '';
         if (isGM) {
             gmHtml += `<div style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.05); padding-top:15px;">`;
@@ -889,7 +924,7 @@ function renderScoringArea(taskId, results, isHeroTask, heroWinState) {
 
 function updateDrawCountSelect(taskId, task) {
     const sel = document.getElementById(`drawCount-${taskId}`);
-    if (!sel || sel.options.length > 0) return; // Estetään vaihtoehtojen päällekirjoitus jos jo olemassa
+    if (!sel || sel.options.length > 0) return; 
     const max = Math.max(allPlayers.length, 1);
     for (let i = 1; i <= max; i++) {
         const opt = document.createElement('option');
