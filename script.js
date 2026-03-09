@@ -17,7 +17,7 @@ let popupQueue = [];
 let isPopupShowing = false;
 let wasInGame = false; 
 
-// UUSI: Supistetun näkymän tila
+// UUSI: Supistetun näkymän tila (Paikallinen, vain tälle laitteelle)
 let isCompactMode = false;
 
 const APP_NAME = "Arimon Approt";
@@ -221,13 +221,10 @@ db.ref('gameState').on('value', (snap) => {
     renderHistory();
     
     if(document.getElementById('adminPanel').style.display === 'block') {
-        // SUOJAUS: Älä päivitä näitä DOM elementtejä jos GM sattuu kirjoittamaan niihin
-        const adminPlayerList = document.getElementById('adminPlayerList');
-        if (adminPlayerList && !adminPlayerList.contains(document.activeElement)) {
+        // KORJAUS 2: Estetään Admin listan piirtäminen vain, jos ollaan oikeasti kirjoittamassa tekstiä
+        const activeTag = document.activeElement ? document.activeElement.tagName : '';
+        if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA') {
             renderAdminPlayerList(heroId);
-        }
-        const taskLib = document.getElementById('taskLibraryEditor');
-        if (taskLib && !taskLib.contains(document.activeElement)) {
             renderTaskLibrary();
         }
 
@@ -282,7 +279,7 @@ function triggerWinnerOverlay(tasksHtml) {
     setTimeout(() => { overlay.style.display = 'none'; }, 3500); 
 }
 
-// --- RENDERÖINTI: AKTIIVISET TEHTÄVÄT (TÄYDELLINEN ANTI-FLICKER) ---
+// --- RENDERÖINTI: AKTIIVISET TEHTÄVÄT ---
 function renderActiveTasks(tasksObj, config) {
     const container = document.getElementById('activeTasksContainer');
     const isGM = document.body.className.includes('gm');
@@ -315,11 +312,12 @@ function renderActiveTasks(tasksObj, config) {
         const results = taskData.participants || [];
         const isMePart = results.some(r => r.name === myName);
         const isHeroTask = !!taskData.isHero; 
-        const showFull = isLocked || isHeroTask || (isGM && localSpyState[taskId]);
+        
+        const isSpying = (isGM && localSpyState[taskId]);
+        const showFull = isLocked || isHeroTask || isSpying;
         
         let card = container.querySelector(`[data-task-id="${taskId}"]`);
         
-        // KORJAUS: DOM append tapahtuu tasan kerran kortin syntyessä! Tämä estää välkkymisen.
         if (!card) {
             card = document.createElement('div');
             card.className = 'card task-box active-task-item';
@@ -353,17 +351,17 @@ function renderActiveTasks(tasksObj, config) {
         if (isGM) {
             statusHtml += `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">`;
             if (isHeroTask) {
-                statusHtml += `<span class="task-status-tag" style="background: gold; color: black; margin:0;">ODOTTAA PISTEYTYSTÄ</span>`;
+                statusHtml += `<span class="task-status-tag" style="background: var(--hero-gold); color: black; margin:0;">ODOTTAA PISTEYTYSTÄ</span>`;
             } else if (!isLocked) {
-                statusHtml += `<span class="task-status-tag" style="background: var(--gm-accent); color: black; margin:0;">${taskData.drawn ? 'ODOTTAA LUKITUSTA' : 'ODOTTAA ARVONTAA'}</span>`;
+                statusHtml += `<span class="task-status-tag" style="background: var(--gm-accent); color: white; margin:0;">${taskData.drawn ? 'ODOTTAA LUKITUSTA' : 'ODOTTAA ARVONTAA'}</span>`;
             } else {
-                statusHtml += `<span class="task-status-tag" style="background: var(--success); color: black; margin:0;">ODOTTAA PISTEYTYSTÄ</span>`;
+                statusHtml += `<span class="task-status-tag" style="background: var(--success); color: white; margin:0;">ODOTTAA PISTEYTYSTÄ</span>`;
             }
             statusHtml += `<button class="btn btn-danger" style="width:auto; margin:0; padding:4px 8px; font-size:0.6rem;" onclick="deleteActiveTask('${taskId}')">X POISTA</button>`;
             statusHtml += `</div>`;
         } else {
             if (isHeroTask) {
-                statusHtml += `<div class="task-status-tag" style="background: gold; color: black; font-weight: 900;">✨ SANKARITEHTÄVÄ ✨</div>`;
+                statusHtml += `<div class="task-status-tag" style="background: var(--hero-gold); color: black; font-weight: 900;">✨ SANKARITEHTÄVÄ ✨</div>`;
             } else if (isLocked) {
                 statusHtml += `<div class="task-status-tag ${isMePart ? '' : 'muted'}">${isMePart ? '🎉 SINUN TEHTÄVÄSI' : '👀 SEURAA MUIDEN SUORITUSTA'}</div>`;
             } else {
@@ -381,15 +379,26 @@ function renderActiveTasks(tasksObj, config) {
             tagsHtml += `<div class="xp-badge" style="display:inline-block; margin-bottom:10px; margin-right:5px;">${taskData.p} XP</div>`;
         }
         if ((showFull || vis.minus) && taskData.m) {
-            tagsHtml += `<div class="xp-badge" style="display:inline-block; margin-bottom:10px; background:var(--danger); color:#000; border-color:var(--danger); margin-right:5px;">⚠️ MIINUS-UHKA</div>`;
+            tagsHtml += `<div class="xp-badge" style="display:inline-block; margin-bottom:10px; background:rgba(185,50,50,0.15); color:var(--danger); border-color:var(--danger); margin-right:5px;">⚠️ MIINUS-UHKA</div>`;
         }
         if ((showFull || vis.bday) && taskData.b) {
-            tagsHtml += `<div class="xp-badge" style="display:inline-block; margin-bottom:10px; background:var(--gm-accent); color:#000; border-color:var(--gm-accent);">🎂 SANKARIBONUS</div>`;
+            tagsHtml += `<div class="xp-badge" style="display:inline-block; margin-bottom:10px; background:rgba(194,120,33,0.15); color:var(--gm-accent); border-color:var(--gm-accent);">🎂 SANKARIBONUS</div>`;
         }
         headerHtml += `<div>${tagsHtml}</div>`;
 
-        // --- 3. DESC ---
+        // --- 3. DESC (Korjaus 5: Speksit pakkolaajentuvat supistetussa tilassa) ---
         let descHtml = '';
+        
+        // Injektoidaan dynaaminen CSS-tyyli, jos kortti on supistetussa tilassa ja speksit painettu
+        if (isSpying && isCompactMode) {
+            descHtml += `<style>
+                .compact-view [data-task-id="${taskId}"] { padding: 24px !important; }
+                .compact-view [data-task-id="${taskId}"] .instruction-card { display: block !important; }
+                .compact-view [data-task-id="${taskId}"] .task-description { display: block !important; }
+                .compact-view [data-task-id="${taskId}"] .t-gm .btn { padding: 18px !important; font-size: 0.8rem !important; }
+            </style>`;
+        }
+
         const shouldShowDesc = showFull || vis.desc;
         if (shouldShowDesc) {
             const displayDesc = (taskData.d && taskData.d.trim() !== "") ? taskData.d : "Ei ohjeita.";
@@ -419,13 +428,13 @@ function renderActiveTasks(tasksObj, config) {
             }
             actionHtml += `</div>`;
         } else if (!isGM && isHeroTask) {
-            actionHtml += `<p style="font-size: 0.7rem; color: gold; text-align: center; margin-top: 10px; font-weight: 700;">GM MERKITSEE PISTEET SUORITUKSEN JÄLKEEN</p>`;
+            actionHtml += `<p style="font-size: 0.7rem; color: var(--hero-gold); text-align: center; margin-top: 10px; font-weight: 700;">GM MERKITSEE PISTEET SUORITUKSEN JÄLKEEN</p>`;
         }
 
         // --- 5. GM CONTROLS ---
         let gmHtml = '';
         if (isGM) {
-            gmHtml += `<div style="margin-top:20px; border-top:1px solid #333; padding-top:15px;">`;
+            gmHtml += `<div style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.05); padding-top:15px;">`;
             if (!isHeroTask) {
                 gmHtml += `
                     <div class="volunteer-selector-grid" id="grid-${taskId}"></div>
@@ -627,7 +636,7 @@ function claimIdentity() {
     if(!n) return; 
     myName = n; 
     localStorage.setItem('appro_name', n);
-    updateIdentityUI(); // Välitön päivitys
+    updateIdentityUI(); 
 
     db.ref('gameState/players').transaction(p => {
         p = p || []; 
@@ -640,7 +649,6 @@ function claimIdentity() {
     });
 }
 
-// UUSI LOKILOGIIKKA JA OSALLISTUMINEN
 function volunteer(taskId) {
     if(!myName) return;
     db.ref('gameState').once('value', snap => {
@@ -772,35 +780,44 @@ window.toggleHeroTaskWin = function(taskId) {
     });
 };
 
+// KORJAUS 4: Selkeä visuaalinen korostus pisteytykselle (Dashed Gold Box)
 function renderScoringArea(taskId, results, isHeroTask, heroWinState) {
     const sArea = document.getElementById(`scoring-${taskId}`);
     if(!sArea) return; 
     
     sArea.innerHTML = '';
     
+    const box = document.createElement('div');
+    box.style.border = "2px dashed var(--hero-gold)";
+    box.style.background = "rgba(197, 161, 77, 0.08)";
+    box.style.padding = "15px";
+    box.style.borderRadius = "10px";
+    box.style.marginTop = "15px";
+    
     if (isHeroTask) {
-        sArea.innerHTML = `<p style="font-size:0.7rem; color:gold; margin:10px 0; text-align:center; font-weight:900;">ONNISTUIKO SANKARI?</p>`;
+        box.innerHTML = `<p style="font-size:0.75rem; color:var(--hero-gold); margin:0 0 12px 0; text-align:center; font-weight:900; letter-spacing:1px;">⚠️ PISTEYTÄ SANKARIN SUORITUS ⚠️</p>`;
         const isWin = heroWinState !== false; 
         const row = document.createElement('div');
         row.className = 'player-row is-hero'; 
         row.style.padding = '8px';
         row.innerHTML = `
             <span>🎂 SYNTTÄRISANKARI</span>
-            <button class="btn" style="width:70px; margin:0; padding:5px; background:${isWin?'var(--success)':'var(--danger)'}; color:#000;" 
+            <button class="btn" style="width:70px; margin:0; padding:5px; background:${isWin?'var(--success)':'var(--danger)'}; color:#ffffff;" 
                 onclick='toggleHeroTaskWin("${taskId}")'>${isWin?'WIN':'FAIL'}</button>
         `;
-        sArea.appendChild(row);
+        box.appendChild(row);
     } else {
-        sArea.innerHTML = `<p style="font-size:0.7rem; color:gold; margin:10px 0; text-align:center; font-weight:900;">ONNISTUIKO TEHTÄVÄ?</p>`;
-        if (results.length === 0) sArea.innerHTML += `<p style="font-size:0.6rem; color:var(--muted); text-align:center;">Ei suorittajia.</p>`;
+        box.innerHTML = `<p style="font-size:0.75rem; color:var(--hero-gold); margin:0 0 12px 0; text-align:center; font-weight:900; letter-spacing:1px;">⚠️ PISTEYTÄ SUORITUKSET ⚠️</p>`;
+        if (results.length === 0) box.innerHTML += `<p style="font-size:0.6rem; color:var(--muted); text-align:center;">Ei suorittajia.</p>`;
         
         results.forEach((r, i) => {
             const row = document.createElement('div');
             row.className = 'player-row'; row.style.padding = '8px';
-            row.innerHTML = `<span>${r.name}</span><button class="btn" style="width:70px; margin:0; padding:5px; background:${r.win?'var(--success)':'var(--danger)'}; color:#000;" onclick='toggleWin("${taskId}", ${i})'>${r.win?'WIN':'FAIL'}</button>`;
-            sArea.appendChild(row);
+            row.innerHTML = `<span>${r.name}</span><button class="btn" style="width:70px; margin:0; padding:5px; background:${r.win?'var(--success)':'var(--danger)'}; color:#ffffff;" onclick='toggleWin("${taskId}", ${i})'>${r.win?'WIN':'FAIL'}</button>`;
+            box.appendChild(row);
         });
     }
+    sArea.appendChild(box);
 }
 
 function updateDrawCountSelect(taskId, task) {
@@ -1002,18 +1019,25 @@ function renderLeaderboard(showCD, heroId) {
     });
 }
 
+// KORJAUS 2: Pelaajien hallinta päivittyy nyt saumattomasti ja sankarille komea kultainen tausta!
 function renderAdminPlayerList(heroId) {
     const list = document.getElementById('adminPlayerList');
     if(!list) return; list.innerHTML = "";
     allPlayers.forEach((p, i) => {
         const div = document.createElement('div');
         div.className = 'player-row'; div.style.padding = '8px';
+        
+        const isHero = i === heroId;
+        const heroBg = isHero ? 'var(--hero-gold)' : 'transparent';
+        const heroColor = isHero ? '#000' : 'inherit';
+        const heroBorder = isHero ? 'var(--hero-gold)' : 'rgba(255,255,255,0.2)';
+
         div.innerHTML = `
             <div style="width:100%">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <span style="font-size:0.8rem; font-weight:bold;">${p.name} (${p.score})</span>
                     <div style="display:flex; gap:4px;">
-                        <button class="btn" style="width:32px; padding:5px; margin:0; background:${i===heroId?'var(--gm-accent)':'#333'}" onclick="setBdayHero(${i})">🎂</button>
+                        <button class="btn" style="width:32px; padding:5px; margin:0; background:${heroBg}; color:${heroColor}; border:1px solid ${heroBorder};" onclick="setBdayHero(${i})">🎂</button>
                         <button class="btn ${p.cooldown ? 'btn-success' : 'btn-secondary'}" style="width:auto; font-size:0.5rem; padding:5px; margin:0;" onclick="adminToggleCooldown(${i})">${p.cooldown ? 'VAP' : 'J'}</button>
                         <button class="btn btn-secondary" style="width:28px; padding:5px; margin:0;" onclick="adjustScore(${i}, 1)">+</button>
                         <button class="btn btn-secondary" style="width:28px; padding:5px; margin:0;" onclick="adjustScore(${i}, -1)">-</button>
@@ -1054,7 +1078,7 @@ function renderTaskLibrary() {
                 <label style="font-size:0.7rem; color:var(--gm-accent); display:flex; align-items:center; gap:5px;">
                     <input type="checkbox" style="width:16px;height:16px;" ${t.b?'checked':''} onchange="updateTaskInLib(${i}, 'b', this.checked)"> Sankari XP
                 </label>
-                <label style="font-size:0.7rem; color:gold; display:flex; align-items:center; gap:5px;">
+                <label style="font-size:0.7rem; color:var(--hero-gold); display:flex; align-items:center; gap:5px;">
                     <input type="checkbox" style="width:16px;height:16px;" ${t.isHero?'checked':''} onchange="updateTaskInLib(${i}, 'isHero', this.checked)"> ✨ Hero
                 </label>
             </div>
