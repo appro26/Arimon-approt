@@ -48,7 +48,7 @@ const defaultTasks = [
     { id: 29, n: "Raaka-aineanalyysi", d: "Tunnista sokkona (silmät kiinni) mitä juomaa sankarisi lasissa on hajun perusteella.", p: 2, m: 1, b: false, r: 1 },
     { id: 30, n: "Pilvipalvelun varmuuskopio", d: "Ota yhteisselfie koko porukasta (tai mahdollisimman monesta) ja varmista, että se on 'tallessa'.", p: 1, m: 1, b: true, r: 1 },
     { id: 31, n: "Tree Kick -epäonni", d: "Matki puuta (seiso yhdellä jalalla kädet sivuilla) 30 sekuntia kesken keskustelun.", p: 2, m: 2, b: false, r: 2 },
-    { id: 32, n: "Winner Winner Chicken Dinner", d: "Tilaa sankarille (ja itsellesi jos haluat) pientä syötävää, kuten kanansiipiä tai vastaavaa.", p: 3, m: 1, b: true, r: 1 }
+    { id: 32, n: "Winner Winner Chicken Dinner", d: "Tilaa sankarille (ja itsellesi jos haluat) pientä syötävää, kuten kanansiipiä tai vastaavaa.", p: 3, m: 1, b: true, r: 1 },
     { id: 33, n: "Suoritin-rasitus", d: "Rumputa pöytää sormillasi kuin olisit kirjoittamassa koodia erittäin nopeasti 30 sekuntia.", p: 1, m: true, b: false, r: 2 },
     { id: 34, n: "Verkkosilta (Bridge)", d: "Pidä molempia käsiä pöydällä 'siltana' seuraavan 5 minuutin ajan. Et saa irrottaa niitä.", p: 1, m: true, b: false, r: 2 },
     { id: 35, n: "Red Zone Survival", d: "Kyykisty pöydän alle suojaan 30 sekunniksi välittömästi, kun joku huutaa 'POMMI!'.", p: 1, m: true, b: false, r: 3 },
