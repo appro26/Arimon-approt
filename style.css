@@ -14,7 +14,6 @@
     --text: #ffffff; 
     --muted: #a0a0ab; 
     --radius: 16px;
-    --boss-accent: #ff0055; /* UUSI: Boss-tehtävän väri */
 }
 
 * { 
@@ -413,40 +412,118 @@ input, textarea, select {
 }
 
 /* ==========================================
-   11. AIEMMAT LISÄYKSET (HISTORIA, SHOP, LOGI)
+   11. UUDET OMINAISUUDET (LISÄYKSET)
    ========================================== */
 
+/* Tehtävähistoria listaus */
 #taskHistoryList {
-    display: flex; flex-direction: column; gap: 8px;
-    max-height: 200px; overflow-y: auto; padding-right: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 5px;
 }
 
 .history-item {
-    background: rgba(255,255,255,0.03); padding: 10px 15px; border-radius: 8px;
-    border-left: 3px solid var(--accent); display: flex;
-    justify-content: space-between; align-items: center; animation: slideIn 0.3s ease-out;
+    background: rgba(255,255,255,0.03);
+    padding: 10px 15px;
+    border-radius: 8px;
+    border-left: 3px solid var(--accent);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    animation: slideIn 0.3s ease-out;
 }
 
-.history-item .task-name { font-weight: 700; font-size: 0.9rem; color: var(--text); }
-.history-item .task-winner { font-size: 0.75rem; color: var(--success); font-weight: bold; }
+.history-item .task-name {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--text);
+}
 
+.history-item .task-meta {
+    text-align: right;
+}
+
+.history-item .task-winner {
+    font-size: 0.75rem;
+    color: var(--success);
+    font-weight: bold;
+    display: block;
+}
+
+.history-item .task-time {
+    font-size: 0.65rem;
+    color: var(--muted);
+}
+
+/* Palkintojen hallinta ja kauppa */
 .reward-row {
-    display: flex; justify-content: space-between; align-items: center;
-    background: var(--surface-light); padding: 12px; border-radius: 12px;
-    margin-bottom: 8px; border: 1px solid rgba(255, 159, 67, 0.2); transition: transform 0.2s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--surface-light);
+    padding: 12px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    border: 1px solid rgba(255, 159, 67, 0.2);
+    transition: transform 0.2s;
 }
 
-.reward-row:hover { transform: translateX(5px); }
-.reward-name { font-weight: 800; color: var(--gm-accent); font-size: 0.9rem; }
+.reward-row:hover {
+    transform: translateX(5px);
+}
 
+.reward-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.reward-name {
+    font-weight: 800;
+    color: var(--gm-accent);
+    font-size: 0.9rem;
+}
+
+.reward-cost {
+    font-size: 0.7rem;
+    color: var(--muted);
+    font-weight: 600;
+}
+
+/* Tapahtumaloki (Admin Event Log) */
 #adminEventLog {
-    background: #000; border-radius: 8px; padding: 10px;
-    font-family: 'Courier New', monospace; font-size: 0.75rem;
-    max-height: 150px; overflow-y: auto; border: 1px solid var(--surface-light);
+    background: #000;
+    border-radius: 8px;
+    padding: 10px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid var(--surface-light);
 }
 
-.log-entry { padding: 4px 0; border-bottom: 1px solid #111; line-height: 1.4; }
-.reward-earned { animation: reward-shimmer 2s infinite; border: 2px solid gold !important; }
+.log-entry {
+    padding: 4px 0;
+    border-bottom: 1px solid #111;
+    line-height: 1.4;
+}
+
+.log-entry .time { color: var(--muted); margin-right: 8px; }
+.log-entry .action { color: var(--success); font-weight: bold; }
+.log-entry .target { color: var(--accent); }
+
+/* Pieni korjaus: Historia-kortin tyhjän tilan hallinta */
+#historyCard {
+    min-height: auto;
+}
+
+/* Animaatio palkinnon saamiselle / Lunastukselle */
+.reward-earned {
+    animation: reward-shimmer 2s infinite;
+    border: 2px solid gold !important;
+}
 
 @keyframes reward-shimmer {
     0% { box-shadow: 0 0 5px gold; filter: brightness(1); }
@@ -454,108 +531,7 @@ input, textarea, select {
     100% { box-shadow: 0 0 5px gold; filter: brightness(1); }
 }
 
-/* ==========================================
-   12. UUDET 6 OMINAISUUTTA & KORJAUKSET
-   ========================================== */
-
-/* 1. COMBO / STREAK MITTARI (Liekki-efekti) */
-.streak-badge {
-    position: absolute; top: -10px; right: -5px;
-    background: linear-gradient(to bottom, #ff9d00, #ff4d00);
-    color: white; padding: 4px 10px; border-radius: 20px;
-    font-size: 0.8rem; font-weight: 900;
-    box-shadow: 0 4px 10px rgba(255, 77, 0, 0.5);
-    display: flex; align-items: center; gap: 5px;
-    animation: flame-flicker 0.6s infinite alternate;
-}
-
-@keyframes flame-flicker {
-    from { transform: scale(1) translateY(0); }
-    to { transform: scale(1.1) translateY(-2px); filter: brightness(1.2); }
-}
-
-/* 2. LEVEL UP OVERLAY (Suuri palkintoilmoitus) */
-.level-up-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.95);
-    z-index: 5000; display: none; flex-direction: column;
-    align-items: center; justify-content: center; pointer-events: none;
-}
-
-.level-up-card {
-    text-align: center; animation: level-pop 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.level-up-card h1 { 
-    font-size: 4rem; color: gold; text-transform: uppercase;
-    text-shadow: 0 0 40px gold; margin: 0;
-}
-
-@keyframes level-pop {
-    0% { transform: scale(0); opacity: 0; }
-    80% { transform: scale(1.1); }
-    100% { transform: scale(1); opacity: 1; }
-}
-
-/* 3. XP-PROGRESS BAR (Pelaajakorttiin) */
-.xp-progress-container {
-    width: 100%; height: 6px; background: rgba(255,255,255,0.05);
-    border-radius: 3px; margin-top: 8px; overflow: hidden;
-}
-
-.xp-progress-bar {
-    height: 100%; background: var(--accent); width: 0%;
-    transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 0 10px var(--accent-glow);
-}
-
-/* 4. BOSS-TEHTÄVÄ (Erikoistyylittely vaikeille tehtäville) */
-.card.is-boss {
-    border: 2px solid var(--boss-accent);
-    background: linear-gradient(145deg, #101014, #1a050b);
-    box-shadow: 0 0 40px rgba(255, 0, 85, 0.15);
-}
-
-.card.is-boss h1 { color: var(--boss-accent) !important; text-shadow: 0 0 15px var(--boss-accent); }
-.card.is-boss .task-status-tag { background: var(--boss-accent); color: #fff; }
-
-/* 5. CRITICAL HIT (XP-tuplaus välähdys) */
-.critical-hit {
-    animation: crit-flash 0.4s ease-out;
-}
-
-@keyframes crit-flash {
-    0% { filter: brightness(1); }
-    50% { filter: brightness(3) saturate(2); transform: scale(1.05); }
-    100% { filter: brightness(1); transform: scale(1); }
-}
-
-/* 6. MOBIILIN KÄYTTÖLIITTYMÄ-KORJAUKSET (Safe Areas & Scannability) */
-.role-switcher {
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-}
-
-.btn:hover {
-    filter: brightness(1.1);
-}
-
-/* Parannettu skrollaus historiaan */
-#taskHistoryList::-webkit-scrollbar { width: 4px; }
-#taskHistoryList::-webkit-scrollbar-track { background: transparent; }
-#taskHistoryList::-webkit-scrollbar-thumb { background: var(--surface-light); border-radius: 2px; }
-
-/* Saavutukset Grid */
-.achievement-grid {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px;
-}
-
-.achievement-icon {
-    aspect-ratio: 1; background: var(--surface-light); border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.2rem; filter: grayscale(1); opacity: 0.3;
-    transition: 0.5s; border: 1px solid rgba(255,255,255,0.05);
-}
-
-.achievement-icon.unlocked {
-    filter: grayscale(0); opacity: 1; border-color: var(--gm-accent);
-    box-shadow: 0 0 15px rgba(255, 159, 67, 0.2);
-}
+/* Uudet tilavärit lokitapahtumille */
+.log-type-xp { color: var(--success); }
+.log-type-task { color: var(--accent); }
+.log-type-error { color: var(--danger); }
