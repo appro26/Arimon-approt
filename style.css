@@ -262,7 +262,6 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
     transform: scale(1.08) !important; box-shadow: 0 0 15px var(--accent-glow); z-index: 10;
 }
 
-/* UUSI: Kultainen syke pisteytyslaatikolle */
 .scoring-box { animation: pulse-gold 2s infinite; }
 @keyframes pulse-gold {
     0% { box-shadow: 0 0 0 0 rgba(197, 161, 77, 0.3); }
@@ -302,7 +301,9 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
 }
 
 .winner-content p { font-size: 1.4rem; color: var(--text); }
-.timer-bar { animation: shrink 3.5s linear forwards; background: var(--success) !important; } 
+
+/* KORJAUS 2: Synkronoitu nopeutettu latauspalkki (3.5s -> 2.2s) */
+.timer-bar { animation: shrink 2.2s linear forwards; background: var(--success) !important; } 
 
 @keyframes shrink { from { width: 100%; } to { width: 0%; } }
 @keyframes winner-pop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -363,7 +364,6 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
     border-top: 1px solid rgba(255,255,255,0.05);
 }
 
-/* KORJAUS 1: Piilotetaan tyhjät napit GM:ltä supistetussa tilassa ja muutetaan flexboxiksi */
 .compact-view .volunteer-selector-grid {
     display: flex !important;
     flex-wrap: wrap;
