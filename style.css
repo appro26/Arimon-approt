@@ -1,5 +1,5 @@
 /* ==========================================
-   1. MUUTTUJAT JA PERUSASETUKSET (PITCH BLACK THEME)
+   1. MUUTTUJAT JA PERUSASETUKSET (MATTA / JALOKIVIVÄRIT)
    ========================================== */
 :root {
     /* Pitch Black Tausta OLED-optimoitu */
@@ -9,21 +9,20 @@
     --surface: #0a0a0a;          
     --surface-light: #1a1a1a;    
     
-    /* Pehmennetty ja hienostunut kontrasti */
-    --text: #f1f5f9;             /* Pehmeä valkoinen */
-    --text-dark: #000000;        /* Nappien sisälle, ehdoton kontrasti */
+    /* Pehmennetty valkoinen ja harmaa */
+    --text: #e2e8f0;             /* Ei täysin sokaiseva valkoinen */
     --muted: #64748b;            /* Viileä harmaa */
     
-    /* Sivistyneemmät tehostevärit (Softened Neon) */
-    --accent: #06b6d4;           /* Helmi-syaani */
-    --accent-glow: rgba(6, 182, 212, 0.15); /* Pienennetty glow */
+    /* Silmäystävälliset matta/jalokivisävyt (Ei enää neon) */
+    --accent: #258aa3;           /* Rauhallinen tumma syaani/petroli */
+    --accent-glow: rgba(37, 138, 163, 0.15); 
     
-    --gm-accent: #f59e0b;        /* Kulta-amber */
-    --gm-glow: rgba(245, 158, 11, 0.15);
+    --gm-accent: #c27821;        /* Poltettu oranssi */
+    --gm-glow: rgba(194, 120, 33, 0.15);
     
-    --success: #10b981;          /* Pehmeä smaragdi */
-    --danger: #ef4444;           /* Pehmeä punainen */
-    --hero-gold: #fbbf24;        /* Rikas kulta */
+    --success: #1f8a62;          /* Sammaleen/Metsän vihreä */
+    --danger: #b93232;           /* Himmeä karmiininpunainen */
+    --hero-gold: #c5a14d;        /* Himmeä antiikkikulta */
     
     --radius: 12px;              /* Minimalistinen reuna */
 }
@@ -56,7 +55,7 @@ body {
 }
 
 /* ==========================================
-   2. ROOLI-KYTKIN (PITCH BLACK)
+   2. ROOLI-KYTKIN
    ========================================== */
 .role-switcher { 
     position: fixed; 
@@ -91,14 +90,14 @@ body {
 
 .role-btn.player.active { 
     background: var(--accent); 
-    color: var(--text-dark); 
-    box-shadow: 0 0 10px var(--accent-glow); 
+    color: #ffffff; /* Mustan sijaan valkoinen teksti */
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5); 
 }
 
 .role-btn.gm.active { 
     background: var(--gm-accent); 
-    color: var(--text-dark); 
-    box-shadow: 0 0 10px var(--gm-glow); 
+    color: #ffffff; 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5); 
 }
 
 .role-btn.gm:active::after {
@@ -107,7 +106,7 @@ body {
     bottom: 0;
     left: 0;
     height: 4px;
-    background: var(--gm-accent);
+    background: rgba(255,255,255,0.3);
     animation: hold-progress 0.8s linear forwards;
 }
 
@@ -129,7 +128,7 @@ body {
     border-radius: var(--radius); 
     padding: 20px; 
     margin-bottom: 15px; 
-    border: 1px solid rgba(255,255,255,0.03); /* Minimalistinen reuna */
+    border: 1px solid rgba(255,255,255,0.03); 
     animation: slideIn 0.4s ease-out; 
     position: relative;
     contain: content;
@@ -140,30 +139,28 @@ body {
     font-size: 0.7rem;
     font-weight: 900;
     background: var(--success);
-    color: var(--text-dark);
+    color: #ffffff;
     padding: 4px 12px;
     border-radius: 20px;
     display: inline-block;
     margin-bottom: 15px;
     text-transform: uppercase;
     letter-spacing: 1px;
-    /* Pienennetty pulssi */
     animation: pulse-green 2.5s infinite; 
 }
 
 .task-status-tag.muted {
     background: var(--surface-light);
-    color: var(--muted);
+    color: var(--text);
     animation: none;
 }
 
 @keyframes pulse-green {
-    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.3); }
-    70% { transform: scale(1.03); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
-    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(31, 138, 98, 0.3); }
+    70% { transform: scale(1.03); box-shadow: 0 0 0 10px rgba(31, 138, 98, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(31, 138, 98, 0); }
 }
 
-/* Minimalistinen korostus: Vain syaani reunus */
 .active-task-item.participating {
     border: 2px solid var(--accent) !important;
     transform: scale(1.02);
@@ -184,7 +181,7 @@ body {
 
 .active-task-item.hero-task-gold {
     border-left: 5px solid var(--hero-gold) !important;
-    border-color: rgba(251, 191, 36, 0.2);
+    border-color: rgba(197, 161, 77, 0.2);
 }
 
 .card h2 { 
@@ -196,14 +193,14 @@ body {
 }
 
 /* ==========================================
-   4. PAINIKKEET (Humalassa Pelaamiseen Optimoitu)
+   4. PAINIKKEET (Himmeämmät & Silmäystävälliset)
    ========================================== */
 .btn { 
     font-family: inherit; 
     border-radius: 10px; 
     border: none; 
     font-weight: 800; 
-    padding: 18px; /* Isompi kosketusalue */
+    padding: 18px; 
     text-transform: uppercase; 
     cursor: pointer; 
     transition: transform 0.15s ease-out, background 0.15s ease-out, box-shadow 0.15s ease-out; 
@@ -212,31 +209,32 @@ body {
     display: flex; 
     align-items: center; 
     justify-content: center; 
+    /* Neon hehku korvattu tavallisella mustalla varjolla */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
 }
 
-.btn:active { transform: scale(0.95); } /* Selkeämpi palaute */
+.btn:active { transform: scale(0.95); } 
 
 .btn-primary { 
     background: var(--accent); 
-    color: var(--text-dark); 
-    box-shadow: 0 4px 10px var(--accent-glow); 
+    color: #ffffff; 
 }
 
 .btn-gm { 
     background: var(--gm-accent); 
-    color: var(--text-dark); 
-    box-shadow: 0 4px 10px var(--gm-glow); 
+    color: #ffffff; 
 }
 
 .btn-secondary { 
     background: var(--surface-light); 
     color: var(--text); 
     border: 1px solid rgba(255,255,255,0.04); 
+    box-shadow: none;
 }
 
 .btn-success { 
     background: var(--success); 
-    color: var(--text-dark); 
+    color: #ffffff; 
 }
 
 .btn-danger { 
@@ -245,6 +243,7 @@ body {
     border: 1px solid var(--danger); 
     font-size: 0.7rem; 
     padding: 10px; 
+    box-shadow: none;
 }
 
 /* ==========================================
@@ -254,7 +253,7 @@ body {
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
-    padding: 14px 18px; /* Isompi */
+    padding: 14px 18px; 
     background: var(--surface); 
     border-radius: 8px; 
     margin-bottom: 7px; 
@@ -263,13 +262,13 @@ body {
 }
 
 .player-row.me { 
-    border-color: rgba(6, 182, 212, 0.2); 
-    background: rgba(6, 182, 212, 0.05); 
+    border-color: rgba(37, 138, 163, 0.3); 
+    background: rgba(37, 138, 163, 0.08); 
 }
 
 .player-row.is-hero { 
-    border-color: rgba(245, 158, 11, 0.2); 
-    background: rgba(245, 158, 11, 0.05); 
+    border-color: rgba(194, 120, 33, 0.3); 
+    background: rgba(194, 120, 33, 0.08); 
 }
 
 .player-row.on-cooldown { opacity: 0.6; border-left: 3px solid var(--danger); }
@@ -287,7 +286,6 @@ body {
 /* ==========================================
    6. TEHTÄVÄN SISÄLTÖ
    ========================================== */
-/* Minimalistinen syaani reunus */
 .task-box { text-align: center; border: 2px solid var(--accent); }
 
 .active-task-item h1 { 
@@ -296,7 +294,6 @@ body {
     text-transform: uppercase; 
     letter-spacing: -1px; 
     margin: 10px 0; 
-    /* Aiempi Fix #3 tallessa: */
     word-wrap: break-word;
     overflow-wrap: break-word;
     hyphens: auto;
@@ -319,7 +316,7 @@ body {
 
 .participating .instruction-card {
     border-left-color: var(--success);
-    background: rgba(16, 185, 129, 0.05);
+    background: rgba(31, 138, 98, 0.08);
 }
 
 .hero-task-gold .instruction-card {
@@ -357,7 +354,7 @@ input:not([type="checkbox"]), textarea, select {
 }
 
 input[type="checkbox"] {
-    width: 24px; /* Isompi drunk-friendly */
+    width: 24px; 
     height: 24px;
     margin: 0;
     cursor: pointer;
@@ -389,18 +386,55 @@ input[type="checkbox"] {
     border: 1px solid rgba(255,255,255,0.02);
 }
 
+.admin-row-stack { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+.admin-row-stack input, .admin-row-stack textarea { margin-bottom: 0; flex: 1; }
+.admin-row-stack .btn { margin-bottom: 0; width: auto; white-space: nowrap; }
+
+.admin-add-task-form {
+    background: rgba(255, 255, 255, 0.02);
+    padding: 15px;
+    border-radius: 12px;
+    margin-top: 10px;
+}
+
+.number-inputs-row { display: flex; gap: 10px; margin-bottom: 10px; }
+.number-input-item { flex: 1; display: flex; flex-direction: column; }
+.number-input-item label { font-size: 0.7rem; color: var(--muted); margin-bottom: 5px; }
+.number-input-item input { margin-bottom: 0; }
+
+.checkbox-group { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.checkbox-group:last-child { margin-bottom: 0; }
+.checkbox-group label { font-size: 0.95rem; font-weight: 700; cursor: pointer; line-height: 1.2; }
+
+.admin-task-controls { margin-top: 10px; }
+
+.minus-label { display: flex; align-items: center; gap: 12px; font-size: 0.85rem; font-weight: 800; cursor: pointer; line-height: 1.2; }
+
+.volunteer-selector-grid {
+    display: grid; 
+    grid-template-columns: repeat(3, 1fr); 
+    gap: 8px; 
+    margin-bottom: 15px;
+}
+
+.btn.on-cooldown {
+    border: 1px solid var(--danger) !important;
+    color: var(--danger) !important;
+    background: rgba(185, 50, 50, 0.1) !important;
+}
+
 .btn.selected-participant {
     background: var(--accent) !important;
-    color: var(--text-dark) !important;
+    color: #ffffff !important;
     border: 1px solid rgba(255,255,255,0.4) !important;
 }
 
 /* ==========================================
-   9. ANIMAATIOT JA VOITTAJA-ILMOITUS (PITCH BLACK)
+   9. ANIMAATIOT JA VOITTAJA-ILMOITUS
    ========================================== */
 .roulette-focus {
     background: var(--accent) !important;
-    color: var(--text-dark) !important;
+    color: #ffffff !important;
     transform: scale(1.08) !important;
     box-shadow: 0 0 15px var(--accent-glow);
     z-index: 10;
@@ -430,7 +464,6 @@ input[type="checkbox"] {
 
 .winner-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    /* Täysi musta */
     background: rgba(0, 0, 0, 0.98); z-index: 4000;
     display: none; flex-direction: column; align-items: center; justify-content: center;
     text-align: center; padding: 20px;
@@ -475,11 +508,36 @@ input[type="checkbox"] {
     .winner-content h1 { font-size: 2rem; }
     #winnerTaskNames { font-size: 1.3rem; }
     .btn { padding: 16px; font-size: 0.8rem; }
+    .admin-row-stack { flex-direction: column; align-items: stretch; }
+    .admin-row-stack .btn { width: 100%; }
 }
 
 /* ==========================================
    11. HISTORIA JA LOKI
    ========================================== */
+#taskHistoryList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.history-item {
+    background: rgba(255,255,255,0.02);
+    padding: 10px 15px;
+    border-radius: 8px;
+    border-left: 3px solid var(--accent);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    animation: slideIn 0.3s ease-out;
+}
+
+.history-item .task-name { font-weight: 700; font-size: 0.9rem; color: var(--text); }
+.history-item .task-time { font-size: 0.65rem; color: var(--muted); }
+
 #adminEventLog {
     background: var(--surface);
     border-radius: 8px;
@@ -494,8 +552,10 @@ input[type="checkbox"] {
 .log-entry { padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.02); line-height: 1.4; }
 .log-entry .time { color: var(--muted); margin-right: 8px; }
 
+#historyCard { min-height: auto; }
+
 /* ==========================================
-   12. COMPACT MODE (Aiempi Fix #2 tallessa)
+   12. COMPACT MODE
    ========================================== */
 .compact-view .active-task-item {
     padding: 12px 15px;
