@@ -17,10 +17,8 @@ function checkInstallStatus() {
     const instructionText = document.getElementById('installInstruction');
     const installBtn = document.getElementById('installBtn');
 
-    // Tarkistetaan, onko pelaaja jo kieltäytynyt asennuksesta aiemmin
     const isDismissed = localStorage.getItem('appro_install_dismissed') === 'true';
 
-    // Jos peli on jo asennettu TAI pelaaja on kieltäytynyt, piilotetaan kortti heti
     if (isStandalone || isDismissed) {
         if (installCard) installCard.style.display = 'none';
         return; 
@@ -49,7 +47,6 @@ function checkInstallStatus() {
     }
 }
 
-// UUSI FUNKTIO: Pelaaja ohittaa asennuksen
 window.dismissInstallPrompt = function() {
     localStorage.setItem('appro_install_dismissed', 'true');
     const installCard = document.getElementById('installCard');
@@ -215,10 +212,11 @@ function triggerRender() {
     });
 }
 
+// KORJATTU NOLLAUS: Tyhjentää ruudun välittömästi odottamatta palvelinta (Toimii offlinessa)
 window.resetGame = function() {
     if (confirm("VAROITUS: Tämä poistaa kaikki tiedot. Jatketaanko?")) {
         const newResetId = Date.now().toString();
-        db.ref('gameState').set({
+        const resetData = {
             players: [],
             tasks: defaultTasks,
             usedTaskIds: [],
@@ -234,7 +232,14 @@ window.resetGame = function() {
                 visibility: { title: true, points: true, drawCount: false, desc: false, minus: true, bday: true },
                 heroDraw: { include: true, weighted: false, interval: 4, drawCount: 0 }
             }
-        }).then(() => { localStorage.clear(); location.reload(); });
+        };
+        
+        // Tallennus (menee jonoon jos laite on offline)
+        db.ref('gameState').set(resetData).catch(err => console.log("Offline tallennus odottaa verkkoa."));
+        
+        // Puhdistetaan käyttöliittymä välittömästi riippumatta nettiyhteydestä
+        localStorage.clear(); 
+        location.reload();
     }
 };
 
