@@ -53,7 +53,11 @@ window.dismissInstallPrompt = function() {
     if (installCard) installCard.style.display = 'none';
 };
 
-document.addEventListener('DOMContentLoaded', checkInstallStatus);
+// KORJAUS: Varmistetaan että kirjautumisruutu piirretään HETI, vaikkei nettiä olisikaan
+document.addEventListener('DOMContentLoaded', () => {
+    checkInstallStatus();
+    updateIdentityUI(); 
+});
 
 // --- GLOBAALIT MUUTTUJAT ---
 let myName = localStorage.getItem('appro_name') || null;
@@ -212,7 +216,7 @@ function triggerRender() {
     });
 }
 
-// KORJATTU NOLLAUS: Tyhjentää ruudun välittömästi odottamatta palvelinta (Toimii offlinessa)
+// KORJATTU NOLLAUS: Tyhjentää ruudun heti ja jonottaa tietokannan nollauksen
 window.resetGame = function() {
     if (confirm("VAROITUS: Tämä poistaa kaikki tiedot. Jatketaanko?")) {
         const newResetId = Date.now().toString();
@@ -234,10 +238,7 @@ window.resetGame = function() {
             }
         };
         
-        // Tallennus (menee jonoon jos laite on offline)
-        db.ref('gameState').set(resetData).catch(err => console.log("Offline tallennus odottaa verkkoa."));
-        
-        // Puhdistetaan käyttöliittymä välittömästi riippumatta nettiyhteydestä
+        db.ref('gameState').set(resetData).catch(err => console.log("Offline nollaus odottaa verkkoa."));
         localStorage.clear(); 
         location.reload();
     }
@@ -732,24 +733,26 @@ if(gmBtn) {
     gmBtn.addEventListener('touchend', endPress);
 }
 
+// KORJAUS: Kirjautuminen tekee tallennuksen OFFLINE-turvallisella tavalla
 function claimIdentity() {
     const n = document.getElementById('playerNameInput').value.trim();
     if(!n) return; 
     myName = n; 
     localStorage.setItem('appro_name', n);
-    updateIdentityUI(); 
+    updateIdentityUI(); // Pakottaa ruudun päivittymään ja kirjautumaan sisään
 
-    db.ref('gameState/players').transaction(p => {
-        p = p || []; 
+    // Tallenna kantaan. Jos offline, tämä jää kiltisti odottamaan verkkoa kaatamatta peliä
+    db.ref('gameState/players').once('value').then(snap => {
+        let p = snap.val() || []; 
         if(!p.find(x => x.name === n)) {
             p.push({ name: n, score: 0, cooldown: false }); 
+            db.ref('gameState/players').set(p);
+            logEvent(`Uusi pelaaja liittyi: ${n}`);
         }
-        return p;
-    }).then(() => {
-        logEvent(`Uusi pelaaja liittyi: ${n}`);
-    });
+    }).catch(err => console.log("Offline: Pelaaja tallennetaan pilveen kun netti palaa."));
 }
 
+// KORJAUS: Kaikki transaktiot muutettu offline-kestäviksi .once -> .set
 function volunteer(taskId) {
     if(!myName) return;
     db.ref('gameState').once('value', snap => {
@@ -773,10 +776,12 @@ function volunteer(taskId) {
         if(data.activeTasks[taskId].locked) return;
         
         const taskName = data.activeTasks[taskId].n;
-        let joined = false;
 
-        db.ref(`gameState/activeTasks/${taskId}/participants`).transaction(list => {
-            list = list || []; const idx = list.findIndex(r => r.name === myName);
+        db.ref(`gameState/activeTasks/${taskId}/participants`).once('value', pSnap => {
+            let list = pSnap.val() || []; 
+            let joined = false;
+            const idx = list.findIndex(r => r.name === myName);
+            
             if(idx > -1) {
                 list.splice(idx, 1);
                 joined = false;
@@ -784,20 +789,21 @@ function volunteer(taskId) {
                 list.push({ name: myName, win: true });
                 joined = true;
             }
-            return list;
-        }).then((res) => {
-            if(res.committed) {
-                logEvent(joined ? `${myName} ilmoittautui: ${taskName}` : `${myName} perui osallistumisen: ${taskName}`);
-            }
+            
+            db.ref(`gameState/activeTasks/${taskId}/participants`).set(list);
+            logEvent(joined ? `${myName} ilmoittautui: ${taskName}` : `${myName} perui osallistumisen: ${taskName}`);
         });
     });
 }
 
 function toggleParticipant(taskId, name) {
     const taskName = lastKnownTasks[taskId] ? lastKnownTasks[taskId].n : "Tehtävä";
-    let added = false;
-    db.ref(`gameState/activeTasks/${taskId}/participants`).transaction(list => {
-        list = list || []; const idx = list.findIndex(r => r.name === name);
+    
+    db.ref(`gameState/activeTasks/${taskId}/participants`).once('value', snap => {
+        let list = snap.val() || []; 
+        let added = false;
+        const idx = list.findIndex(r => r.name === name);
+        
         if(idx > -1) {
             list.splice(idx, 1);
             added = false;
@@ -805,11 +811,9 @@ function toggleParticipant(taskId, name) {
             list.push({ name: name, win: true });
             added = true;
         }
-        return list;
-    }).then((res) => {
-        if(res.committed) {
-            logEvent(added ? `GM lisäsi pelaajan ${name}: ${taskName}` : `GM poisti pelaajan ${name}: ${taskName}`);
-        }
+        
+        db.ref(`gameState/activeTasks/${taskId}/participants`).set(list);
+        logEvent(added ? `GM lisäsi pelaajan ${name}: ${taskName}` : `GM poisti pelaajan ${name}: ${taskName}`);
     });
 }
 
@@ -887,8 +891,8 @@ function showScoring(taskId, isMassAction = false) {
 }
 
 window.toggleHeroTaskWin = function(taskId) {
-    db.ref(`gameState/activeTasks/${taskId}`).once('value', s => {
-        const current = s.val().heroWin;
+    db.ref(`gameState/activeTasks/${taskId}/heroWin`).once('value', s => {
+        const current = s.val();
         const newVal = current === false ? true : false;
         db.ref(`gameState/activeTasks/${taskId}/heroWin`).set(newVal);
     });
@@ -946,7 +950,11 @@ function updateDrawCountSelect(taskId, task) {
     }
 }
 
-function toggleWin(taskId, i) { db.ref(`gameState/activeTasks/${taskId}/participants/${i}/win`).transaction(w => !w); }
+function toggleWin(taskId, i) { 
+    db.ref(`gameState/activeTasks/${taskId}/participants/${i}/win`).once('value', snap => {
+        db.ref(`gameState/activeTasks/${taskId}/participants/${i}/win`).set(!snap.val());
+    });
+}
 
 function confirmRandomize() {
     db.ref('gameState').once('value', snap => {
@@ -1091,8 +1099,10 @@ function adminAddPlayer() {
 }
 
 function adjustScore(idx, amt) { 
-    db.ref('gameState/players/' + idx + '/score').transaction(s => Math.max(0, (s || 0) + amt)); 
-    logEvent(`Admin muutti pelaajan ${allPlayers[idx].name} pisteitä: ${amt > 0 ? '+' : ''}${amt} XP`);
+    db.ref('gameState/players/' + idx + '/score').once('value', snap => {
+        db.ref('gameState/players/' + idx + '/score').set(Math.max(0, (snap.val() || 0) + amt)); 
+        logEvent(`Admin muutti pelaajan ${allPlayers[idx].name} pisteitä: ${amt > 0 ? '+' : ''}${amt} XP`);
+    });
 }
 
 function removePlayer(idx) { 
@@ -1104,10 +1114,10 @@ function removePlayer(idx) {
 }
 
 function setBdayHero(idx) { 
-    db.ref('gameState/config/bdayHero').transaction(curr => {
-        const newVal = curr === idx ? null : idx;
+    db.ref('gameState/config/bdayHero').once('value', snap => {
+        const newVal = snap.val() === idx ? null : idx;
+        db.ref('gameState/config/bdayHero').set(newVal);
         if(newVal !== null) logEvent(`Asetettu synttärisankari: ${allPlayers[newVal].name}`);
-        return newVal;
     }); 
 }
 
@@ -1137,13 +1147,19 @@ function adminCreateTask() {
     const hero = document.getElementById('newTaskIsHero').checked; 
     const r = parseInt(document.getElementById('newTaskRecommendedPlayers').value) || 1;
     if(!n || !d) return;
+    
     const newTask = { id: Date.now(), n, d, p, m, b, r, isHero: hero };
-    db.ref('gameState/tasks').transaction(list => { list = list || []; list.push(newTask); return list; });
+    
+    db.ref('gameState/tasks').once('value', snap => {
+        let list = snap.val() || []; 
+        list.push(newTask); 
+        db.ref('gameState/tasks').set(list);
+        logEvent(`Luotu uusi tehtävä kirjastoon: ${n}`);
+    });
     
     document.getElementById('newTaskName').value = ''; 
     document.getElementById('newTaskDesc').value = '';
     document.getElementById('newTaskIsHero').checked = false;
-    logEvent(`Luotu uusi tehtävä kirjastoon: ${n}`);
 }
 
 function renderLeaderboard(showCD, heroId) {
@@ -1236,7 +1252,12 @@ function updateManualTaskSelect() {
     taskLibrary.forEach((t, i) => { sel.innerHTML += `<option value="${i}">${t.n}</option>`; });
 }
 
-function updateIdentityUI() { document.getElementById('identityCard').style.display = myName ? 'none' : 'block'; document.getElementById('idTag').innerText = myName ? "PROFIILI: " + myName : "KIRJAUDU SISÄÄN"; }
+function updateIdentityUI() { 
+    const identityCard = document.getElementById('identityCard');
+    const idTag = document.getElementById('idTag');
+    if(identityCard) identityCard.style.display = myName ? 'none' : 'block'; 
+    if(idTag) idTag.innerText = myName ? "PROFIILI: " + myName : "KIRJAUDU SISÄÄN"; 
+}
 
 function toggleAdminPanel() { 
     const p = document.getElementById('adminPanel'); const isOpening = p.style.display === 'none'; p.style.display = isOpening ? 'block' : 'none'; 
