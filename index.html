@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-title" content="Arimon Approt">
     <meta name="application-name" content="Arimon Approt">
     
-    <link rel="stylesheet" href="style.css?v=3">
+    <link rel="stylesheet" href="style.css?v=5">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
     <meta name="mobile-web-app-capable" content="yes">
@@ -45,11 +45,15 @@
             KIRJAUDU SISÄÄN
         </div>
 
+        <div class="player-only" style="margin-bottom: 15px;">
+            <button class="btn btn-secondary" id="playerCompactToggleBtn" onclick="togglePlayerCompactMode()" style="font-size: 0.65rem; padding: 12px; width: 100%; margin: 0;">SUPISTA NÄKYMÄ</button>
+        </div>
+
         <div class="gm-only" id="gmGlobalControls" style="display:none; margin-bottom: 15px;">
             <div class="admin-grid-layout" style="flex-wrap: wrap;">
                 <button class="btn btn-gm" onclick="drawAllTasks()" style="font-size: 0.65rem; padding: 12px; flex: 1;">ARVO KAIKKIIN</button>
                 <button class="btn btn-primary" onclick="lockAllTasks()" style="font-size: 0.65rem; padding: 12px; flex: 1;">LUKITSE KAIKKI</button>
-                <button class="btn btn-secondary" id="compactToggleBtn" onclick="toggleCompactMode()" style="font-size: 0.65rem; padding: 12px; flex: 1;">SUPISTA NÄKYMÄ</button>
+                <button class="btn btn-secondary" id="gmCompactToggleBtn" onclick="toggleGMCompactMode()" style="font-size: 0.65rem; padding: 12px; flex: 1;">SUPISTA NÄKYMÄ</button>
                 <button class="btn btn-success" onclick="finishAllTasks()" style="font-size: 0.65rem; padding: 12px; flex-basis: 100%;">MERKITSE VALMIIT KERRALLA</button>
             </div>
         </div>
@@ -74,7 +78,11 @@
                 <div class="admin-settings-list">
                     <div class="checkbox-group">
                         <input type="checkbox" id="useCooldowns" onchange="updateConfig('useCooldowns', this.checked)"> 
-                        <label for="useCooldowns">Käytä jäähyä (Cooldown)</label>
+                        <label for="useCooldowns">Käytä perusjäähyä (Lukituksesta)</label>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="strictVolunteer" onchange="updateConfig('strictVolunteer', this.checked)"> 
+                        <label for="strictVolunteer">Jäähy myös ilmoittautuessa (Vain 1 aktiivinen kerrallaan)</label>
                     </div>
                     <div class="checkbox-group">
                         <input type="checkbox" id="excludeUsedTasks" onchange="updateConfig('excludeUsedTasks', this.checked)"> 
