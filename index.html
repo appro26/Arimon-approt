@@ -49,6 +49,11 @@
 
         <div id="liveTask" style="display:none;"></div>
 
+        <div class="card" id="historyCard">
+            <h2>Viimeisimmät tehtävät</h2>
+            <div id="taskHistoryList" style="font-size: 0.8rem; color: var(--muted);"></div>
+        </div>
+
         <div class="card">
             <h2>Leaderboard</h2>
             <div id="playerList"></div>
@@ -87,6 +92,13 @@
                     <button class="btn btn-success" onclick="adminAddPlayer()">LISÄÄ PELAAJA</button>
                 </div>
 
+                <h2 style="margin-top:20px;">Palkinnot & Saavutukset</h2>
+                <div class="admin-row-stack">
+                    <input type="text" id="newRewardName" placeholder="Palkinnon nimi (esim. Kultainen muki)">
+                    <button class="btn btn-primary" onclick="adminAddReward()">LISÄÄ PALKINTO</button>
+                </div>
+                <div id="adminRewardList" style="margin-top:10px;"></div>
+
                 <h2 style="margin-top:20px;">Lisää uusi tehtävä pakkaan</h2>
                 <div class="admin-row-stack">
                     <input type="text" id="newTaskName" placeholder="Tehtävän nimi">
@@ -115,6 +127,9 @@
                 
                 <h2 style="margin-top:20px;">Tehtäväkirjasto (Muokkaa pakkaa)</h2>
                 <div id="taskLibraryEditor" style="max-height:400px; overflow-y:auto; margin-top:10px; border-top:1px solid #333; padding-top:10px;"></div>
+
+                <h2 style="margin-top:20px;">Tapahtumaloki</h2>
+                <div id="adminEventLog" style="max-height:200px; overflow-y:auto; font-size:0.6rem; background:#000; padding:10px; border-radius:5px; border:1px solid #222; font-family:monospace;"></div>
 
                 <hr style="border: 0; border-top: 1px solid #333; margin: 30px 0;">
                 <button class="btn btn-danger" style="width:100%;" onclick="window.resetGame()">NOLLAA KOKO PELI (DATABASE RESET)</button>
