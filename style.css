@@ -24,7 +24,7 @@
     --danger: #b93232;           /* Himmeä karmiininpunainen */
     --hero-gold: #c5a14d;        /* Himmeä antiikkikulta */
     
-    --radius: 16px;              /* Pehmennetyt kulmat korteille */
+    --radius: 16px;              
 }
 
 * { 
@@ -86,6 +86,13 @@ body {
     transition: 0.3s; 
     position: relative;
     z-index: 2;
+    
+    /* KORJAUS 1: Estetään tekstin maalaus ja kopiointivalikot puhelimella */
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
 }
 
 .role-btn.player.active { 
@@ -116,7 +123,7 @@ body {
 }
 
 /* ==========================================
-   3. KORTIT JA MULTI-TASK (UUSI PREMIUM DESIGN)
+   3. KORTIT JA MULTI-TASK
    ========================================== */
 #activeTasksContainer {
     display: flex;
@@ -124,13 +131,11 @@ body {
 }
 
 .card { 
-    /* Tumma lasimainen/metallinen liukuväri */
     background: linear-gradient(145deg, #121212, #050505);
     border-radius: var(--radius); 
-    padding: 24px; /* Lisää hengitystilaa */
+    padding: 24px; 
     margin-bottom: 20px; 
     border: 1px solid rgba(255,255,255,0.03); 
-    /* Sisäinen valo yläreunaan ja pehmeä varjo */
     box-shadow: 0 10px 30px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05);
     animation: slideIn 0.4s ease-out; 
     position: relative;
@@ -138,24 +143,20 @@ body {
     min-height: 180px;
 }
 
-/* Yleinen tehtäväkortin tila */
 .active-task-item {
     border-left: 4px solid var(--accent);
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* OMAN TEHTÄVÄN TILA (Elegantti leijuminen) */
 .active-task-item.participating {
     border: 1px solid rgba(37, 138, 163, 0.3) !important;
     border-left: 4px solid var(--accent) !important;
     background: linear-gradient(145deg, #0d1a1e, #030303) !important;
-    /* Nousee ylös ja hehkuu kauniisti */
     box-shadow: 0 15px 35px rgba(37, 138, 163, 0.15), inset 0 1px 0 rgba(255,255,255,0.05);
     transform: translateY(-3px);
     z-index: 10;
 }
 
-/* MUIDEN TEHTÄVÄN TILA (Häivytetty) */
 .active-task-item.not-participating {
     opacity: 0.6;
     filter: grayscale(0.6);
@@ -163,7 +164,6 @@ body {
     background: linear-gradient(145deg, #0a0a0a, #000000);
 }
 
-/* SANKARITEHTÄVÄN TILA (VIP Kulta) */
 .active-task-item.hero-task-gold {
     border: 1px solid rgba(197, 161, 77, 0.2) !important;
     border-left: 4px solid var(--hero-gold) !important;
@@ -171,7 +171,6 @@ body {
     box-shadow: 0 15px 35px rgba(197, 161, 77, 0.1), inset 0 1px 0 rgba(255,255,255,0.05);
 }
 
-/* Otsikko kortin sisällä */
 .active-task-item h1 { 
     font-weight: 900; 
     color: var(--accent); 
@@ -188,16 +187,14 @@ body {
 
 .active-task-item.hero-task-gold h1 { color: var(--hero-gold); }
 
-/* VAIHE-otsikot ylhäällä */
 .card h2 { 
     font-size: 0.75rem; 
     color: var(--muted); 
     text-transform: uppercase; 
     margin: 0 0 15px 0; 
-    letter-spacing: 2px; /* Tyylikkäämpi harvennus */
+    letter-spacing: 2px; 
 }
 
-/* Tagit (Väritetyt tila-pillerit) */
 .task-status-tag {
     font-size: 0.7rem;
     font-weight: 900;
@@ -226,7 +223,6 @@ body {
     100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(31, 138, 98, 0); }
 }
 
-/* Puoliläpinäkyvät XP-merkit */
 .xp-badge { 
     background: rgba(37, 138, 163, 0.15); 
     color: var(--accent); 
@@ -237,7 +233,6 @@ body {
     border: 1px solid rgba(37, 138, 163, 0.3); 
 }
 
-/* Ohjelaatikko kortin sisällä */
 .instruction-card {
     background: rgba(255, 255, 255, 0.02);
     padding: 20px;
@@ -319,16 +314,8 @@ body {
     transition: all 0.3s ease;
 }
 
-.player-row.me { 
-    border-color: rgba(37, 138, 163, 0.3); 
-    background: rgba(37, 138, 163, 0.08); 
-}
-
-.player-row.is-hero { 
-    border-color: rgba(194, 120, 33, 0.3); 
-    background: rgba(194, 120, 33, 0.08); 
-}
-
+.player-row.me { border-color: rgba(37, 138, 163, 0.3); background: rgba(37, 138, 163, 0.08); }
+.player-row.is-hero { border-color: rgba(194, 120, 33, 0.3); background: rgba(194, 120, 33, 0.08); }
 .player-row.on-cooldown { opacity: 0.6; border-left: 3px solid var(--danger); }
 
 /* ==========================================
@@ -346,14 +333,7 @@ input:not([type="checkbox"]), textarea, select {
     font-size: 1rem;
 }
 
-input[type="checkbox"] {
-    width: 24px; 
-    height: 24px;
-    margin: 0;
-    cursor: pointer;
-    accent-color: var(--accent);
-    flex-shrink: 0; 
-}
+input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; accent-color: var(--accent); flex-shrink: 0; }
 
 /* ==========================================
    8. ADMIN JA GM TYÖKALUT
@@ -361,34 +341,14 @@ input[type="checkbox"] {
 .admin-grid-layout { display: flex; gap: 10px; margin-bottom: 15px; }
 .admin-grid-layout .btn { margin: 0; flex: 1; }
 
-.admin-settings-list {
-    background: rgba(255, 255, 255, 0.01);
-    padding: 15px;
-    border-radius: 12px;
-    margin-bottom: 15px;
-    border: 1px solid rgba(255,255,255,0.03);
-}
-
-.checkbox-stack {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    background: rgba(255, 255, 255, 0.01);
-    padding: 15px;
-    border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.02);
-}
+.admin-settings-list { background: rgba(255, 255, 255, 0.01); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.03); }
+.checkbox-stack { display: flex; flex-direction: column; gap: 12px; background: rgba(255, 255, 255, 0.01); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.02); }
 
 .admin-row-stack { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
 .admin-row-stack input, .admin-row-stack textarea { margin-bottom: 0; flex: 1; }
 .admin-row-stack .btn { margin-bottom: 0; width: auto; white-space: nowrap; }
 
-.admin-add-task-form {
-    background: rgba(255, 255, 255, 0.02);
-    padding: 15px;
-    border-radius: 12px;
-    margin-top: 10px;
-}
+.admin-add-task-form { background: rgba(255, 255, 255, 0.02); padding: 15px; border-radius: 12px; margin-top: 10px; }
 
 .number-inputs-row { display: flex; gap: 10px; margin-bottom: 10px; }
 .number-input-item { flex: 1; display: flex; flex-direction: column; }
@@ -402,24 +362,10 @@ input[type="checkbox"] {
 .admin-task-controls { margin-top: 10px; }
 .minus-label { display: flex; align-items: center; gap: 12px; font-size: 0.85rem; font-weight: 800; cursor: pointer; line-height: 1.2; }
 
-.volunteer-selector-grid {
-    display: grid; 
-    grid-template-columns: repeat(3, 1fr); 
-    gap: 8px; 
-    margin-bottom: 15px;
-}
+.volunteer-selector-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px; }
 
-.btn.on-cooldown {
-    border: 1px solid var(--danger) !important;
-    color: var(--danger) !important;
-    background: rgba(185, 50, 50, 0.1) !important;
-}
-
-.btn.selected-participant {
-    background: var(--accent) !important;
-    color: #ffffff !important;
-    border: 1px solid rgba(255,255,255,0.4) !important;
-}
+.btn.on-cooldown { border: 1px solid var(--danger) !important; color: var(--danger) !important; background: rgba(185, 50, 50, 0.1) !important; }
+.btn.selected-participant { background: var(--accent) !important; color: #ffffff !important; border: 1px solid rgba(255,255,255,0.4) !important; }
 
 /* ==========================================
    9. ANIMAATIOT JA VOITTAJA-ILMOITUS
@@ -461,23 +407,12 @@ input[type="checkbox"] {
     text-align: center; padding: 20px;
 }
 
-.winner-content {
-    animation: winner-pop 0.5s cubic-bezier(0.17, 0.89, 0.32, 1.49);
-    width: 100%;
-    max-width: 90%; 
-}
-
+.winner-content { animation: winner-pop 0.5s cubic-bezier(0.17, 0.89, 0.32, 1.49); width: 100%; max-width: 90%; }
 .winner-content h1 { color: var(--success); font-size: 3rem; margin-bottom: 10px; text-shadow: 0 0 15px var(--success); }
 
 #winnerTaskNames {
-    font-size: 1.5rem; 
-    color: var(--accent);
-    margin: 0 0 20px 0;
-    text-transform: uppercase;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    hyphens: auto;
-    line-height: 1.3;
+    font-size: 1.5rem; color: var(--accent); margin: 0 0 20px 0; text-transform: uppercase;
+    word-wrap: break-word; overflow-wrap: break-word; hyphens: auto; line-height: 1.3;
 }
 
 .winner-content p { font-size: 1.4rem; color: var(--text); }
@@ -507,52 +442,44 @@ input[type="checkbox"] {
 /* ==========================================
    11. HISTORIA JA LOKI
    ========================================== */
-#taskHistoryList {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    max-height: 200px;
-    overflow-y: auto;
-    padding-right: 5px;
-}
-
-.history-item {
-    background: rgba(255,255,255,0.02);
-    padding: 10px 15px;
-    border-radius: 8px;
-    border-left: 3px solid var(--accent);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    animation: slideIn 0.3s ease-out;
-}
-
+#taskHistoryList { display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; padding-right: 5px; }
+.history-item { background: rgba(255,255,255,0.02); padding: 10px 15px; border-radius: 8px; border-left: 3px solid var(--accent); display: flex; justify-content: space-between; align-items: center; animation: slideIn 0.3s ease-out; }
 .history-item .task-name { font-weight: 700; font-size: 0.9rem; color: var(--text); }
 .history-item .task-time { font-size: 0.65rem; color: var(--muted); }
 
-#adminEventLog {
-    background: var(--surface);
-    border-radius: 8px;
-    padding: 10px;
-    font-family: 'Courier New', monospace;
-    font-size: 0.7rem;
-    max-height: 150px;
-    overflow-y: auto;
-    border: 1px solid rgba(255,255,255,0.03);
-}
-
+#adminEventLog { background: var(--surface); border-radius: 8px; padding: 10px; font-family: 'Courier New', monospace; font-size: 0.7rem; max-height: 150px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.03); }
 .log-entry { padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.02); line-height: 1.4; }
 .log-entry .time { color: var(--muted); margin-right: 8px; }
 
 #historyCard { min-height: auto; }
 
 /* ==========================================
-   12. COMPACT MODE
+   12. COMPACT MODE (SUPER COMPACT KORJAUS)
    ========================================== */
 .compact-view .active-task-item {
-    padding: 16px; /* Hieman mukautettu uuteen paddingiin */
+    padding: 8px 12px;
     min-height: auto;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+}
+
+.compact-view .task-status-tag {
+    font-size: 0.55rem;
+    padding: 3px 8px;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+}
+
+.compact-view .active-task-item h1 {
+    font-size: 0.95rem;
+    margin: 2px 0 6px 0;
+    line-height: 1.1;
+}
+
+.compact-view .xp-badge {
+    font-size: 0.55rem;
+    padding: 2px 6px;
+    margin-bottom: 6px;
 }
 
 .compact-view .instruction-card,
@@ -560,18 +487,37 @@ input[type="checkbox"] {
     display: none !important;
 }
 
-.compact-view .active-task-item h1 {
-    font-size: 1.1rem;
-    margin: 5px 0;
+.compact-view .t-gm {
+    margin-top: 6px;
+    padding-top: 6px;
 }
 
-.compact-view .t-gm {
-    margin-top: 10px;
-    padding-top: 10px;
+.compact-view .volunteer-selector-grid {
+    margin-bottom: 6px;
+    gap: 4px;
 }
 
 .compact-view .btn {
-    padding: 12px;
-    font-size: 0.75rem;
-    margin-bottom: 6px;
+    padding: 8px 10px;
+    font-size: 0.65rem;
+    margin-bottom: 4px;
+    border-radius: 6px;
+}
+
+.compact-view select {
+    padding: 6px;
+    font-size: 0.8rem;
+    margin-bottom: 4px;
+    border-radius: 6px;
+}
+
+.compact-view .admin-row-stack {
+    margin-bottom: 4px;
+    gap: 6px;
+}
+
+/* Supistetaan myös Poista-painike minikokoiseksi */
+.compact-view .t-status .btn-danger {
+    padding: 4px 6px;
+    font-size: 0.55rem;
 }
