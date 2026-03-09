@@ -15,6 +15,7 @@ let taskHistory = [];
 
 let popupQueue = [];
 let isPopupShowing = false;
+let wasInGame = false; // UUSI TARKISTUSMUUTTUJA POISTOJA VARTEN
 
 const APP_NAME = "Arimon Approt";
 document.title = APP_NAME;
@@ -166,16 +167,27 @@ db.ref('gameState').on('value', (snap) => {
 
     allPlayers = data.players || [];
     
-    // KORJAUS 1: Tarkista onko pelaaja poistettu
+    // KORJAUS 1: Pelaajan uloskirjaus, jos Admin on poistanut nimen
     const me = allPlayers.find(p => p.name === myName);
-    if (myName && !me) {
-        myName = null;
-        localStorage.removeItem('appro_name');
-        alert("Game Master on poistanut sinut pelistä. Voit kirjautua sisään uudelleen.");
-        updateIdentityUI();
-    } else if (me) {
-        if (lastMyScore !== null && me.score !== lastMyScore) { showXPAnimation(me.score - lastMyScore); }
-        lastMyScore = me.score;
+    
+    if (myName) {
+        if (me) {
+            wasInGame = true;
+            if (lastMyScore !== null && me.score !== lastMyScore) { showXPAnimation(me.score - lastMyScore); }
+            lastMyScore = me.score;
+        } else {
+            if (wasInGame) {
+                myName = null;
+                localStorage.removeItem('appro_name');
+                wasInGame = false;
+                lastMyScore = null;
+                alert("Game Master on poistanut sinut pelistä. Voit kirjautua sisään uudelleen.");
+            } else {
+                myName = null;
+                localStorage.removeItem('appro_name');
+            }
+            updateIdentityUI();
+        }
     }
     
     taskLibrary = (data.tasks || []).map(t => {
@@ -218,7 +230,7 @@ db.ref('gameState').on('value', (snap) => {
     lastKnownTasks = JSON.parse(JSON.stringify(data.activeTasks || {}));
 });
 
-// --- POP-UP TARKISTUS (Bullet points & Nopeutettu) ---
+// --- POP-UP TARKISTUS ---
 function checkForNewWinnerPopups(newTasks) {
     if (!myName) return;
     let wonTaskNames = [];
@@ -281,7 +293,6 @@ function renderActiveTasks(tasksObj, config) {
         const isMePart = results.some(r => r.name === myName);
         const isHeroTask = !!taskData.isHero; 
         
-        // KORJAUS 2: Jos lukittu TAI "Speksit" painettu TAI Sankaritehtävä, paljastetaan kaikki tagit GM:lle
         const showFull = isLocked || isHeroTask || (isGM && localSpyState[taskId]);
         
         let card = container.querySelector(`[data-task-id="${taskId}"]`);
@@ -347,7 +358,6 @@ function renderActiveTasks(tasksObj, config) {
         if (showFull || vis.points) {
             tagsHtml += `<div class="xp-badge" style="display:inline-block; margin-bottom:10px; margin-right:5px;">${taskData.p} XP</div>`;
         }
-        // KORJAUS 2 (Jatko): Kun showFull on päällä, tagit näkyvät aina jos tehtävässä on ominaisuus.
         if ((showFull || vis.minus) && taskData.m) {
             tagsHtml += `<div class="xp-badge" style="display:inline-block; margin-bottom:10px; background:var(--danger); color:#000; border-color:var(--danger); margin-right:5px;">⚠️ MIINUS-UHKA</div>`;
         }
@@ -590,15 +600,22 @@ if(gmBtn) {
     gmBtn.addEventListener('touchend', endPress);
 }
 
+// KORJAUS 1: Välitön UI päivitys ettei kortti vilku
 function claimIdentity() {
     const n = document.getElementById('playerNameInput').value.trim();
-    if(!n) return; myName = n; localStorage.setItem('appro_name', n);
+    if(!n) return; 
+    myName = n; 
+    localStorage.setItem('appro_name', n);
+    updateIdentityUI();
+
     db.ref('gameState/players').transaction(p => {
-        p = p || []; if(!p.find(x => x.name === n)) {
+        p = p || []; 
+        if(!p.find(x => x.name === n)) {
             p.push({ name: n, score: 0, cooldown: false });
-            logEvent(`Uusi pelaaja liittyi: ${n}`);
         }
         return p;
+    }).then(() => {
+        logEvent(`Uusi pelaaja liittyi: ${n}`);
     });
 }
 
@@ -754,7 +771,6 @@ function updateDrawCountSelect(taskId, task) {
 
 function toggleWin(taskId, i) { db.ref(`gameState/activeTasks/${taskId}/participants/${i}/win`).transaction(w => !w); }
 
-// --- KORJAUS 4: Sankaritehtävien älykäs ja painotettu arvonta ---
 function confirmRandomize() {
     db.ref('gameState').once('value', snap => {
         const d = snap.val();
@@ -770,12 +786,11 @@ function confirmRandomize() {
         let newDrawCount = heroDraw.drawCount || 0;
         let isForcedHero = false;
 
-        // Jos painotettu arvonta on päällä, kasvatetaan laskuria
         if (heroDraw.weighted) {
             newDrawCount++;
             if (newDrawCount >= (heroDraw.interval || 4)) {
                 isForcedHero = true;
-                newDrawCount = 0; // Nollataan kun tavoite saavutettu
+                newDrawCount = 0; 
             }
         }
 
@@ -783,19 +798,18 @@ function confirmRandomize() {
         const normalTasks = taskLibrary.filter(t => !t.isHero && !used.includes(t.id));
         const heroTasks = taskLibrary.filter(t => t.isHero && !used.includes(t.id));
         
-        // Varmistetaan ettei peli jumiudu jos tehtävät loppuvat
         let finalNormal = normalTasks.length > 0 ? normalTasks : taskLibrary.filter(t => !t.isHero);
         let finalHero = heroTasks.length > 0 ? heroTasks : taskLibrary.filter(t => t.isHero);
 
         if (isForcedHero && finalHero.length > 0) {
             pool = finalHero;
         } else if (heroDraw.include && !heroDraw.weighted) {
-            pool = finalNormal.concat(finalHero); // Kaikki mukana tasaisesti
+            pool = finalNormal.concat(finalHero); 
         } else {
-            pool = finalNormal; // Vain normaalit
+            pool = finalNormal; 
         }
 
-        if(pool.length === 0) pool = finalHero; // Viimeinen hätävara
+        if(pool.length === 0) pool = finalHero; 
 
         const t = pool[Math.floor(Math.random() * pool.length)];
         const instanceId = "t_" + Date.now();
