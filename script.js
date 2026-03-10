@@ -14,9 +14,12 @@ function checkInstallStatus() {
     const installCard = document.getElementById('installCard');
     const instructionText = document.getElementById('installInstruction');
     const installBtn = document.getElementById('installBtn');
+
     const isDismissed = localStorage.getItem('appro_install_dismissed') === 'true';
 
-    if (isStandalone || isDismissed) { if (installCard) installCard.style.display = 'none'; return; }
+    if (isStandalone || isDismissed) {
+        if (installCard) installCard.style.display = 'none'; return; 
+    }
 
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     if (installCard) installCard.style.display = 'block';
@@ -359,7 +362,6 @@ function triggerWinnerOverlay(tasksHtml) {
     setTimeout(() => { overlay.style.display = 'none'; }, 2500); 
 }
 
-// KORJAUS 3: Uusi upea XP-mitali animaatio!
 function showXPAnimation(points) {
     if (points === 0) return;
     pendingXP += points;
@@ -442,7 +444,7 @@ function renderActiveTasks(tasksObj, config) {
                 <div class="compact-participants-text"></div>
                 <div class="smooth-collapse">
                     <div>
-                        <div class="blur-reveal-area" ontouchstart="">
+                        <div class="blur-reveal-area ${isSpying ? 'blur-removed' : ''}" ontouchstart="">
                             <div class="t-desc"></div>
                         </div>
                         <div class="t-action"></div>
@@ -451,9 +453,16 @@ function renderActiveTasks(tasksObj, config) {
                 </div>
             `;
             container.appendChild(card);
+        } else {
+            // Päivitä sumentumisen poisto-luokka (Speksit nappia varten)
+            const blurArea = card.querySelector('.blur-reveal-area');
+            if (blurArea) {
+                if (isSpying) blurArea.classList.add('blur-removed');
+                else blurArea.classList.remove('blur-removed');
+            }
         }
 
-        card.className = `card task-box active-task-item ${taskIsCompact ? 'compact-view-card' : ''} ${isGM && isLocked ? 'is-scoring' : ''}`;
+        card.className = `card task-box active-task-item ${taskIsCompact ? 'compact-view-card' : ''} ${isGM && isLocked && !isSpying ? 'is-scoring' : ''}`;
         card.classList.toggle('hero-task-gold', isHeroTask);
         card.classList.toggle('participating', !isGM && !isHeroTask && isLocked && isMePart);
         card.classList.toggle('not-participating', !isGM && !isHeroTask && isLocked && !isMePart);
@@ -475,11 +484,11 @@ function renderActiveTasks(tasksObj, config) {
             let stageText = ''; let stageBg = ''; let textColor = '#ffffff'; let pulseClass = '';
             
             if (isHeroTask) {
-                stageText = '3. PISTEYTÄ SANKARI'; stageBg = 'var(--hero-gold)'; textColor = '#000000'; pulseClass = 'stage-pulse'; 
+                stageText = '3. PISTEYTÄ SANKARI'; stageBg = 'var(--success)'; pulseClass = 'stage-pulse'; 
             } else {
-                if (isLocked) { stageText = '3. PISTEYTÄ SUORITUKSET'; stageBg = 'var(--hero-gold)'; textColor = '#000000'; pulseClass = 'stage-pulse'; } 
+                if (isLocked) { stageText = '3. PISTEYTÄ SUORITUKSET'; stageBg = 'var(--success)'; pulseClass = 'stage-pulse'; } 
                 else if (taskData.drawn) { stageText = '2. LUKITSE TEHTÄVÄ'; stageBg = 'var(--accent)'; } 
-                else { stageText = '1. ARVO / VALITSE'; stageBg = 'var(--gm-accent)'; }
+                else { stageText = '1. ARVO PELAAJAT'; stageBg = '#a36114'; }
             }
 
             statusHtml += `<div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">`;
@@ -507,22 +516,19 @@ function renderActiveTasks(tasksObj, config) {
         if ((showFull || vis.bday) && taskData.b) { tagsHtml += `<div class="xp-badge" style="margin-bottom:10px; background:rgba(194,120,33,0.15); color:var(--gm-accent); border-color:var(--gm-accent);">🎂 SANKARIBONUS</div>`; }
         headerHtml += `<div>${tagsHtml}</div>`;
 
-        // KORJAUS 1 & 4: Kompakti nimitieto näkyy VAIN kun EI olla lukittu-tilassa (Koska vaihe 3 näyttää ne muutenkin)
         let compactNamesHtml = "";
         if (isGM && !isHeroTask) {
             if (isLocked) {
-                // Vaihe 3 (Lukittu): Näytetään erittäin pienellä Win/Fail tila jos ohjeet on supistettu piiloon
                 if (results.length > 0) {
                     let details = results.map(r => {
                         let st = r.win ? '<span style="color:var(--success)">WIN</span>' : '<span style="color:var(--danger)">FAIL</span>';
                         return `${r.name}: ${st}`;
                     }).join(' | ');
-                    compactNamesHtml = `<div style="font-size:0.6rem; background:rgba(0,0,0,0.5); padding:4px 8px; border-radius:6px; margin-bottom:4px;"><b>SUORITUKSET:</b> ${details}</div>`;
+                    compactNamesHtml = `<div style="font-size:0.65rem; background:rgba(0,0,0,0.5); padding:6px 10px; border-radius:6px; margin-bottom:4px; line-height: 1.4;"><b>SUORITUKSET:</b> ${details}</div>`;
                 } else {
                     compactNamesHtml = `<span style="color:var(--muted); font-size:0.65rem;">Ei suorittajia.</span>`;
                 }
             } else {
-                // Vaihe 1 & 2: Näytetään keitä on mukana / arvottu
                 if (results.length > 0) {
                     let names = results.map(r => r.name).join(', ');
                     let label = taskData.drawn ? "ARVOTTU:" : "ILMOITTAUTUNEET:";
@@ -536,7 +542,7 @@ function renderActiveTasks(tasksObj, config) {
             if (isLocked) {
                 let hw = (taskData.heroWin !== false);
                 let st = hw ? '<span style="color:var(--success)">WIN</span>' : '<span style="color:var(--danger)">FAIL</span>';
-                compactNamesHtml = `<div style="font-size:0.6rem; background:rgba(0,0,0,0.5); padding:4px 8px; border-radius:6px; margin-bottom:4px;"><b>SANKARI:</b> ${st}</div>`;
+                compactNamesHtml = `<div style="font-size:0.65rem; background:rgba(0,0,0,0.5); padding:6px 10px; border-radius:6px; margin-bottom:4px;"><b>SANKARI:</b> ${st}</div>`;
             }
         }
 
@@ -600,7 +606,7 @@ function renderActiveTasks(tasksObj, config) {
             gmHtml += `<div id="scoring-${taskId}" style="display:${isLocked || isHeroTask ? 'block' : 'none'};"></div>`;
             gmHtml += `<div style="display:flex; gap:10px; margin-top:8px;">
                             <button class="btn btn-success" id="finish-${taskId}" style="display:${(isLocked || isHeroTask) ? 'block' : 'none'}; flex:2; margin:0;" onclick="showScoring('${taskId}')">MERKITSE VALMIIKSI</button>
-                            <button class="btn btn-secondary" style="flex:1; font-size:0.6rem; padding:8px; margin:0;" onclick="toggleGMSpy('${taskId}')">SPEKSIT</button>
+                            <button class="btn btn-secondary" style="flex:1; font-size:0.6rem; padding:8px; margin:0;" onclick="toggleGMSpy('${taskId}')">${isSpying ? 'PIILOTA' : 'SPEKSIT'}</button>
                        </div>`;
             gmHtml += `</div>`;
         }
@@ -1122,7 +1128,7 @@ function confirmRandomize() {
         const instanceId = "t_" + Date.now();
         
         let updates = {};
-        // KORJAUS 1: Sankaritehtävä on suoraan lukittu vaiheeseen 3!
+        // Sankaritehtävä lukitaan automaattisesti luonnin yhteydessä
         updates[`gameState/activeTasks/${instanceId}`] = { 
             ...t, 
             locked: t.isHero ? true : false, 
@@ -1277,7 +1283,7 @@ function adminCreateTask() {
     logEvent(`Admin (${adminName}) loi uuden tehtävän kirjastoon: ${n}`);
 }
 
-// KORJAUS 4: Nousevat ja laskevat sijoitusnuolet!
+// KORJAUS 5: Oikeaoppinen kilpailusijoitus tasapisteillä!
 function renderLeaderboard(showCD, heroId) {
     const list = document.getElementById('playerList');
     if(!list) return;
@@ -1286,18 +1292,31 @@ function renderLeaderboard(showCD, heroId) {
     const newScoresStr = sortedPlayers.map(p => p.name + p.score).join('|');
     
     if (newScoresStr !== leaderboardScoresStr) {
-        let newRanks = {};
+        
+        let currentRanks = {};
+        let currentRank = 1;
+        let prevScore = -1;
+        
+        // Kilpailusijoitus (1, 2, 2, 4)
         sortedPlayers.forEach((p, index) => {
-            newRanks[p.name] = index;
+            if (p.score !== prevScore) {
+                currentRank = index + 1; 
+                prevScore = p.score;
+            }
+            currentRanks[p.name] = currentRank;
+        });
+
+        sortedPlayers.forEach(p => {
             if (leaderboardPrevRanks[p.name] !== undefined) {
-                if (index < leaderboardPrevRanks[p.name]) leaderboardDirections[p.name] = 'up';
-                else if (index > leaderboardPrevRanks[p.name]) leaderboardDirections[p.name] = 'down';
+                if (currentRanks[p.name] < leaderboardPrevRanks[p.name]) leaderboardDirections[p.name] = 'up';
+                else if (currentRanks[p.name] > leaderboardPrevRanks[p.name]) leaderboardDirections[p.name] = 'down';
                 else leaderboardDirections[p.name] = 'same';
             } else {
                 leaderboardDirections[p.name] = 'same';
             }
         });
-        leaderboardPrevRanks = newRanks;
+        
+        leaderboardPrevRanks = currentRanks;
         leaderboardScoresStr = newScoresStr;
     }
 
