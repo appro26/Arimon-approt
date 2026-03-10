@@ -1,28 +1,21 @@
 /* ==========================================
-   1. MUUTTUJAT JA PERUSASETUKSET (MATTA / JALOKIVIVÄRIT)
+   1. MUUTTUJAT JA PERUSASETUKSET
    ========================================== */
 :root {
-    /* Pitch Black Tausta OLED-optimoitu */
     --bg: #000000;               
-    
-    /* Elegantti tumma pinta ja sub-pinta */
-    --surface: rgba(15, 15, 15, 0.7); /* Lasi-efektiä varten */         
+    --surface: rgba(15, 15, 15, 0.7);       
     --surface-light: #1a1a1a;    
     
-    /* Pehmennetty valkoinen ja harmaa (Vaalennnettu luettavuuden vuoksi) */
     --text: #ffffff;             
-    --muted: #8899ac; /* Aiempaa kirkkaampi harmaa auringonpaistetta varten */           
+    --muted: #8899ac;           
     
-    /* Silmäystävälliset matta/jalokivisävyt */
-    --accent: #258aa3;           /* Rauhallinen tumma syaani/petroli */
+    --accent: #258aa3;           
     --accent-glow: rgba(37, 138, 163, 0.25); 
     
-    --gm-accent: #c27821;        /* Poltettu oranssi */
-    --gm-glow: rgba(194, 120, 33, 0.25);
-    
-    --success: #23a373;          /* Kirkkaampi smaragdinvihreä */
-    --danger: #cc3b3b;           /* Kirkkaampi karmiininpunainen */
-    --hero-gold: #d4ae53;        /* Kirkkaampi antiikkikulta */
+    --gm-accent: #c27821;        
+    --success: #1f8a62;          
+    --danger: #cc3b3b;           
+    --hero-gold: #d4ae53;        
     
     --radius: 16px;              
 }
@@ -35,119 +28,78 @@
 }
 
 body { 
-    font-family: 'Inter', sans-serif; 
-    background: var(--bg); 
-    color: var(--text); 
-    margin: 0; 
-    padding: 10px; 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-    min-height: 100vh; 
-    overflow-x: hidden;
+    font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); 
+    margin: 0; padding: 10px; display: flex; flex-direction: column; 
+    align-items: center; min-height: 100vh; overflow-x: hidden;
 }
 
-.container { 
-    width: 100%; 
-    max-width: 460px; 
-    padding-top: 110px; 
-    padding-bottom: 30px; 
-}
+.container { width: 100%; max-width: 460px; padding-top: 110px; padding-bottom: 30px; }
 
 /* ==========================================
-   2. ROOLI-KYTKIN (LASI-EFEKTI)
+   2. ROOLI-KYTKIN
    ========================================== */
 .role-switcher { 
-    position: fixed; 
-    top: calc(15px + env(safe-area-inset-top)); 
-    left: 10px; 
-    right: 10px; 
-    height: 54px; 
-    display: flex; 
-    z-index: 1000; 
-    background: rgba(10, 10, 10, 0.75); 
-    backdrop-filter: blur(15px); 
-    -webkit-backdrop-filter: blur(15px);
-    border-radius: 27px; 
-    border: 1px solid rgba(255,255,255,0.15); 
-    padding: 5px; 
-    overflow: hidden;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+    position: fixed; top: calc(15px + env(safe-area-inset-top)); left: 10px; right: 10px; 
+    height: 54px; display: flex; z-index: 1000; 
+    background: rgba(10, 10, 10, 0.75); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+    border-radius: 27px; border: 1px solid rgba(255,255,255,0.15); padding: 5px; 
+    box-shadow: 0 4px 20px rgba(0,0,0,0.8); overflow: hidden;
 }
 
 .role-btn { 
     flex: 1; border: none; color: var(--muted); background: transparent; 
-    font-weight: 700; font-size: 0.75rem; text-transform: uppercase; 
-    cursor: pointer; border-radius: 22px; transition: 0.3s; position: relative; z-index: 2;
-    -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; -webkit-touch-callout: none;
+    font-weight: 700; font-size: 0.75rem; text-transform: uppercase; cursor: pointer; 
+    border-radius: 22px; transition: 0.3s; position: relative; z-index: 2;
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
 }
-
 .role-btn.player.active { background: var(--accent); color: #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
 .role-btn.gm.active { background: var(--gm-accent); color: #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
 
 .role-btn.gm:active::after {
     content: ''; position: absolute; bottom: 0; left: 0; height: 4px;
-    background: rgba(255,255,255,0.3);
-    animation: hold-progress 0.8s linear forwards;
+    background: rgba(255,255,255,0.3); animation: hold-progress 0.8s linear forwards;
 }
-
 @keyframes hold-progress { from { width: 0%; } to { width: 100%; } }
 
 /* ==========================================
-   3. KORTIT JA MULTI-TASK (UUSI LASITYYLI & KONTRASTI)
+   3. KORTIT JA MULTI-TASK (UUSI MUOTOILU)
    ========================================== */
 #activeTasksContainer { display: flex; flex-direction: column; }
 
 .card { 
-    background: var(--surface);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-radius: var(--radius); 
-    padding: 24px; 
-    margin-bottom: 25px; 
-    border: 1px solid rgba(255,255,255,0.12); /* Kirkkaampi reuna erottuvuuteen */
-    border-top: 1px solid rgba(255,255,255,0.2); /* Valonheijastus yläreunassa */
+    background: var(--surface); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border-radius: var(--radius); padding: 24px; margin-bottom: 25px; 
+    border: 1px solid rgba(255,255,255,0.12); border-top: 1px solid rgba(255,255,255,0.2); 
     box-shadow: 0 10px 30px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.05);
-    animation: slideIn 0.4s ease-out; 
-    position: relative;
-    contain: content;
-    min-height: 180px;
+    animation: slideIn 0.4s ease-out; position: relative; contain: content; min-height: 180px;
 }
 
-.active-task-item { 
-    border-left: 5px solid var(--accent); 
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-}
+.active-task-item { border-left: 5px solid var(--accent); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 
-/* OMAN TEHTÄVÄN VOIMAKAS KOROSTUS */
+/* UUSI TYYLIKÄS OMAN TEHTÄVÄN KOROSTUS (SYAANI/TUMMANSININEN) */
 .active-task-item.participating {
-    background: rgba(13, 26, 30, 0.85) !important;
-    border: 1px solid rgba(37, 138, 163, 0.5) !important;
+    background: linear-gradient(145deg, #09131a, #000000) !important;
+    border: 1px solid rgba(37, 138, 163, 0.4) !important;
     border-left: 6px solid var(--accent) !important;
-    box-shadow: 0 10px 40px rgba(37, 138, 163, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 40px rgba(37, 138, 163, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
     transform: translateY(-3px); z-index: 10;
 }
 
-.active-task-item.not-participating {
-    opacity: 0.55; filter: grayscale(0.7);
-    border-left: 5px solid rgba(255,255,255,0.1);
-    background: rgba(10, 10, 10, 0.6);
-}
+.active-task-item.not-participating { opacity: 0.55; filter: grayscale(0.7); border-left: 5px solid rgba(255,255,255,0.1); background: rgba(10, 10, 10, 0.6); }
 
 .active-task-item.hero-task-gold {
-    background: rgba(26, 22, 13, 0.85) !important;
-    border: 1px solid rgba(197, 161, 77, 0.4) !important;
+    background: linear-gradient(145deg, #1a150a, #000000) !important;
+    border: 1px solid rgba(212, 174, 83, 0.3) !important;
     border-left: 6px solid var(--hero-gold) !important;
-    box-shadow: 0 15px 40px rgba(197, 161, 77, 0.15), inset 0 1px 0 rgba(255,255,255,0.1);
+    box-shadow: 0 15px 40px rgba(212, 174, 83, 0.15), inset 0 1px 0 rgba(255,255,255,0.1);
 }
 
 .active-task-item h1 { 
     font-weight: 900; color: var(--accent); text-transform: uppercase; 
     letter-spacing: -0.5px; margin: 10px 0 15px 0; 
     word-wrap: break-word; overflow-wrap: break-word; hyphens: auto;
-    max-width: 100%; line-height: 1.2; text-shadow: 0 2px 6px rgba(0,0,0,0.9);
+    line-height: 1.2; text-shadow: 0 2px 6px rgba(0,0,0,0.9);
 }
-
 .active-task-item.hero-task-gold h1 { color: var(--hero-gold); }
 
 .card h2 { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; margin: 0 0 15px 0; letter-spacing: 2px; }
@@ -156,73 +108,54 @@ body {
     font-size: 0.7rem; font-weight: 900; background: var(--success); color: #ffffff;
     padding: 6px 14px; border-radius: 20px; display: inline-block; margin-bottom: 15px;
     text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-    animation: pulse-green 2.5s infinite; 
-    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    animation: pulse-green 2.5s infinite; text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
 .task-status-tag.muted { background: var(--surface-light); color: var(--muted); animation: none; box-shadow: none; border: 1px solid rgba(255,255,255,0.1);}
 
 @keyframes pulse-green {
-    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(35, 163, 115, 0.4); }
-    70% { transform: scale(1.03); box-shadow: 0 0 0 12px rgba(35, 163, 115, 0); }
-    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(35, 163, 115, 0); }
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(31, 138, 98, 0.4); }
+    70% { transform: scale(1.03); box-shadow: 0 0 0 12px rgba(31, 138, 98, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(31, 138, 98, 0); }
 }
 
 .xp-badge { 
     background: rgba(37, 138, 163, 0.2); color: #ffffff; font-weight: 900; 
-    padding: 6px 12px; border-radius: 8px; font-size: 0.7rem; 
+    padding: 6px 12px; border-radius: 8px; font-size: 0.7rem; display: inline-flex; align-items: center;
     border: 1px solid rgba(37, 138, 163, 0.5); text-shadow: 0 1px 3px rgba(0,0,0,0.8);
 }
 
-/* YLEINEN OHJEKORTTI */
-.instruction-card {
-    background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 12px; margin-top: 15px;
-    border: 1px solid rgba(255,255,255,0.08); border-left: 4px solid var(--accent);
-    text-align: left; animation: slideIn 0.3s ease-out; box-shadow: inset 0 2px 10px rgba(0,0,0,0.4);
+/* UUSI OHJEALUE (Eroon dokumenttimaisuudesta) */
+.instruction-area {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px dashed rgba(255,255,255,0.1);
+    animation: slideIn 0.3s ease-out;
 }
 
-/* OMAN TEHTÄVÄN OHJEKORTTI (SUPER-KOROSTETTU) */
-.participating .instruction-card { 
-    border-left: 6px solid var(--success); 
-    background: rgba(35, 163, 115, 0.15); 
-    border: 1px solid rgba(35, 163, 115, 0.4); 
-    box-shadow: 0 5px 25px rgba(35, 163, 115, 0.15), inset 0 2px 15px rgba(0,0,0,0.4);
+.participating .instruction-area { border-top: 1px dashed rgba(37, 138, 163, 0.4); }
+.hero-task-gold .instruction-area { border-top: 1px dashed rgba(212, 174, 83, 0.4); }
+
+.instruction-label {
+    font-size: 0.65rem; color: var(--accent); text-transform: uppercase;
+    letter-spacing: 2px; margin-bottom: 8px; font-weight: 800; opacity: 0.8;
+}
+.hero-task-gold .instruction-label { color: var(--hero-gold); }
+
+.instruction-text { font-size: 1.05rem; line-height: 1.5; margin: 0; color: var(--text); }
+
+/* OMAN TEHTÄVÄN TEKSTI-KOROSTUS (Selkeä, iso ja hohtava) */
+.participating .instruction-text {
+    font-size: 1.25rem; font-weight: 600; color: #ffffff; text-shadow: 0 2px 5px rgba(0,0,0,0.9);
 }
 
-.hero-task-gold .instruction-card { 
-    border-left-color: var(--hero-gold); 
-    background: rgba(212, 174, 83, 0.1); 
-    border: 1px solid rgba(212, 174, 83, 0.3);
-}
-
-.instruction-card p { font-size: 1.05rem !important; line-height: 1.6; margin: 0; color: var(--text); }
-
-/* OMAN TEHTÄVÄN TEKSTI-KOROSTUKSET */
-.participating .instruction-card p {
-    font-size: 1.15rem !important;
-    font-weight: 700;
-    color: #ffffff;
-    text-shadow: 0 2px 5px rgba(0,0,0,0.9); /* Luettavuus auringossa */
-}
-
-.participating .instruction-card strong {
-    color: var(--success);
-    font-size: 1.2rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    display: block;
-    margin-bottom: 8px;
-    text-shadow: 0 0 10px rgba(35, 163, 115, 0.5);
-}
-
-.task-description { transition: opacity 0.3s ease; line-height: 1.6; margin: 15px 0; font-size: 1.05rem; color: var(--muted); font-weight: 700; }
+.task-description { line-height: 1.6; margin: 15px 0; font-size: 1.05rem; color: var(--muted); font-weight: 700; }
 
 /* ==========================================
    4. PAINIKKEET
    ========================================== */
 .btn { 
     font-family: inherit; border-radius: 10px; border: none; font-weight: 800; padding: 18px; 
-    text-transform: uppercase; cursor: pointer; 
-    transition: transform 0.1s ease-out, background 0.15s ease-out, box-shadow 0.15s ease-out; 
+    text-transform: uppercase; cursor: pointer; transition: transform 0.1s ease-out; 
     width: 100%; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; 
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.6); text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
@@ -271,36 +204,25 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
 .number-input-item { flex: 1; display: flex; flex-direction: column; }
 .number-input-item label { font-size: 0.7rem; color: var(--muted); margin-bottom: 5px; }
 .number-input-item input { margin-bottom: 0; }
-
 .checkbox-group { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
 .checkbox-group:last-child { margin-bottom: 0; }
 .checkbox-group label { font-size: 0.95rem; font-weight: 700; cursor: pointer; line-height: 1.2; }
 
 .admin-task-controls { margin-top: 10px; }
 .minus-label { display: flex; align-items: center; gap: 12px; font-size: 0.85rem; font-weight: 800; cursor: pointer; line-height: 1.2; }
-
 .volunteer-selector-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px; }
 
 .btn.on-cooldown { border: 1px solid var(--danger) !important; color: var(--danger) !important; background: rgba(204, 59, 59, 0.1) !important; }
 .btn.selected-participant { background: var(--accent) !important; color: #ffffff !important; border: 1px solid rgba(255,255,255,0.4) !important; }
-
 #adminPlayerList .btn { transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1); }
 #adminPlayerList .btn:active { transform: scale(0.85); }
 
 /* ==========================================
    9. ANIMAATIOT JA VOITTAJA-ILMOITUS
    ========================================== */
-.roulette-focus {
-    background: var(--accent) !important; color: #ffffff !important;
-    transform: scale(1.08) !important; box-shadow: 0 0 15px var(--accent-glow); z-index: 10;
-}
-
+.roulette-focus { background: var(--accent) !important; color: #ffffff !important; transform: scale(1.08) !important; box-shadow: 0 0 15px var(--accent-glow); z-index: 10; }
 .scoring-box { animation: pulse-gold 2s infinite; }
-@keyframes pulse-gold {
-    0% { box-shadow: 0 0 0 0 rgba(212, 174, 83, 0.3); }
-    70% { box-shadow: 0 0 0 8px rgba(212, 174, 83, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(212, 174, 83, 0); }
-}
+@keyframes pulse-gold { 0% { box-shadow: 0 0 0 0 rgba(212, 174, 83, 0.3); } 70% { box-shadow: 0 0 0 8px rgba(212, 174, 83, 0); } 100% { box-shadow: 0 0 0 0 rgba(212, 174, 83, 0); } }
 
 .xp-popup {
     position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -308,7 +230,6 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
     text-shadow: 0 0 30px rgba(0,0,0,0.9), 0 5px 15px rgba(0,0,0,0.5);
     -webkit-text-stroke: 2px rgba(255,255,255,0.2);
 }
-
 .xp-animate { display: block !important; animation: xp-bouncy-float 2.2s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
 
 @keyframes xp-bouncy-float {
@@ -328,12 +249,7 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
 }
 .winner-content { animation: winner-pop 0.5s cubic-bezier(0.17, 0.89, 0.32, 1.49); width: 100%; max-width: 90%; }
 .winner-content h1 { color: var(--success); font-size: 3rem; margin-bottom: 10px; text-shadow: 0 0 20px var(--success); }
-
-#winnerTaskNames {
-    font-size: 1.5rem; color: var(--accent); margin: 0 0 20px 0; text-transform: uppercase;
-    word-wrap: break-word; overflow-wrap: break-word; hyphens: auto; line-height: 1.3;
-}
-
+#winnerTaskNames { font-size: 1.5rem; color: var(--accent); margin: 0 0 20px 0; text-transform: uppercase; word-wrap: break-word; hyphens: auto; line-height: 1.3; }
 .winner-content p { font-size: 1.4rem; color: var(--text); font-weight: 700; }
 .timer-bar { animation: shrink 2.2s linear forwards; background: var(--success) !important; box-shadow: 0 0 10px var(--success); } 
 
@@ -365,47 +281,25 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
 .history-item { background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px; border-left: 3px solid var(--accent); display: flex; justify-content: space-between; align-items: center; animation: slideIn 0.3s ease-out; }
 .history-item .task-name { font-weight: 700; font-size: 0.9rem; color: var(--text); }
 .history-item .task-time { font-size: 0.65rem; color: var(--muted); }
-
 #adminEventLog { background: rgba(0,0,0,0.5); border-radius: 8px; padding: 10px; font-family: 'Courier New', monospace; font-size: 0.7rem; max-height: 150px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1); }
 .log-entry { padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); line-height: 1.4; }
 .log-entry .time { color: var(--muted); margin-right: 8px; }
-
 #historyCard { min-height: auto; }
 
 /* ==========================================
    12. COMPACT MODE (SUPER TIIVIS)
    ========================================== */
-.compact-view .active-task-item {
-    padding: 12px 14px; 
-    min-height: auto;
-    margin-bottom: 12px;
-}
-
+.compact-view .active-task-item { padding: 12px 14px; min-height: auto; margin-bottom: 12px; }
 .compact-view .task-status-tag { font-size: 0.65rem; padding: 4px 10px; margin-bottom: 6px; }
 .compact-view .active-task-item h1 { font-size: 1rem; margin: 4px 0 6px 0; line-height: 1.1; }
 .compact-view .xp-badge { font-size: 0.65rem; padding: 4px 8px; margin-bottom: 6px; }
 
-.compact-view .instruction-card,
-.compact-view .task-description {
-    display: none !important;
-}
+.compact-view .instruction-area,
+.compact-view .task-description { display: none !important; }
 
-.compact-view .t-gm {
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px solid rgba(255,255,255,0.1);
-}
-
-.compact-view .volunteer-selector-grid {
-    display: flex !important;
-    flex-wrap: wrap;
-    margin-bottom: 8px;
-    gap: 6px;
-}
-.compact-view .volunteer-selector-grid .btn:not(.selected-participant) {
-    display: none !important;
-}
-
+.compact-view .t-gm { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); }
+.compact-view .volunteer-selector-grid { display: flex !important; flex-wrap: wrap; margin-bottom: 8px; gap: 6px; }
+.compact-view .volunteer-selector-grid .btn:not(.selected-participant) { display: none !important; }
 .compact-view .btn { padding: 10px; font-size: 0.7rem; margin-bottom: 6px; border-radius: 8px; }
 .compact-view select { padding: 8px; font-size: 0.85rem; margin-bottom: 6px; border-radius: 8px; }
 .compact-view .admin-row-stack { margin-bottom: 6px; gap: 8px; }
