@@ -76,6 +76,7 @@ let leaderboardDirections = {};
 const APP_NAME = "Arimon Approt";
 document.title = APP_NAME;
 
+// --- TEHTÄVÄPAKKA (PÄIVITETTY: KILPAILUT + SANKARI 1XP) ---
 const defaultTasks = [
     { id: 1, n: "Mise en place", d: "Varmista, että kaikilla pöytäseurueen jäsenillä on lasissa juotavaa (myös vettä). Jos jollain on tyhjää, täytä lasia omalla juomallasi tai vedellä.", p: 2, m: 2, b: false, r: 2, k: 'juoma' },
     { id: 2, n: "Uudelleenkäynnistys (Reboot)", d: "Kaikkien suorittajien on juotava lasi vettä yhdeltä istumalta 'järjestelmän vakauttamiseksi'.", p: 1, m: 3, b: false, r: 3, k: 'juoma' },
@@ -155,27 +156,49 @@ const defaultTasks = [
     { id: 110, n: "Laajakaistan maksimointi", d: "Juo juoma käyttämällä vähintään viittä pilliä samaan aikaan.", p: 1, m: true, b: false, r: 1, k: 'juoma' },
     { id: 111, n: "Tasting-lusikka", d: "Juo juoma käyttämällä lusikkaa.", p: 3, m: true, b: false, r: 1, k: 'juoma' },
 
-    // --- SANKARITEHTÄVÄT ---
-    { id: 83, n: "Admin-huolto (Sankari)", d: "Sankarin on kerättävä seurueen kaikki tyhjät tölkit/lasit ja vietävä ne tiskille yksin.", p: 2, m: 1, b: true, r: 1, isHero: true, k: 'liikunta' },
-    { id: 84, n: "Kiekon etsintä (Sankari)", d: "Sankari joutuu nousemaan ylös ja kävelemään baarin ympäri etsimässä 'kadonnutta kiekkoa'.", p: 2, m: 1, b: true, r: 1, isHero: true, k: 'liikunta' },
-    { id: 85, n: "PUBG Emote (Sankari)", d: "Sankarin on esitettävä jokin PUBG-pelin tuuletus tai liike baarin keskellä mahdollisimman näyttävästi.", p: 3, m: 1, b: true, r: 1, isHero: true, k: 'pokka' },
+    // --- UUDET KILPAILUTEHTÄVÄT (20 kpl, 1v1 dynamiikka, m: true -> ± samat pisteet) ---
+    { id: 112, n: "Flashbang-tuijotuskisa", d: "Pelaajat ottavat mittaa toisistaan tuijotuskisassa. Se, joka räpäyttää silmiään, kääntää katseensa tai nauraa ensin, on häviäjä.", p: 2, m: true, b: false, r: 2, k: 'kilpailu' },
+    { id: 113, n: "DDoS-hyökkäys", d: "GM antaa pitkän ja vaikean sanan tai lauseen. Kilpailijoiden pitää kirjoittaa se ryhmän WhatsAppiin/chattiin. Ensimmäisenä täysin virheettömän viestin lähettänyt voittaa.", p: 2, m: true, b: false, r: 2, k: 'kilpailu' },
+    { id: 114, n: "Sudden Death -puttikisa", d: "Kumpikin heittää vuorotellen lasinalusta pystyssä olevaan tyhjään tuoppiin n. 2 metrin päästä. Heitetään 3 heittoa per pelaaja. Se, joka saa enemmän 'putteja' sisään, voittaa.", p: 3, m: true, b: false, r: 2, k: 'kilpailu' },
+    { id: 115, n: "Tulinen Michelin-haaste", d: "Klassinen Kivi-paperi-sakset, mutta paras kolmesta -periaatteella (eli kaksi voittoa vaaditaan). Häviäjä joutuu ottamaan rankkumiinukset.", p: 1, m: true, b: false, r: 2, k: 'kilpailu' },
+    { id: 116, n: "Medkit Speedrun", d: "Kummallakin on edessään saman kokoinen lasi vettä. Kun GM antaa luvan, ensimmäinen, joka juo vesilasinsa täysin tyhjäksi, voittaa.", p: 2, m: true, b: false, r: 2, k: 'kilpailu' },
+    { id: 117, n: "Hardware-testi / Peukalopaini", d: "Klassinen peukalopaini! Ensimmäinen, joka saa painettua vastustajan peukalon kiinni nyrkkiin 3 sekunnin ajaksi, voittaa.", p: 2, m: true, b: false, r: 2, k: 'kilpailu' },
+    { id: 118, n: "Loot Drop -sprintti", d: "GM huutaa jonkin yleisen baariesineen (esim. 'punainen pilli', 'karkkipaperi'). Ensimmäinen, joka juoksee hakemaan kyseisen esineen ja tuo sen GM:lle, voittaa.", p: 3, m: true, b: false, r: 2, k: 'kilpailu' },
+    { id: 119, n: "Salasanan purku", d: "Puhdas arvauskilpailu. GM keksii numeron 1-100 väliltä ja kirjoittaa sen ylös. Kumpikin pelaaja arvaa numeron kerran ääneen. Se, kenen arvaus on lähempänä, voittaa.", p: 2, m: true, b: false, r: 2, k: 'kilpailu' },
+    { id: 120, n: "CTP-kisa (Closest to Pin)", d: "Kumpikin liu'uttaa kolikon tai lasinalusen pöydän vastakkaista reunaa kohti. Se, kenen esine pysähtyy lähimmäksi reunaa tippumatta, voittaa.", p: 2, m: true, b: false, r: 2, k: 'kilpailu' },
+    { id: 121, n: "Sokkomaistelu", d: "Kummankin silmät laitetaan kiinni. GM antaa heidän haistaa tai maistaa pienen tipan jotain pöydästä löytyvää (esim. ketsuppi, suola, tietty juoma). Ensimmäinen oikein arvannut voittaa.", p: 2, m: true, b: false, r: 2, k: 'kilpailu' },
+    { id: 122, n: "Salauksen purku", d: "GM keksii 3 sanaa ja lausuu ne takaperin (esim. 'I-RAAB' = baari). Ensimmäinen kilpailijoista, joka huutaa sanan oikein päin, saa pisteen. Paras kolmesta voittaa.", p: 3, m: true, b: false, r: 2, k: 'kilpailu' },
+    { id: 123, n: "Quickscope-reaktio", d: "Kummankin kädet ovat selän takana. GM asettaa kolikon pöydälle. Kun GM sanoo 'TULI!', ensimmäinen joka iskee kätensä pöydälle kolikon päälle, voittaa.", p: 2, m: true, b: false, r: 2, k: 'kilpailu' },
+    { id: 124, n: "Hankala Stanssi", d: "Tasapainokisa! Kumpikin seisoo yhdellä jalalla silmät kiinni. Ensimmäinen, joka horjahtaa, koskettaa maata toisella jalalla tai avaa silmät, häviää.", p: 2, m: true, b: false, r: 2, k: 'kilpailu' },
+    { id: 125, n: "Keittiöapulaisen nopeustesti", d: "Taittohaaste! Molemmat saavat 3 servettiä. Ensimmäinen, joka on taitellut kaikki kolme siististi kolmioiksi ja huutaa 'VALMIS!', voittaa.", p: 2, m: true, b: false, r: 2, k: 'kilpailu' },
+    { id: 126, n: "Tiedonhaku-protokolla Ctrl+F", d: "Googlauskisa. GM kysyy jonkin oudon triviakysymyksen. Ensimmäinen, joka löytää tiedon puhelimellaan ja huutaa vastauksen, voittaa.", p: 2, m: true, b: false, r: 2, k: 'kilpailu' },
+    { id: 127, n: "Blue Zone -happikisa", d: "Hengityksen pidätys. Kun GM antaa merkin, molemmat vetävät keuhkot täyteen ja pidättävät hengitystä. Se kuka joutuu puhaltamaan ilmaa ulos ensin, häviää.", p: 3, m: true, b: false, r: 2, k: 'kilpailu' },
+    { id: 128, n: "Vastatuuli-draivi", d: "Ilmakiekkoa! Pöydän keskelle laitetaan mytätty karkkipaperi. Kun aika alkaa, molemmat puhaltavat paperia kohti vastustajaa. Se, kenen syliin tai ohi paperi tippuu, häviää.", p: 2, m: true, b: false, r: 2, k: 'kilpailu' },
+    { id: 129, n: "Masterchefin makupaletti", d: "Sanakilpailu. GM antaa raaka-aineen (esim. 'Peruna'). Kilpailijat sanovat vuorotellen ruokalajeja, joissa on tuota raaka-ainetta. Se kumpi miettii yli 3 sekuntia tai toistaa saman, häviää.", p: 2, m: true, b: false, r: 2, k: 'kilpailu' },
+    { id: 130, n: "Ping-viive", d: "Laskentakisa. Kilpailijoiden pitää vuorotellen laskea taaksepäin sadasta alaspäin miinus seitsemän (100, 93, 86...). Ensimmäinen, joka sekoaa laskuissa tai miettii yli 3 sekuntia, häviää.", p: 3, m: true, b: false, r: 2, k: 'kilpailu' },
+    { id: 131, n: "Tarkka-ampujan vakaus", d: "Kumpikin ottaa oman juomalasinsa ja nostaa sen suoralla kädellä eteensä ilmaan. Se, kenen käsi alkaa täristä liikaa, laskee alas tai koukistuu ensin, häviää.", p: 3, m: true, b: false, r: 2, k: 'kilpailu' },
+
+    // --- SANKARITEHTÄVÄT (KORJATTU: KAIKKI p: 1) ---
+    { id: 83, n: "Admin-huolto (Sankari)", d: "Sankarin on kerättävä seurueen kaikki tyhjät tölkit/lasit ja vietävä ne tiskille yksin.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'liikunta' },
+    { id: 84, n: "Kiekon etsintä (Sankari)", d: "Sankari joutuu nousemaan ylös ja kävelemään baarin ympäri etsimässä 'kadonnutta kiekkoa'.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'liikunta' },
+    { id: 85, n: "PUBG Emote (Sankari)", d: "Sankarin on esitettävä jokin PUBG-pelin tuuletus tai liike baarin keskellä mahdollisimman näyttävästi.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'pokka' },
     { id: 86, n: "Koodin katselmointi (Sankari)", d: "Sankarin on keksittävä jokaisesta pelaajasta yksi positiivinen 'kommentti' (kuten koodin katselmoinnissa).", p: 1, m: 0, b: true, r: 1, isHero: true, k: 'pokka' },
-    { id: 87, n: "Mise en place -tarkastus (Sankari)", d: "Sankarin on maistettava kolmen eri pelaajan juomaa ja arvattava niiden ainesosat.", p: 2, m: 1, b: true, r: 1, isHero: true, k: 'juoma' },
-    { id: 88, n: "Ping-testi (Sankari)", d: "Sankarin on vastattava 'PONG' sekunnin sisällä aina kun joku huutaa 'PING' seuraavan 10 minuutin ajan.", p: 2, m: 1, b: true, r: 1, isHero: true, k: 'pokka' },
-    { id: 89, n: "Putti-haaste (Sankari)", d: "Sankarin on heitettävä lasinalunen pystyasennossa olevaan tyhjään tuoppiin. Kolme yritystä.", p: 2, m: 1, b: true, r: 1, isHero: true, k: 'liikunta' },
-    { id: 90, n: "Blue Zone -juoksu (Sankari)", d: "Sankarin on käytävä koskettamassa baarin ulko-ovea ja palattava 15 sekunnissa takaisin.", p: 2, m: 1, b: true, r: 1, isHero: true, k: 'liikunta' },
-    { id: 91, n: "Hardware Troubleshooting (Sankari)", d: "Sankarin on selitettävä jollekin pelaajalle tai tuntemattomalle asiakkaalle, miten frisbeegolfin pituusdraivi tai IT-tuki toimii.", p: 3, m: 1, b: true, r: 1, isHero: true, k: 'pokka' },
+    { id: 87, n: "Mise en place -tarkastus (Sankari)", d: "Sankarin on maistettava kolmen eri pelaajan juomaa ja arvattava niiden ainesosat.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'juoma' },
+    { id: 88, n: "Ping-testi (Sankari)", d: "Sankarin on vastattava 'PONG' sekunnin sisällä aina kun joku huutaa 'PING' seuraavan 10 minuutin ajan.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'pokka' },
+    { id: 89, n: "Putti-haaste (Sankari)", d: "Sankarin on heitettävä lasinalunen pystyasennossa olevaan tyhjään tuoppiin. Kolme yritystä.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'liikunta' },
+    { id: 90, n: "Blue Zone -juoksu (Sankari)", d: "Sankarin on käytävä koskettamassa baarin ulko-ovea ja palattava 15 sekunnissa takaisin.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'liikunta' },
+    { id: 91, n: "Hardware Troubleshooting (Sankari)", d: "Sankarin on selitettävä jollekin pelaajalle tai tuntemattomalle asiakkaalle, miten frisbeegolfin pituusdraivi tai IT-tuki toimii.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'pokka' },
     { id: 92, n: "Chef's Special (Sankari)", d: "Sankarin on loihdittava 'annos' eli koottava pöydän snacks-kulhosta näyttävä taideteos ja syötävä se.", p: 1, m: 0, b: true, r: 1, isHero: true, k: 'juoma' },
     { id: 93, n: "Palvelinhuoneen hämärä (Sankari)", d: "Sankarin on suoritettava seuraava tilauksensa tai keskustelunsa kuiskaamalla, kuin hän olisi salaisessa palvelinruumissa.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'pokka' },
-    { id: 94, n: "Range-treeni (Sankari)", d: "Sankarin on 'heitettävä' viisi erilaista frisbeegolf-kiekkoa ja selitettävä niiden lentoradat seurueelle.", p: 2, m: 0, b: true, r: 1, isHero: true, k: 'pokka' },
-    { id: 95, n: "Loot-varkaus (Sankari)", d: "Sankarin on onnistuttava ottamaan yksi hörppy jonkun muun lasista niin, ettei kukaan huomaa (stealth mode).", p: 3, m: 1, b: true, r: 1, isHero: true, k: 'juoma' },
-    { id: 96, n: "Käyttöjärjestelmän vaihto (Sankari)", d: "Sankarin on vaihdettava kieltä ja puhuttava seuraavat 5 minuuttia pelkkää englantia.", p: 2, m: 1, b: true, r: 1, isHero: true, k: 'pokka' },
+    { id: 94, n: "Range-treeni (Sankari)", d: "Sankarin on 'heitettävä' viisi erilaista frisbeegolf-kiekkoa ja selitettävä niiden lentoradat seurueelle.", p: 1, m: 0, b: true, r: 1, isHero: true, k: 'pokka' },
+    { id: 95, n: "Loot-varkaus (Sankari)", d: "Sankarin on onnistuttava ottamaan yksi hörppy jonkun muun lasista niin, ettei kukaan huomaa (stealth mode).", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'juoma' },
+    { id: 96, n: "Käyttöjärjestelmän vaihto (Sankari)", d: "Sankarin on vaihdettava kieltä ja puhuttava seuraavat 5 minuuttia pelkkää englantia.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'pokka' },
     { id: 97, n: "Spotterin virhe (Sankari)", d: "Sankarin on osoitettava baarista kolme mahdollista 'vaaran paikkaa' ja annettava niille IT-tukihenkinen korjaussuunnitelma.", p: 1, m: 0, b: true, r: 1, isHero: true, k: 'pokka' },
-    { id: 98, n: "C1-tason grippi (Sankari)", d: "Sankarin on pidettävä lasistaan kiinni erittäin oudolla otteella seuraavat 5 minuuttia.", p: 2, m: 1, b: true, r: 1, isHero: true, k: 'juoma' },
+    { id: 98, n: "C1-tason grippi (Sankari)", d: "Sankarin on pidettävä lasistaan kiinni erittäin oudolla otteella seuraavat 5 minuuttia.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'juoma' },
     { id: 99, n: "Bug Bounty (Sankari)", d: "Sankarin on etsittävä muiden pelaajien vaatetuksesta yksi 'bugi' ja kerrottava, miten se korjataan (esim. vino kaulus).", p: 1, m: 0, b: true, r: 1, isHero: true, k: 'pokka' },
-    { id: 100, n: "Air Drop Defense (Sankari)", d: "Sankarin on suojeltava omaa juomaansa niin, ettei kukaan saa koskea siihen 5 minuuttiin.", p: 2, m: 1, b: true, r: 1, isHero: true, k: 'juoma' },
-    { id: 101, n: "Mando-kierto (Sankari)", d: "Sankarin on noustava ylös ja kierrettävä koko seurue ympäri tehden samalla frisbeegolf-lähipeliä matkivia liikkeitä.", p: 2, m: 1, b: true, r: 1, isHero: true, k: 'liikunta' },
-    { id: 102, n: "System Overload (Sankari)", d: "Sankarin on lueteltava 10 IT-termiä, 10 frisbeegolf-termiä tai 10 PUBG-termiä 30 sekunnissa.", p: 3, m: 1, b: true, r: 1, isHero: true, k: 'pokka' }
+    { id: 100, n: "Air Drop Defense (Sankari)", d: "Sankarin on suojeltava omaa juomaansa niin, ettei kukaan saa koskea siihen 5 minuuttiin.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'juoma' },
+    { id: 101, n: "Mando-kierto (Sankari)", d: "Sankarin on noustava ylös ja kierrettävä koko seurue ympäri tehden samalla frisbeegolf-lähipeliä matkivia liikkeitä.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'liikunta' },
+    { id: 102, n: "System Overload (Sankari)", d: "Sankarin on lueteltava 10 IT-termiä, 10 frisbeegolf-termiä tai 10 PUBG-termiä 30 sekunnissa.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'pokka' }
 ];
 
 function logEvent(msg) {
@@ -250,7 +273,7 @@ window.resetGame = function() {
                 useCooldowns: true, strictVolunteer: false, excludeUsedTasks: true, bdayHero: null,
                 visibility: { title: true, points: true, category: true, drawCount: false, desc: false, minus: true, bday: true },
                 heroDraw: { include: true, weighted: false, interval: 4, drawCount: 0 },
-                disableHeroBonus: false, forceSinglePlayer: false // UUDET KYTKIMET
+                disableHeroBonus: false, forceSinglePlayer: false 
             }
         }).then(() => { localStorage.clear(); location.reload(); });
     }
@@ -289,7 +312,7 @@ db.ref('gameState').on('value', (snap) => {
     }
     
     taskLibrary = (data.tasks || []).map(t => {
-        if (t.id >= 83 && t.id <= 102) return { ...t, isHero: true };
+        if (t.id >= 83 && t.id <= 102) return { ...t, isHero: true, p: 1 }; // Varmistus sankaripisteille
         return t;
     });
 
@@ -325,7 +348,6 @@ db.ref('gameState').on('value', (snap) => {
         document.getElementById('weightHero').checked = !!heroDrawConfig.weighted;
         document.getElementById('heroInterval').value = heroDrawConfig.interval || 4;
 
-        // UUDET KATKAISIJAT PÄIVITTYVÄT UI:HIN
         if(document.getElementById('disableHeroBonus')) document.getElementById('disableHeroBonus').checked = !!config.disableHeroBonus;
         if(document.getElementById('forceSinglePlayer')) document.getElementById('forceSinglePlayer').checked = !!config.forceSinglePlayer;
     }
@@ -418,7 +440,6 @@ function showXPAnimation(points) {
     }, 400);
 }
 
-// UUSI GM-TYÖKALU: XP:n lennosta muokkaus
 window.changeTaskXP = function(taskId, delta) {
     db.ref(`gameState/activeTasks/${taskId}/p`).transaction(currentXP => {
         let newXP = (currentXP || 0) + delta;
@@ -560,13 +581,13 @@ function renderActiveTasks(tasksObj, config) {
             if (taskData.k === 'pokka') { catName = '🗣️ POKKA'; catClass = 'badge-pokka'; }
             if (taskData.k === 'liikunta') { catName = '🏃 TOIMINTA'; catClass = 'badge-liikunta'; }
             if (taskData.k === 'juoma') { catName = '🍻 JUOMA'; catClass = 'badge-juoma'; }
+            if (taskData.k === 'kilpailu') { catName = '⚔️ KILPAILU'; catClass = 'badge-kilpailu'; } // UUSI LUOKKA
             tagsHtml += `<div class="xp-badge ${catClass}" style="margin-bottom:10px; margin-right:5px;">${catName}</div>`;
         }
 
         if (!isHeroTask && (showFull || vis.drawCount)) { tagsHtml += `<div class="xp-badge" style="margin-bottom:10px; margin-right:5px;">👥 MAX ${taskData.r || 1} SUORITTAJAA</div>`; }
         if ((showFull || vis.minus) && taskData.m) { tagsHtml += `<div class="xp-badge" style="margin-bottom:10px; background:rgba(185,50,50,0.15); color:var(--danger); border-color:var(--danger); margin-right:5px;">⚠️ MIINUS-UHKA</div>`; }
         
-        // KORJAUS: Ei näytetä ollenkaan Sankaribonus-lätkää jos pääkatkaisija on kytketty päälle
         if (!config.disableHeroBonus && (showFull || vis.bday) && taskData.b) { 
             tagsHtml += `<div class="xp-badge" style="margin-bottom:10px; background:rgba(194,120,33,0.15); color:var(--gm-accent); border-color:var(--gm-accent); margin-right:5px;">🎂 SANKARIBONUS</div>`; 
         }
@@ -662,7 +683,6 @@ function renderActiveTasks(tasksObj, config) {
             
             gmHtml += `<div id="scoring-${taskId}" style="display:${isLocked || isHeroTask ? 'block' : 'none'};"></div>`;
             
-            // UUSI GM TYÖKALU: XP:N LENNNOSTA MUOKKAUS
             gmHtml += `
                 <div class="admin-row-stack" style="background:rgba(255,255,255,0.05); padding:8px 12px; border-radius:8px; margin-top:10px; justify-content:space-between;">
                     <span style="font-size:0.65rem; color:var(--muted); font-weight:bold;">TEHTÄVÄN XP-ARVO:</span>
@@ -696,7 +716,7 @@ function renderActiveTasks(tasksObj, config) {
         if (isGM) {
             if (!isHeroTask && !isLocked) {
                 renderGMGrid(taskId, results, isLocked, taskData.isLotteryRunning, config.useCooldowns, taskData);
-                updateDrawCountSelect(taskId, taskData, config.forceSinglePlayer); // KORJAUS!
+                updateDrawCountSelect(taskId, taskData, config.forceSinglePlayer);
             }
             if (isLocked || isHeroTask) {
                 renderScoringArea(taskId, results, isHeroTask, taskData.heroWin, taskData.heroReviewed);
@@ -998,8 +1018,8 @@ function lockParticipants(taskId, isMassAction = false) {
 function showScoring(taskId, isMassAction = false, extConfig = null) {
     db.ref('gameState').once('value', snap => {
         const d = snap.val();
-        const config = extConfig || d.config || {}; // Sallii massatoiminnon ajaa configin sisään
-        const disableBonus = !!config.disableHeroBonus; // UUSI PÄÄKATKAISIJA
+        const config = extConfig || d.config || {}; 
+        const disableBonus = !!config.disableHeroBonus; 
         
         const taskInstance = d.activeTasks[taskId];
         if(!taskInstance) return;
@@ -1028,10 +1048,9 @@ function showScoring(taskId, isMassAction = false, extConfig = null) {
                         earned += taskInstance.p; 
                         winnersNames.push(p.name); 
                     } else if(taskInstance.m) {
-                        earned -= taskInstance.p;
+                        earned -= taskInstance.p; // Tämä tekee miinuksesta aina yhtä suuren kuin palkkio!
                     }
                 } else if (idx === heroId && taskInstance.b && !disableBonus) {
-                    // KORJAUS 1: Ei passiivibonusta, jos admin on sulkenut sen
                     if (taskCompletedBySomeone) earned += 1; 
                 }
             }
@@ -1125,7 +1144,6 @@ function renderScoringArea(taskId, results, isHeroTask, heroWinState, heroReview
     sArea.appendChild(box);
 }
 
-// KORJAUS 1: Arvontavalikon rajoittaminen pääkatkaisijalla
 function updateDrawCountSelect(taskId, task, forceSinglePlayer) {
     const sel = document.getElementById(`drawCount-${taskId}`);
     if (!sel || sel.options.length > 0) return; 
@@ -1203,10 +1221,8 @@ function confirmRandomize() {
 
         if(pool.length === 0) pool = finalHero; 
 
-        // TEHTÄVÄN LUONTI
         const t = { ...pool[Math.floor(Math.random() * pool.length)] };
         
-        // KORJAUS 1: Ylikirjoitetaan pakotettu yksittäispelaaja lennosta
         if (config.forceSinglePlayer) t.r = 1;
 
         const instanceId = "t_" + Date.now();
@@ -1246,7 +1262,6 @@ function selectManualTask(idx) {
         
         const t = { ...taskLibrary[idx] };
         
-        // KORJAUS 1
         if (d.config?.forceSinglePlayer) t.r = 1;
 
         const instanceId = "t_" + Date.now();
