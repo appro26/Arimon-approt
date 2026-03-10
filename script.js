@@ -76,19 +76,18 @@ let leaderboardDirections = {};
 const APP_NAME = "Arimon Approt";
 document.title = APP_NAME;
 
-// --- TEHTÄVÄPAKKA (KORJATTU: b: false niistä joissa ei kohdetta 'synttärisankari') ---
 const defaultTasks = [
     { id: 1, n: "Mise en place", d: "Varmista, että kaikilla pöytäseurueen jäsenillä on lasissa juotavaa (myös vettä). Jos jollain on tyhjää, täytä lasia omalla juomallasi tai vedellä.", p: 2, m: 2, b: false, r: 2, k: 'juoma' },
     { id: 2, n: "Uudelleenkäynnistys (Reboot)", d: "Kaikkien suorittajien on juotava lasi vettä yhdeltä istumalta 'järjestelmän vakauttamiseksi'.", p: 1, m: 3, b: false, r: 3, k: 'juoma' },
     { id: 3, n: "Holari-yritys", d: "Heitä lasinalunen tyhjään tuoppiin tai lasiin 2 metrin etäisyydeltä. Kolme yritystä.", p: 2, m: 2, b: false, r: 2, k: 'liikunta' },
-    { id: 4, n: "Air Drop saapuu", d: "Tilaa valitsemallesi pelaajalle juoma (mieto tai alkoholiton käy).", p: 3, m: 1, b: false, r: 1, k: 'juoma' }, // KORJATTU b: false
+    { id: 4, n: "Air Drop saapuu", d: "Tilaa valitsemallesi pelaajalle juoma (mieto tai alkoholiton käy).", p: 3, m: 1, b: false, r: 1, k: 'juoma' }, 
     { id: 5, n: "Gordon Ramsay -palautekierros", d: "Kehu nykyisen baarin miljöötä tai juomavalikoimaa yhdelle tuntemattomalle asiakkaalle 'ammattilaisen otteella'.", p: 2, m: 1, b: false, r: 1, k: 'pokka' },
-    { id: 6, n: "Tikettijärjestelmän ruuhka", d: "Kuuntele valitsemasi pelaajan yksi valitsema muisto tai ongelma menneisyydestä keskeyttämättä. Lopuksi analysoi 'ratkaisu'.", p: 1, m: 2, b: false, r: 2, k: 'pokka' }, // KORJATTU b: false
+    { id: 6, n: "Tikettijärjestelmän ruuhka", d: "Kuuntele valitsemasi pelaajan yksi valitsema muisto tai ongelma menneisyydestä keskeyttämättä. Lopuksi analysoi 'ratkaisu'.", p: 1, m: 2, b: false, r: 2, k: 'pokka' }, 
     { id: 7, n: "Spotterin rooli", d: "Seuraa oikealla puolellasi istuvan pelaajan lasia 5 minuutin ajan. Jos hän aikoo laskea sen pöydälle ilman alusta, estä se tai aseta alunen alle.", p: 2, m: 1, b: false, r: 1, k: 'pokka' },
     { id: 8, n: "Level 3 -kypärä", d: "Pidä mukanasi jotain outoa esinettä (esim. tyhjä tölkki tai pilli) seuraavaan baariin asti hukkaamatta sitä.", p: 2, m: 2, b: false, r: 2, k: 'liikunta' },
     { id: 9, n: "Uunilohi palaa pohjaan", d: "Suorittajien on poistuttava välittömästi ulos 'tuulettumaan' 2 minuutiksi ilman puhelimia.", p: 1, m: 4, b: false, r: 4, k: 'liikunta' },
     { id: 10, n: "BIOS-päivitys", d: "Kerro vasemmalla puolellasi istuvalle pelaajalle yksi asia, jota hän ei vielä tiennyt sinusta (IT-salaisuus).", p: 1, m: 1, b: false, r: 1, k: 'pokka' },
-    { id: 11, n: "Caddy-palvelu", d: "Kanna valitsemasi pelaajan takkia tai laukkua seuraavaan siirtymään (tai baarin sisällä siirtyessä).", p: 2, m: 1, b: false, r: 1, k: 'liikunta' }, // KORJATTU b: false
+    { id: 11, n: "Caddy-palvelu", d: "Kanna valitsemasi pelaajan takkia tai laukkua seuraavaan siirtymään (tai baarin sisällä siirtyessä).", p: 2, m: 1, b: false, r: 1, k: 'liikunta' }, 
     { id: 12, n: "Pochinki Loot", d: "Hae koko seurueelle nippu ilmaisia servettejä tai pillejä tiskiltä ja jaa ne. Esineen saajan on kannettava sitä mukana seuraavaan baariin saakka tai tulee -1 xp.", p: 1, m: 1, b: false, r: 1, k: 'liikunta' },
     { id: 14, n: "Palomuuri (Firewall)", d: "Seiso valitsemasi toisen pelaajan ja muiden asiakkaiden välissä 'suojana' 3 minuutin ajan.", p: 2, m: 2, b: false, r: 2, k: 'pokka' },
     { id: 15, n: "OB-linja (Out of Bounds)", d: "Käy koskettamassa baarin kaukaisinta seinää ja palaa takaisin sanomatta sanaakaan matkalla.", p: 1, m: 3, b: false, r: 3, k: 'liikunta' },
@@ -97,22 +96,22 @@ const defaultTasks = [
     { id: 19, n: "Mandatory-kierto", d: "Nouse ylös! Ennen kuin istut alas, sinun on kierrettävä valittu pöytä tai tuoli myötäpäivään ympäri.", p: 1, m: 4, b: false, r: 4, k: 'liikunta' },
     { id: 22, n: "Etätuki-istunto", d: "Selitä toiselle pelaajalle mahdollisimman monimutkaisesti, miten jokin arkipäiväinen esine (esim. kynä) toimii.", p: 1, m: 1, b: false, r: 1, k: 'pokka' },
     { id: 23, n: "Putterin tarkkuus", d: "Liu'uta lasi pöytää pitkin mahdollisimman lähelle reunaa tippumatta. Kolme yritystä.", p: 2, m: 2, b: false, r: 2, k: 'liikunta' },
-    { id: 24, n: "Med Kit -huolto", d: "Hae synttärisankarille lasi vettä.", p: 3, m: 1, b: true, r: 1, k: 'juoma' }, // b: true koska synttärisankari!
+    { id: 24, n: "Med Kit -huolto", d: "Hae synttärisankarille lasi vettä.", p: 3, m: 1, b: true, r: 1, k: 'juoma' }, 
     { id: 26, n: "Käyttäjävirhe (User Error)", d: "Sano 'Olen pahoillani, kyseessä oli käyttäjävirhe' aina kun joku seurueesta tekee jotain kömpelöä seuraavan 10 min aikana.", p: 2, m: 1, b: false, r: 1, k: 'pokka' },
     { id: 27, n: "Fore!", d: "Huuda 'FORE!' (kohtuullisella volyymilla) aina kun joku seurueesta nousee seisomaan. Kesto 5 minuuttia.", p: 1, m: 2, b: false, r: 2, k: 'pokka' },
     { id: 28, n: "Blue Zone -siirtymä", d: "Seuraavaan baariin siirryttäessä suorittajien on kuljettava viimeisenä ja varmistettava, ettei ketään jää jälkeen.", p: 1, m: 2, b: false, r: 2, k: 'liikunta' },
     { id: 29, n: "Raaka-aineanalyysi", d: "Tunnista sokkona (silmät kiinni) mitä juomaa oikealla istuvan pelaajan lasissa on hajun perusteella.", p: 2, m: 1, b: false, r: 1, k: 'juoma' },
-    { id: 32, n: "Winner Winner Chicken Dinner", d: "Nouse ylös, tuuleta näyttävästi ja esitä syöväsi voiton kunniaksi kuvitteellista kana-ateriaa. Huuda lopuksi 'Winner Winner Chicken Dinner!'", p: 3, m: 1, b: false, r: 1, k: 'pokka' }, // KORJATTU b: false
+    { id: 32, n: "Winner Winner Chicken Dinner", d: "Nouse ylös, tuuleta näyttävästi ja esitä syöväsi voiton kunniaksi kuvitteellista kana-ateriaa. Huuda lopuksi 'Winner Winner Chicken Dinner!'", p: 3, m: 1, b: false, r: 1, k: 'pokka' }, 
     { id: 35, n: "Red Zone Survival", d: "Kyykisty pöydän alle suojaan 30 sekunniksi välittömästi, kun joku huutaa 'POMMI!'.", p: 1, m: 1, b: false, r: 3, k: 'liikunta' },
     { id: 36, n: "Pro-tason draiveri", d: "Heitä roskasi (esim. karkkipaperi tai kuitti) roskikseen vähintään 3 metrin päästä. Onnistuttava!", p: 2, m: 1, b: false, r: 1, k: 'liikunta' },
     { id: 37, n: "Tukipyyntö (Support Ticket)", d: "Käy kysymässä baarimikolta: 'Voitteko auttaa, minulla on yhteysongelma?'", p: 3, m: 1, b: false, r: 1, k: 'pokka' },
-    { id: 38, n: "Salasanan vaihto", d: "Keksi vasemmalla istuvalle pelaajalle uusi lempinimi, jota kaikkien on käytettävä seuraavat 10 minuuttia.", p: 2, m: 1, b: false, r: 1, k: 'pokka' }, // KORJATTU b: false
+    { id: 38, n: "Salasanan vaihto", d: "Keksi vasemmalla istuvalle pelaajalle uusi lempinimi, jota kaikkien on käytettävä seuraavat 10 minuuttia.", p: 2, m: 1, b: false, r: 1, k: 'pokka' }, 
     { id: 39, n: "UAV aktivoitu", d: "Käy tarkistamassa onko baarin toisessa huoneessa tai tiskillä tilaa ja raportoi takaisin.", p: 1, m: 0, b: false, r: 1, k: 'liikunta' },
     { id: 40, n: "Kiekon etsintä", d: "Etsi baarin lattialta tai pöytien alta jokin pudonnut esine ja palauta se omistajalle.", p: 1, m: 1, b: false, r: 2, k: 'liikunta' },
-    { id: 41, n: "Sous-viden lämpö", d: "Hiero valitsemasi pelaajan hartioita 1 minuutin ajan 'lämmittääksesi' hänet seuraavaan baariin.", p: 1, m: 0, b: false, r: 1, k: 'pokka' }, // KORJATTU b: false
+    { id: 41, n: "Sous-viden lämpö", d: "Hiero valitsemasi pelaajan hartioita 1 minuutin ajan 'lämmittääksesi' hänet seuraavaan baariin.", p: 1, m: 0, b: false, r: 1, k: 'pokka' }, 
     { id: 43, n: "Bridge Camping", d: "Seiso baarin oviaukon tai kapean kohdan lähellä 2 minuuttia 'vartioimassa' kulkua.", p: 2, m: 1, b: false, r: 2, k: 'pokka' },
     { id: 44, n: "Levyaseman virhe", d: "Vaihda kenkiäsi päittäin (vasen oikeaan ja oikea vasempaan) 5 minuutin ajaksi.", p: 2, m: 1, b: false, r: 1, k: 'liikunta' },
-    { id: 45, n: "Ping-mittaus", d: "Tökkää sormella viereisiä pelaajia olkapäähän ja sano 'Ping' aina kun he ottavat kulauksen juomastaan.", p: 1, m: 0, b: false, r: 1, k: 'pokka' }, // KORJATTU b: false
+    { id: 45, n: "Ping-mittaus", d: "Tökkää sormella viereisiä pelaajia olkapäähän ja sano 'Ping' aina kun he ottavat kulauksen juomastaan.", p: 1, m: 0, b: false, r: 1, k: 'pokka' }, 
     { id: 46, n: "Ethernet-kaapeli", d: "Muodosta 'yhteys' pitämällä kädestä kiinni naapuria 3 minuutin ajan keskeytyksettä.", p: 1, m: 1, b: false, r: 3, k: 'liikunta' },
     { id: 48, n: "Flippaava kiekko", d: "Pyörähdä 360 astetta paikallasi kerran aina kun joku seurueesta katsoo puhelintaan.", p: 2, m: 1, b: false, r: 1, k: 'liikunta' },
     { id: 49, n: "Salty Player", d: "Kerro jokin asia, joka sinua ärsyttää (IT-ongelma tai huono grippi) erittäin intohimoisesti.", p: 1, m: 0, b: false, r: 1, k: 'pokka' },
@@ -121,7 +120,7 @@ const defaultTasks = [
     { id: 53, n: "Ace-tuuletus", d: "Juokse baarin ympäri (tai lyhyt lenkki) kädet levällään kuin olisit tehnyt hole-in-onen.", p: 3, m: 1, b: false, r: 1, k: 'liikunta' },
     { id: 55, n: "Lagipiikki", d: "Nouse ylös! Liiku nykien lagisesti kun tulet takaisin istumaan.", p: 2, m: 1, b: false, r: 2, k: 'liikunta' },
     { id: 56, n: "Fore!-varoitus", d: "Aina kun joku laskee lasin pöytään, huuda 'FORE!' seuraavan 5 minuutin ajan.", p: 1, m: 1, b: false, r: 1, k: 'pokka' },
-    { id: 57, n: "Lootbox-yllätys", d: "Käy ostamasta valitsemallesi pelaajalle jokin yllätys tiskiltä (pähkinöitä, tikkarit, tms).", p: 3, m: 0, b: false, r: 1, k: 'juoma' }, // KORJATTU b: false
+    { id: 57, n: "Lootbox-yllätys", d: "Käy ostamasta valitsemallesi pelaajalle jokin yllätys tiskiltä (pähkinöitä, tikkarit, tms).", p: 3, m: 0, b: false, r: 1, k: 'juoma' }, 
     { id: 58, n: "Stack Overflow", d: "Pinoa 3 tyhjää lasia päällekkäin ja pidä ne pystyssä 1 minuutti.", p: 1, m: 1, b: false, r: 1, k: 'liikunta' },
     { id: 59, n: "Putti-putki", d: "Heitä kolikko tai korkki lasiin metrin päästä. Onnistuttava kerran kolmesta.", p: 2, m: 1, b: false, r: 2, k: 'liikunta' },
     { id: 60, n: "Uunilohi-muisto", d: "Kerro nolo tai hauska muisto ammattikoulun ajoilta. Jos et muista, juo lasi vettä.", p: 1, m: 0, b: false, r: 1, k: 'pokka' },
@@ -129,23 +128,23 @@ const defaultTasks = [
     { id: 62, n: "Ghillie-shotti", d: "Ota huikka juomastasi niin, että yrität olla mahdollisimman näkymätön (esim. takin alla).", p: 1, m: 1, b: false, r: 2, k: 'juoma' },
     { id: 63, n: "Ob-raja (Out of Bounds)", d: "Seuraavan siirtymän aikana et saa astua katuvalojen varjoihin (tai tiettyihin laattoihin).", p: 2, m: 1, b: false, r: 3, k: 'liikunta' },
     { id: 64, n: "Etätuki-puhelu", d: "Soita (tai teeskentele soittavasi) kaverille ja selitä miten baarijakkara 'asennetaan'.", p: 2, m: 1, b: false, r: 1, k: 'pokka' },
-    { id: 65, n: "Drop-alueen vartija", d: "Pidä kättäsi toisen pelaajan tuolin selkänojalla 5 minuuttia 'suojellen häntä'.", p: 1, m: 1, b: false, r: 1, k: 'pokka' }, // KORJATTU b: false
-    { id: 66, n: "Caddy-vinkki", d: "Suosittele toiselle pelaajalle seuraavaa liikettä tai juomaa 'ammattilaisen varmuudella'.", p: 1, m: 0, b: false, r: 1, k: 'pokka' }, // KORJATTU b: false
+    { id: 65, n: "Drop-alueen vartija", d: "Pidä kättäsi toisen pelaajan tuolin selkänojalla 5 minuuttia 'suojellen häntä'.", p: 1, m: 1, b: false, r: 1, k: 'pokka' }, 
+    { id: 66, n: "Caddy-vinkki", d: "Suosittele toiselle pelaajalle seuraavaa liikettä tai juomaa 'ammattilaisen varmuudella'.", p: 1, m: 0, b: false, r: 1, k: 'pokka' }, 
     { id: 67, n: "System Restore", d: "Istu täysin hiljaa ja silmät kiinni 30 sekuntia, kunnes 'boottaus' on valmis.", p: 1, m: 1, b: false, r: 2, k: 'pokka' },
     { id: 68, n: "Pan-haaste", d: "Pitele juomaasi kaksin käsin kuin se olisi painava paistinpannu seuraavat 5 minuuttia.", p: 1, m: 1, b: false, r: 1, k: 'liikunta' },
     { id: 69, n: "Ankkurilinkki", d: "Pidä jalkaasi toisen pelaajan jalan päällä seuraavan 3 minuutin ajan.", p: 1, m: 1, b: false, r: 2, k: 'liikunta' },
     { id: 71, n: "Scramble-peli", d: "Kaikki suorittajat vaihtavat paikkoja keskenään mahdollisimman nopeasti (juosten).", p: 1, m: 1, b: false, r: 4, k: 'liikunta' },
     { id: 72, n: "Bugiraportti", d: "Luettele 5 asiaa, jotka ovat 'vialla' nykyisessä sijainnissasi (vitsillä).", p: 1, m: 0, b: false, r: 1, k: 'pokka' },
-    { id: 73, n: "Air Drop -paketti", d: "Nosta valitsemasi pelaajan juoma ilmaan ja huuda: 'Paketti toimitettu!' aina kun hän aikoo juoda.", p: 2, m: 1, b: false, r: 1, k: 'pokka' }, // KORJATTU b: false
-    { id: 74, n: "Spotterin silmät", d: "Kuvaile muille pelaajille, mitä tapahtuu oikealla istuvan pelaajan selän takana ilman että hän kääntyy.", p: 1, m: 0, b: false, r: 1, k: 'pokka' }, // KORJATTU b: false
+    { id: 73, n: "Air Drop -paketti", d: "Nosta valitsemasi pelaajan juoma ilmaan ja huuda: 'Paketti toimitettu!' aina kun hän aikoo juoda.", p: 2, m: 1, b: false, r: 1, k: 'pokka' }, 
+    { id: 74, n: "Spotterin silmät", d: "Kuvaile muille pelaajille, mitä tapahtuu oikealla istuvan pelaajan selän takana ilman että hän kääntyy.", p: 1, m: 0, b: false, r: 1, k: 'pokka' }, 
     { id: 76, n: "Frisbee-ketjut", d: "Kilistä lasiasi jonkun toisen pelaajan lasin reunaan ja huuda 'Ketjuihin!' aina kun hän ottaa ensimmäisen huikan uudesta juomasta.", p: 1, m: 1, b: false, r: 1, k: 'juoma' },
     { id: 78, n: "Keittiömestarin tarkastus", d: "Maista (luvan kanssa) pienen pieni pala jonkun ruuasta tai tilkkanen juomasta ja anna arvosana.", p: 1, m: 0, b: false, r: 2, k: 'juoma' },
     { id: 79, n: "Full Auto -sarja", d: "Juo 5 pientä hörppyä juomaasi peräkkäin 'sarjatulella'.", p: 1, m: 0, b: false, r: 2, k: 'juoma' },
     { id: 80, n: "Kiekon palautus", d: "Käy viemässä tyhjä lasi tiskille (itse valitsemasi) mahdollisimman tyylikkäästi.", p: 1, m: 0, b: false, r: 1, k: 'liikunta' },
-    { id: 81, n: "Admin-komento", d: "Valitsemasi pelaaja joutuu kertomaan vitsin tai juomaan lasin vettä.", p: 2, m: 0, b: false, r: 2, k: 'pokka' }, // KORJATTU b: false
+    { id: 81, n: "Admin-komento", d: "Valitsemasi pelaaja joutuu kertomaan vitsin tai juomaan lasin vettä.", p: 2, m: 0, b: false, r: 2, k: 'pokka' }, 
     { id: 82, n: "Victory Dance", d: "Tee lyhyt ja energinen voittotanssi baarin lattialla (PUBG tyyliin).", p: 3, m: 1, b: false, r: 1, k: 'pokka' },
     
-    // --- UUDET TEHTÄVÄT (KUVISTA) TEEMOITETTUINA ---
+    // --- UUDET TEHTÄVÄT ---
     { id: 103, n: "Palvelimen hätätuuletus", d: "Jos näet sytytetyn kynttilän, sammuta se heiluttamalla paperia tai servettiä, jota pidät huulien välissä.", p: 3, m: true, b: false, r: 1, k: 'liikunta' },
     { id: 104, n: "Valkokastikkeen pohja", d: "Tilaa lasi maitoa tai kermaa (kermasta GM antaa extra pisteen). Jos juot lasin tyhjäksi saat 1 extra pisteen.", p: 1, m: true, b: false, r: 1, k: 'juoma' },
     { id: 105, n: "Hylätty Dacia", d: "Ota selfie likaisimman auton kanssa mitä löydät.", p: 1, m: true, b: false, r: 1, k: 'liikunta' },
@@ -156,7 +155,7 @@ const defaultTasks = [
     { id: 110, n: "Laajakaistan maksimointi", d: "Juo juoma käyttämällä vähintään viittä pilliä samaan aikaan.", p: 1, m: true, b: false, r: 1, k: 'juoma' },
     { id: 111, n: "Tasting-lusikka", d: "Juo juoma käyttämällä lusikkaa.", p: 3, m: true, b: false, r: 1, k: 'juoma' },
 
-    // --- SANKARITEHTÄVÄT (NÄISSÄ b:true OVAT AINA VOIMASSA) ---
+    // --- SANKARITEHTÄVÄT ---
     { id: 83, n: "Admin-huolto (Sankari)", d: "Sankarin on kerättävä seurueen kaikki tyhjät tölkit/lasit ja vietävä ne tiskille yksin.", p: 2, m: 1, b: true, r: 1, isHero: true, k: 'liikunta' },
     { id: 84, n: "Kiekon etsintä (Sankari)", d: "Sankari joutuu nousemaan ylös ja kävelemään baarin ympäri etsimässä 'kadonnutta kiekkoa'.", p: 2, m: 1, b: true, r: 1, isHero: true, k: 'liikunta' },
     { id: 85, n: "PUBG Emote (Sankari)", d: "Sankarin on esitettävä jokin PUBG-pelin tuuletus tai liike baarin keskellä mahdollisimman näyttävästi.", p: 3, m: 1, b: true, r: 1, isHero: true, k: 'pokka' },
@@ -186,9 +185,7 @@ function logEvent(msg) {
 
 window.toggleTaskHold = function(taskId) {
     db.ref(`gameState/activeTasks/${taskId}`).transaction(t => {
-        if(t) {
-            t.onHold = !t.onHold;
-        }
+        if(t) { t.onHold = !t.onHold; }
         return t;
     });
 };
@@ -252,7 +249,8 @@ window.resetGame = function() {
             config: { 
                 useCooldowns: true, strictVolunteer: false, excludeUsedTasks: true, bdayHero: null,
                 visibility: { title: true, points: true, category: true, drawCount: false, desc: false, minus: true, bday: true },
-                heroDraw: { include: true, weighted: false, interval: 4, drawCount: 0 }
+                heroDraw: { include: true, weighted: false, interval: 4, drawCount: 0 },
+                disableHeroBonus: false, forceSinglePlayer: false // UUDET KYTKIMET
             }
         }).then(() => { localStorage.clear(); location.reload(); });
     }
@@ -317,7 +315,7 @@ db.ref('gameState').on('value', (snap) => {
         
         document.getElementById('visTitle').checked = !!vis.title;
         document.getElementById('visPoints').checked = !!vis.points;
-        document.getElementById('visCategory').checked = !!vis.category; // UUSI KATEGORIA TÄPPÄ
+        document.getElementById('visCategory').checked = !!vis.category; 
         document.getElementById('visDrawCount').checked = !!vis.drawCount;
         document.getElementById('visDesc').checked = !!vis.desc;
         document.getElementById('visMinus').checked = !!vis.minus;
@@ -326,6 +324,10 @@ db.ref('gameState').on('value', (snap) => {
         document.getElementById('incHero').checked = !!heroDrawConfig.include;
         document.getElementById('weightHero').checked = !!heroDrawConfig.weighted;
         document.getElementById('heroInterval').value = heroDrawConfig.interval || 4;
+
+        // UUDET KATKAISIJAT PÄIVITTYVÄT UI:HIN
+        if(document.getElementById('disableHeroBonus')) document.getElementById('disableHeroBonus').checked = !!config.disableHeroBonus;
+        if(document.getElementById('forceSinglePlayer')) document.getElementById('forceSinglePlayer').checked = !!config.forceSinglePlayer;
     }
 
     if(document.getElementById('adminPanel').style.display === 'block') {
@@ -415,6 +417,14 @@ function showXPAnimation(points) {
         }, 2000);
     }, 400);
 }
+
+// UUSI GM-TYÖKALU: XP:n lennosta muokkaus
+window.changeTaskXP = function(taskId, delta) {
+    db.ref(`gameState/activeTasks/${taskId}/p`).transaction(currentXP => {
+        let newXP = (currentXP || 0) + delta;
+        return newXP < 0 ? 0 : newXP;
+    });
+};
 
 window.updateTaskDrawCount = function(taskId, val) {
     db.ref(`gameState/activeTasks/${taskId}/r`).set(parseInt(val));
@@ -545,7 +555,6 @@ function renderActiveTasks(tasksObj, config) {
         let tagsHtml = '';
         if (showFull || vis.points) { tagsHtml += `<div class="xp-badge" style="margin-bottom:10px; margin-right:5px;">${taskData.p} XP</div>`; }
         
-        // KORJAUS 2: Kategoria heti XP:n jälkeen
         if (taskData.k && (showFull || vis.category)) {
             let catName = '', catClass = '';
             if (taskData.k === 'pokka') { catName = '🗣️ POKKA'; catClass = 'badge-pokka'; }
@@ -556,7 +565,11 @@ function renderActiveTasks(tasksObj, config) {
 
         if (!isHeroTask && (showFull || vis.drawCount)) { tagsHtml += `<div class="xp-badge" style="margin-bottom:10px; margin-right:5px;">👥 MAX ${taskData.r || 1} SUORITTAJAA</div>`; }
         if ((showFull || vis.minus) && taskData.m) { tagsHtml += `<div class="xp-badge" style="margin-bottom:10px; background:rgba(185,50,50,0.15); color:var(--danger); border-color:var(--danger); margin-right:5px;">⚠️ MIINUS-UHKA</div>`; }
-        if ((showFull || vis.bday) && taskData.b) { tagsHtml += `<div class="xp-badge" style="margin-bottom:10px; background:rgba(194,120,33,0.15); color:var(--gm-accent); border-color:var(--gm-accent); margin-right:5px;">🎂 SANKARIBONUS</div>`; }
+        
+        // KORJAUS: Ei näytetä ollenkaan Sankaribonus-lätkää jos pääkatkaisija on kytketty päälle
+        if (!config.disableHeroBonus && (showFull || vis.bday) && taskData.b) { 
+            tagsHtml += `<div class="xp-badge" style="margin-bottom:10px; background:rgba(194,120,33,0.15); color:var(--gm-accent); border-color:var(--gm-accent); margin-right:5px;">🎂 SANKARIBONUS</div>`; 
+        }
         
         headerHtml += `<div style="margin-top:10px;">${tagsHtml}</div>`;
 
@@ -648,6 +661,19 @@ function renderActiveTasks(tasksObj, config) {
             }
             
             gmHtml += `<div id="scoring-${taskId}" style="display:${isLocked || isHeroTask ? 'block' : 'none'};"></div>`;
+            
+            // UUSI GM TYÖKALU: XP:N LENNNOSTA MUOKKAUS
+            gmHtml += `
+                <div class="admin-row-stack" style="background:rgba(255,255,255,0.05); padding:8px 12px; border-radius:8px; margin-top:10px; justify-content:space-between;">
+                    <span style="font-size:0.65rem; color:var(--muted); font-weight:bold;">TEHTÄVÄN XP-ARVO:</span>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <button class="btn btn-secondary" style="width:28px; height:28px; padding:0; margin:0; min-height:0;" onclick="changeTaskXP('${taskId}', -1)">-</button>
+                        <span style="font-weight:900; font-size:0.9rem; color:var(--accent); width:20px; text-align:center;">${taskData.p}</span>
+                        <button class="btn btn-secondary" style="width:28px; height:28px; padding:0; margin:0; min-height:0;" onclick="changeTaskXP('${taskId}', 1)">+</button>
+                    </div>
+                </div>
+            `;
+
             gmHtml += `<div style="display:flex; gap:10px; margin-top:8px;">
                             <button class="btn btn-success" id="finish-${taskId}" style="display:${(isLocked || isHeroTask) ? 'block' : 'none'}; flex:2; margin:0;" onclick="showScoring('${taskId}')">MERKITSE VALMIIKSI</button>
                             <button class="btn btn-secondary" style="flex:1; font-size:0.6rem; padding:8px; margin:0;" onclick="toggleGMSpy('${taskId}')">${isSpying ? 'PIILOTA' : 'SPEKSIT'}</button>
@@ -670,7 +696,7 @@ function renderActiveTasks(tasksObj, config) {
         if (isGM) {
             if (!isHeroTask && !isLocked) {
                 renderGMGrid(taskId, results, isLocked, taskData.isLotteryRunning, config.useCooldowns, taskData);
-                updateDrawCountSelect(taskId, taskData);
+                updateDrawCountSelect(taskId, taskData, config.forceSinglePlayer); // KORJAUS!
             }
             if (isLocked || isHeroTask) {
                 renderScoringArea(taskId, results, isHeroTask, taskData.heroWin, taskData.heroReviewed);
@@ -739,13 +765,16 @@ function lockAllTasks() {
 }
 
 function finishAllTasks() {
-    db.ref('gameState/activeTasks').once('value', snap => {
-        const tasks = snap.val() || {};
+    db.ref('gameState').once('value', snap => {
+        const d = snap.val();
+        const tasks = d.activeTasks || {};
+        const config = d.config || {};
         let finishTriggered = 0;
+        
         Object.keys(tasks).forEach(taskId => {
             const taskData = tasks[taskId];
             if (!taskData.onHold && (taskData.locked || taskData.isHero)) {
-                showScoring(taskId, true); 
+                showScoring(taskId, true, config); 
                 finishTriggered++;
             }
         });
@@ -966,14 +995,17 @@ function lockParticipants(taskId, isMassAction = false) {
     });
 }
 
-function showScoring(taskId, isMassAction = false) {
+function showScoring(taskId, isMassAction = false, extConfig = null) {
     db.ref('gameState').once('value', snap => {
         const d = snap.val();
+        const config = extConfig || d.config || {}; // Sallii massatoiminnon ajaa configin sisään
+        const disableBonus = !!config.disableHeroBonus; // UUSI PÄÄKATKAISIJA
+        
         const taskInstance = d.activeTasks[taskId];
         if(!taskInstance) return;
         
         const res = taskInstance.participants || [];
-        const heroId = d.config?.bdayHero;
+        const heroId = config.bdayHero;
         let used = d.usedTaskIds || [];
         used.push(taskInstance.id);
         
@@ -998,7 +1030,8 @@ function showScoring(taskId, isMassAction = false) {
                     } else if(taskInstance.m) {
                         earned -= taskInstance.p;
                     }
-                } else if (idx === heroId && taskInstance.b) {
+                } else if (idx === heroId && taskInstance.b && !disableBonus) {
+                    // KORJAUS 1: Ei passiivibonusta, jos admin on sulkenut sen
                     if (taskCompletedBySomeone) earned += 1; 
                 }
             }
@@ -1092,10 +1125,12 @@ function renderScoringArea(taskId, results, isHeroTask, heroWinState, heroReview
     sArea.appendChild(box);
 }
 
-function updateDrawCountSelect(taskId, task) {
+// KORJAUS 1: Arvontavalikon rajoittaminen pääkatkaisijalla
+function updateDrawCountSelect(taskId, task, forceSinglePlayer) {
     const sel = document.getElementById(`drawCount-${taskId}`);
     if (!sel || sel.options.length > 0) return; 
-    const max = Math.max(allPlayers.length, 1);
+    
+    const max = forceSinglePlayer ? 1 : Math.max(allPlayers.length, 1);
     for (let i = 1; i <= max; i++) {
         const opt = document.createElement('option');
         opt.value = i; opt.innerText = i;
@@ -1168,7 +1203,12 @@ function confirmRandomize() {
 
         if(pool.length === 0) pool = finalHero; 
 
-        const t = pool[Math.floor(Math.random() * pool.length)];
+        // TEHTÄVÄN LUONTI
+        const t = { ...pool[Math.floor(Math.random() * pool.length)] };
+        
+        // KORJAUS 1: Ylikirjoitetaan pakotettu yksittäispelaaja lennosta
+        if (config.forceSinglePlayer) t.r = 1;
+
         const instanceId = "t_" + Date.now();
         
         let updates = {};
@@ -1204,7 +1244,11 @@ function selectManualTask(idx) {
             db.ref('gameState/players').set(updatedPlayers);
         }
         
-        const t = taskLibrary[idx];
+        const t = { ...taskLibrary[idx] };
+        
+        // KORJAUS 1
+        if (d.config?.forceSinglePlayer) t.r = 1;
+
         const instanceId = "t_" + Date.now();
         db.ref(`gameState/activeTasks/${instanceId}`).set({ 
             ...t, 
