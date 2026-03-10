@@ -69,7 +69,6 @@ let winnerTimeout = null;
 let pendingXP = 0;
 let xpTimeout = null;
 
-// Leaderboard Nuolilogiikan muuttujat
 let leaderboardScoresStr = "";
 let leaderboardPrevRanks = {};
 let leaderboardDirections = {};
@@ -77,7 +76,7 @@ let leaderboardDirections = {};
 const APP_NAME = "Arimon Approt";
 document.title = APP_NAME;
 
-// --- TEHTÄVÄPAKKA ---
+// --- TEHTÄVÄPAKKA (PÄIVITETTY UUSILLA TEEMOILLA) ---
 const defaultTasks = [
     { id: 1, n: "Mise en place", d: "Varmista, että kaikilla pöytäseurueen jäsenillä on lasissa juotavaa (myös vettä). Jos jollain on tyhjää, täytä lasia omalla juomallasi tai vedellä.", p: 2, m: 2, b: false, r: 2 },
     { id: 2, n: "Uudelleenkäynnistys (Reboot)", d: "Kaikkien suorittajien on juotava lasi vettä yhdeltä istumalta 'järjestelmän vakauttamiseksi'.", p: 1, m: 3, b: false, r: 3 },
@@ -146,16 +145,16 @@ const defaultTasks = [
     { id: 81, n: "Admin-komento", d: "Sankari saa päättää, kuka suorittajista joutuu kertomaan vitsin tai juomaan lasin vettä.", p: 2, m: 0, b: true, r: 2 },
     { id: 82, n: "Victory Dance", d: "Tee lyhyt ja energinen voittotanssi baarin lattialla (PUBG tyyliin).", p: 3, m: 1, b: false, r: 1 },
     
-    // --- UUDET TEHTÄVÄT (KUVISTA) ---
-    { id: 103, n: "Kynttilän sammutus", d: "Jos näet sytytetyn kynttilän, sammuta se heiluttamalla paperia tai servettiä, jota pidät huulien välissä.", p: 3, m: true, b: false, r: 1 },
-    { id: 104, n: "Maitoa tai kermaa", d: "Tilaa lasi maitoa tai kermaa (kermasta GM antaa extra pisteen). Jos juot lasin tyhjäksi saat 1 extra pisteen.", p: 1, m: true, b: false, r: 1 },
-    { id: 105, n: "Likaisin auto", d: "Ota selfie likaisimman auton kanssa mitä löydät.", p: 1, m: true, b: false, r: 1 },
-    { id: 106, n: "Vieraskielinen", d: "Puhu seuraavassa baarissa ainoastaan jotain muuta kieltä kuin suomea tai englantia.", p: 3, m: true, b: false, r: 1 },
-    { id: 107, n: "Juomatilauksen hypetys", d: "Hypetä jonkun juomatilausta minuutin ajan (jos random GM antaa extra 2 pistettä).", p: 1, m: true, b: false, r: 1 },
-    { id: 108, n: "Sokea ryhmäcocktail", d: "Suunnitelkaa ryhmäcocktail ilman että kukaan tietää cocktailin muita ainesosia kuin omansa ja tilatkaa jokaiselle kyseinen cocktail. Juomalle täytyy antaa nimi ja ryhmän tulee ottaa kuva juoman kanssa.", p: 1, m: false, b: false, r: 3 }, // Tähän poikkeuksellisesti ei miinusta (Kuvan ohje)
-    { id: 109, n: "Juottaja", d: "Seuraavassa baarissa et saa itse juoda, jonkun täytyy juottaa sinua (jos random GM antaa extra 2 pistettä).", p: 2, m: true, b: false, r: 1 },
-    { id: 110, n: "Viisi pilliä", d: "Juo juoma käyttämällä vähintään viittä pilliä samaan aikaan.", p: 1, m: true, b: false, r: 1 },
-    { id: 111, n: "Lusikkajuoma", d: "Juo juoma käyttämällä lusikkaa.", p: 3, m: true, b: false, r: 1 },
+    // --- UUDET TEHTÄVÄT (KUVISTA) TEEMOITETTUINA ---
+    { id: 103, n: "Palvelimen hätätuuletus", d: "Jos näet sytytetyn kynttilän, sammuta se heiluttamalla paperia tai servettiä, jota pidät huulien välissä.", p: 3, m: true, b: false, r: 1 },
+    { id: 104, n: "Valkokastikkeen pohja", d: "Tilaa lasi maitoa tai kermaa (kermasta GM antaa extra pisteen). Jos juot lasin tyhjäksi saat 1 extra pisteen.", p: 1, m: true, b: false, r: 1 },
+    { id: 105, n: "Hylätty Dacia", d: "Ota selfie likaisimman auton kanssa mitä löydät.", p: 1, m: true, b: false, r: 1 },
+    { id: 106, n: "Random Squad -voicechat", d: "Puhu seuraavassa baarissa ainoastaan jotain muuta kieltä kuin suomea tai englantia.", p: 3, m: true, b: false, r: 1 },
+    { id: 107, n: "Hole-in-one -hype", d: "Hypetä jonkun juomatilausta minuutin ajan (jos random GM antaa extra 2 pistettä).", p: 1, m: true, b: false, r: 1 },
+    { id: 108, n: "Mystery Box -haaste", d: "Suunnitelkaa ryhmäcocktail ilman että kukaan tietää cocktailin muita ainesosia kuin omansa ja tilatkaa jokaiselle kyseinen cocktail. Juomalle täytyy antaa nimi ja ryhmän tulee ottaa kuva juoman kanssa.", p: 1, m: false, b: false, r: 3 },
+    { id: 109, n: "Etätyöpöytä (Remote Desktop)", d: "Seuraavassa baarissa et saa itse juoda, jonkun täytyy juottaa sinua (jos random GM antaa extra 2 pistettä).", p: 2, m: true, b: false, r: 1 },
+    { id: 110, n: "Laajakaistan maksimointi", d: "Juo juoma käyttämällä vähintään viittä pilliä samaan aikaan.", p: 1, m: true, b: false, r: 1 },
+    { id: 111, n: "Tasting-lusikka", d: "Juo juoma käyttämällä lusikkaa.", p: 3, m: true, b: false, r: 1 },
 
     // --- SANKARITEHTÄVÄT ---
     { id: 83, n: "Admin-huolto (Sankari)", d: "Sankarin on kerättävä seurueen kaikki tyhjät tölkit/lasit ja vietävä ne tiskille yksin.", p: 2, m: 1, b: true, r: 1, isHero: true },
@@ -168,6 +167,7 @@ const defaultTasks = [
     { id: 90, n: "Blue Zone -juoksu (Sankari)", d: "Sankarin on käytävä koskettamassa baarin ulko-ovea ja palattava 15 sekunnissa takaisin.", p: 2, m: 1, b: true, r: 1, isHero: true },
     { id: 91, n: "Hardware Troubleshooting (Sankari)", d: "Sankarin on selitettävä jollekin pelaajalle tai tuntemattomalle asiakkaalle, miten frisbeegolfin pituusdraivi tai IT-tuki toimii.", p: 3, m: 1, b: true, r: 1, isHero: true },
     { id: 92, n: "Chef's Special (Sankari)", d: "Sankarin on loihdittava 'annos' eli koottava pöydän snacks-kulhosta näyttävä taideteos ja syötävä se.", p: 1, m: 0, b: true, r: 1, isHero: true },
+    { id: 93, n: "Palvelinhuoneen hämärä (Sankari)", d: "Sankarin on suoritettava seuraava tilauksensa tai keskustelunsa kuiskaamalla, kuin hän olisi salaisessa palvelinruumissa.", p: 1, m: 1, b: true, r: 1, isHero: true },
     { id: 94, n: "Range-treeni (Sankari)", d: "Sankarin on 'heitettävä' viisi erilaista frisbeegolf-kiekkoa ja selitettävä niiden lentoradat seurueelle.", p: 2, m: 0, b: true, r: 1, isHero: true },
     { id: 95, n: "Loot-varkaus (Sankari)", d: "Sankarin on onnistuttava ottamaan yksi hörppy jonkun muun lasista niin, ettei kukaan huomaa (stealth mode).", p: 3, m: 1, b: true, r: 1, isHero: true },
     { id: 96, n: "Käyttöjärjestelmän vaihto (Sankari)", d: "Sankarin on vaihdettava kieltä ja puhuttava seuraavat 5 minuuttia pelkkää englantia.", p: 2, m: 1, b: true, r: 1, isHero: true },
