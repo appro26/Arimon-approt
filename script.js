@@ -14,12 +14,9 @@ function checkInstallStatus() {
     const installCard = document.getElementById('installCard');
     const instructionText = document.getElementById('installInstruction');
     const installBtn = document.getElementById('installBtn');
-
     const isDismissed = localStorage.getItem('appro_install_dismissed') === 'true';
 
-    if (isStandalone || isDismissed) {
-        if (installCard) installCard.style.display = 'none'; return; 
-    }
+    if (isStandalone || isDismissed) { if (installCard) installCard.style.display = 'none'; return; }
 
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
     if (installCard) installCard.style.display = 'block';
@@ -36,9 +33,7 @@ function checkInstallStatus() {
                 const { outcome } = await deferredPrompt.userChoice;
                 if (outcome === 'accepted') { installCard.style.display = 'none'; }
                 deferredPrompt = null;
-            } else {
-                alert("Asennus ei onnistu suoraan tästä selaimesta. Käytä Chromea tai valitse valikosta 'Asenna sovellus'.");
-            }
+            } else { alert("Asennus ei onnistu suoraan tästä selaimesta. Käytä Chromea tai valitse valikosta 'Asenna sovellus'."); }
         };
     }
 }
@@ -60,7 +55,6 @@ let localSpyState = {};
 let lastMyScore = null;
 let lastKnownTasks = {}; 
 let taskHistory = [];
-
 let wasInGame = false; 
 
 let isPlayerCompactMode = false;
@@ -71,6 +65,11 @@ let pendingWinnerTasks = [];
 let winnerTimeout = null;
 let pendingXP = 0;
 let xpTimeout = null;
+
+// Leaderboard Nuolilogiikan muuttujat
+let leaderboardScoresStr = "";
+let leaderboardPrevRanks = {};
+let leaderboardDirections = {};
 
 const APP_NAME = "Arimon Approt";
 document.title = APP_NAME;
@@ -159,6 +158,8 @@ const defaultTasks = [
     { id: 80, n: "Kiekon palautus", d: "Käy viemässä tyhjä lasi tiskille (itse valitsemasi) mahdollisimman tyylikkäästi.", p: 1, m: 0, b: false, r: 1 },
     { id: 81, n: "Admin-komento", d: "Sankari saa päättää, kuka suorittajista joutuu kertomaan vitsin tai juomaan lasin vettä.", p: 2, m: 0, b: true, r: 2 },
     { id: 82, n: "Victory Dance", d: "Tee lyhyt ja energinen voittotanssi baarin lattialla (PUBG tyyliin).", p: 3, m: 1, b: false, r: 1 },
+    
+    // --- SANKARITEHTÄVÄT ---
     { id: 83, n: "Admin-huolto (Sankari)", d: "Sankarin on kerättävä seurueen kaikki tyhjät tölkit/lasit ja vietävä ne tiskille yksin.", p: 2, m: 1, b: true, r: 1, isHero: true },
     { id: 84, n: "Kiekon etsintä (Sankari)", d: "Sankari joutuu nousemaan ylös ja kävelemään baarin ympäri etsimässä 'kadonnutta kiekkoa' silmät kiinni ohjattuna.", p: 2, m: 1, b: true, r: 1, isHero: true },
     { id: 85, n: "PUBG Emote (Sankari)", d: "Sankarin on esitettävä jokin PUBG-pelin tuuletus tai liike baarin keskellä mahdollisimman näyttävästi.", p: 3, m: 1, b: true, r: 1, isHero: true },
@@ -199,7 +200,7 @@ window.toggleIndividualTask = function(taskId) {
 
 window.toggleGMCompactMode = function() {
     isGMCompactMode = !isGMCompactMode;
-    window.localTaskCompactState = {}; // Nollaa yksittäiset ja pakottaa kaikki!
+    window.localTaskCompactState = {}; 
     const btn = document.getElementById('gmCompactToggleBtn');
     if (btn) btn.innerText = isGMCompactMode ? 'LAAJENNA NÄKYMÄ KAIKISTA' : 'SUPISTA NÄKYMÄ KAIKISTA';
     db.ref('gameState').once('value', snap => {
@@ -358,6 +359,7 @@ function triggerWinnerOverlay(tasksHtml) {
     setTimeout(() => { overlay.style.display = 'none'; }, 2500); 
 }
 
+// KORJAUS 3: Uusi upea XP-mitali animaatio!
 function showXPAnimation(points) {
     if (points === 0) return;
     pendingXP += points;
@@ -366,15 +368,21 @@ function showXPAnimation(points) {
     xpTimeout = setTimeout(() => {
         const pop = document.getElementById('xpPopUp');
         if(!pop) return;
-        pop.style.display = 'block';
-        pop.style.color = pendingXP > 0 ? "var(--success)" : "var(--danger)";
-        pop.innerText = (pendingXP > 0 ? "+" : "") + pendingXP + " XP";
-        pop.classList.remove('xp-animate'); 
-        void pop.offsetWidth; 
-        pop.classList.add('xp-animate');
+        pop.style.display = 'flex';
+        
+        if (pendingXP > 0) {
+            pop.className = 'xp-popup success xp-animate';
+            pop.innerText = `+${pendingXP} XP`;
+        } else {
+            pop.className = 'xp-popup danger xp-animate';
+            pop.innerText = `${pendingXP} XP`;
+        }
         
         pendingXP = 0;
-        setTimeout(() => { pop.style.display = 'none'; }, 2200);
+        setTimeout(() => { 
+            pop.style.display = 'none'; 
+            pop.className = 'xp-popup'; 
+        }, 2500);
     }, 400);
 }
 
@@ -499,16 +507,36 @@ function renderActiveTasks(tasksObj, config) {
         if ((showFull || vis.bday) && taskData.b) { tagsHtml += `<div class="xp-badge" style="margin-bottom:10px; background:rgba(194,120,33,0.15); color:var(--gm-accent); border-color:var(--gm-accent);">🎂 SANKARIBONUS</div>`; }
         headerHtml += `<div>${tagsHtml}</div>`;
 
-        // KORJAUS 4: Nimiä ei näytetä supistetussa tilassa jos ollaan jo vaiheessa 3 (lukittu)
+        // KORJAUS 1 & 4: Kompakti nimitieto näkyy VAIN kun EI olla lukittu-tilassa (Koska vaihe 3 näyttää ne muutenkin)
         let compactNamesHtml = "";
-        if (isGM && !isHeroTask && !isLocked) {
-            if (results.length > 0) {
-                let names = results.map(r => r.name).join(', ');
-                let label = taskData.drawn ? "ARVOTTU:" : "ILMOITTAUTUNEET:";
-                let color = taskData.drawn ? "var(--success)" : "var(--accent)";
-                compactNamesHtml = `<span style="color:${color};">${label}</span> <span style="color:#fff;">${names}</span>`;
+        if (isGM && !isHeroTask) {
+            if (isLocked) {
+                // Vaihe 3 (Lukittu): Näytetään erittäin pienellä Win/Fail tila jos ohjeet on supistettu piiloon
+                if (results.length > 0) {
+                    let details = results.map(r => {
+                        let st = r.win ? '<span style="color:var(--success)">WIN</span>' : '<span style="color:var(--danger)">FAIL</span>';
+                        return `${r.name}: ${st}`;
+                    }).join(' | ');
+                    compactNamesHtml = `<div style="font-size:0.6rem; background:rgba(0,0,0,0.5); padding:4px 8px; border-radius:6px; margin-bottom:4px;"><b>SUORITUKSET:</b> ${details}</div>`;
+                } else {
+                    compactNamesHtml = `<span style="color:var(--muted); font-size:0.65rem;">Ei suorittajia.</span>`;
+                }
             } else {
-                compactNamesHtml = `<span style="color:var(--muted);">Ei ilmoittautuneita vielä.</span>`;
+                // Vaihe 1 & 2: Näytetään keitä on mukana / arvottu
+                if (results.length > 0) {
+                    let names = results.map(r => r.name).join(', ');
+                    let label = taskData.drawn ? "ARVOTTU:" : "ILMOITTAUTUNEET:";
+                    let color = taskData.drawn ? "var(--success)" : "var(--accent)";
+                    compactNamesHtml = `<div style="font-size:0.65rem; margin-bottom:4px;"><span style="color:${color}; font-weight:bold;">${label}</span> <span style="color:#fff;">${names}</span></div>`;
+                } else {
+                    compactNamesHtml = `<div style="font-size:0.65rem; color:var(--muted); margin-bottom:4px;">Ei ilmoittautuneita vielä.</div>`;
+                }
+            }
+        } else if (isGM && isHeroTask) {
+            if (isLocked) {
+                let hw = (taskData.heroWin !== false);
+                let st = hw ? '<span style="color:var(--success)">WIN</span>' : '<span style="color:var(--danger)">FAIL</span>';
+                compactNamesHtml = `<div style="font-size:0.6rem; background:rgba(0,0,0,0.5); padding:4px 8px; border-radius:6px; margin-bottom:4px;"><b>SANKARI:</b> ${st}</div>`;
             }
         }
 
@@ -631,7 +659,6 @@ function drawAllTasks() {
                     let list = taskData.participants || [];
                     let shuffled = [...list].sort(() => 0.5 - Math.random());
                     
-                    // KORJAUS 5: Oletus-Win tila alussa (reviewed = false)
                     let winners = shuffled.slice(0, count).map(p => ({ ...p, win: true, reviewed: false }));
 
                     updatesFinish[`${taskId}/participants`] = winners;
@@ -946,7 +973,6 @@ function showScoring(taskId, isMassAction = false) {
     });
 }
 
-// KORJAUS 5: Älykäs 3-vaiheinen painike sankareille
 window.toggleHeroTaskWin = function(taskId) {
     db.ref(`gameState/activeTasks/${taskId}`).transaction(t => {
         if(t) {
@@ -1028,7 +1054,6 @@ function updateDrawCountSelect(taskId, task) {
     }
 }
 
-// KORJAUS 5: Älykäs 3-vaiheinen painike tavallisille
 function toggleWin(taskId, i) { 
     db.ref(`gameState/activeTasks/${taskId}/participants/${i}`).transaction(p => {
         if(p) {
@@ -1097,6 +1122,7 @@ function confirmRandomize() {
         const instanceId = "t_" + Date.now();
         
         let updates = {};
+        // KORJAUS 1: Sankaritehtävä on suoraan lukittu vaiheeseen 3!
         updates[`gameState/activeTasks/${instanceId}`] = { 
             ...t, 
             locked: t.isHero ? true : false, 
@@ -1251,17 +1277,44 @@ function adminCreateTask() {
     logEvent(`Admin (${adminName}) loi uuden tehtävän kirjastoon: ${n}`);
 }
 
+// KORJAUS 4: Nousevat ja laskevat sijoitusnuolet!
 function renderLeaderboard(showCD, heroId) {
     const list = document.getElementById('playerList');
+    if(!list) return;
+    
+    let sortedPlayers = [...allPlayers].sort((a,b) => b.score - a.score);
+    const newScoresStr = sortedPlayers.map(p => p.name + p.score).join('|');
+    
+    if (newScoresStr !== leaderboardScoresStr) {
+        let newRanks = {};
+        sortedPlayers.forEach((p, index) => {
+            newRanks[p.name] = index;
+            if (leaderboardPrevRanks[p.name] !== undefined) {
+                if (index < leaderboardPrevRanks[p.name]) leaderboardDirections[p.name] = 'up';
+                else if (index > leaderboardPrevRanks[p.name]) leaderboardDirections[p.name] = 'down';
+                else leaderboardDirections[p.name] = 'same';
+            } else {
+                leaderboardDirections[p.name] = 'same';
+            }
+        });
+        leaderboardPrevRanks = newRanks;
+        leaderboardScoresStr = newScoresStr;
+    }
+
     list.innerHTML = '';
-    [...allPlayers].sort((a,b) => b.score - a.score).forEach((p) => {
+    sortedPlayers.forEach((p) => {
         const pIdx = allPlayers.findIndex(x => x.name === p.name);
         const isHero = heroId !== null && pIdx === heroId;
         const div = document.createElement('div');
         div.className = `player-row ${p.name === myName ? 'me' : ''} ${isHero ? 'is-hero' : ''} ${p.cooldown > 0 ? 'on-cooldown' : ''}`;
         
         const cdText = (showCD && p.cooldown > 0) ? ' <small style="color:var(--danger)">[JÄÄHY]</small>' : '';
-        div.innerHTML = `<span>${isHero?'🎂 ':''}${p.name}${cdText}</span><span class="xp-badge">${p.score} XP</span>`;
+        
+        let dirIcon = '';
+        if (leaderboardDirections[p.name] === 'up') dirIcon = ' <span style="color:var(--success); font-size:0.8rem; font-weight:900;">▲</span>';
+        else if (leaderboardDirections[p.name] === 'down') dirIcon = ' <span style="color:var(--danger); font-size:0.8rem; font-weight:900;">▼</span>';
+
+        div.innerHTML = `<span>${isHero?'🎂 ':''}${p.name}${cdText}${dirIcon}</span><span class="xp-badge">${p.score} XP</span>`;
         list.appendChild(div);
     });
 }
