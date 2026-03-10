@@ -336,9 +336,7 @@ function checkForNewWinnerPopups(newTasks) {
         localStorage.setItem('appro_seen_popups', JSON.stringify(seenPopups)); 
         if (winnerTimeout) clearTimeout(winnerTimeout);
         winnerTimeout = setTimeout(() => {
-            const html = pendingWinnerTasks.length > 1 
-                ? pendingWinnerTasks.map(n => `&bull; ${n}`).join('<br>') 
-                : pendingWinnerTasks[0];
+            const html = pendingWinnerTasks.map(n => `<div>${n}</div>`).join('');
             triggerWinnerOverlay(html);
             pendingWinnerTasks = []; 
         }, 500);
@@ -370,7 +368,7 @@ function showXPAnimation(points) {
     xpTimeout = setTimeout(() => {
         const pop = document.getElementById('xpPopUp');
         if(!pop) return;
-        pop.style.display = 'flex';
+        pop.style.display = 'block';
         
         if (pendingXP > 0) {
             pop.className = 'xp-popup success xp-animate';
@@ -448,13 +446,12 @@ function renderActiveTasks(tasksObj, config) {
                             <div class="t-desc"></div>
                         </div>
                         <div class="t-action"></div>
-                        <div class="t-gm gm-only"></div>
                     </div>
                 </div>
+                <div class="t-gm gm-only"></div>
             `;
             container.appendChild(card);
         } else {
-            // Päivitä sumentumisen poisto-luokka (Speksit nappia varten)
             const blurArea = card.querySelector('.blur-reveal-area');
             if (blurArea) {
                 if (isSpying) blurArea.classList.add('blur-removed');
@@ -589,16 +586,16 @@ function renderActiveTasks(tasksObj, config) {
                 const isDrawn = taskData.drawn;
                 const drawOpacity = isDrawn ? '0.4' : '1';
                 const lockOpacity = (hasParticipants && isDrawn) ? '1' : '0.4';
-                const lockPulse = (hasParticipants && isDrawn) ? 'box-shadow: 0 0 15px var(--success); transform: scale(1.02);' : '';
+                const lockPulse = (hasParticipants && isDrawn) ? 'box-shadow: 0 0 15px var(--accent); transform: scale(1.02);' : '';
 
                 gmHtml += `
                     <div class="volunteer-selector-grid" id="grid-${taskId}"></div>
                     <div class="admin-row-stack">
                         <div style="display:flex; gap:8px; flex:1; opacity:${drawOpacity}; transition:all 0.3s;">
                             <select id="drawCount-${taskId}" style="flex:1; margin:0;" onchange="updateTaskDrawCount('${taskId}', this.value)"></select>
-                            <button class="btn btn-gm" style="flex:2; margin:0;" onclick="drawRandom('${taskId}')">ARVO PELAAJAT</button>
+                            <button class="btn btn-arvo" style="flex:2; margin:0;" onclick="drawRandom('${taskId}')">ARVO PELAAJAT</button>
                         </div>
-                        <button class="btn btn-success" style="margin:0; font-size:0.75rem; padding:12px; opacity:${lockOpacity}; ${lockPulse} transition:all 0.3s;" onclick="lockParticipants('${taskId}')">LUKITSE VALINNAT</button>
+                        <button class="btn btn-primary" style="margin:0; font-size:0.75rem; padding:12px; opacity:${lockOpacity}; ${lockPulse} transition:all 0.3s;" onclick="lockParticipants('${taskId}')">LUKITSE VALINNAT</button>
                     </div>
                 `;
             }
@@ -1128,7 +1125,6 @@ function confirmRandomize() {
         const instanceId = "t_" + Date.now();
         
         let updates = {};
-        // Sankaritehtävä lukitaan automaattisesti luonnin yhteydessä
         updates[`gameState/activeTasks/${instanceId}`] = { 
             ...t, 
             locked: t.isHero ? true : false, 
@@ -1283,7 +1279,6 @@ function adminCreateTask() {
     logEvent(`Admin (${adminName}) loi uuden tehtävän kirjastoon: ${n}`);
 }
 
-// KORJAUS 5: Oikeaoppinen kilpailusijoitus tasapisteillä!
 function renderLeaderboard(showCD, heroId) {
     const list = document.getElementById('playerList');
     if(!list) return;
@@ -1297,7 +1292,6 @@ function renderLeaderboard(showCD, heroId) {
         let currentRank = 1;
         let prevScore = -1;
         
-        // Kilpailusijoitus (1, 2, 2, 4)
         sortedPlayers.forEach((p, index) => {
             if (p.score !== prevScore) {
                 currentRank = index + 1; 
