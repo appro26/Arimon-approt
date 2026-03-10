@@ -53,9 +53,7 @@ window.dismissInstallPrompt = function() {
     if (installCard) installCard.style.display = 'none';
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-    checkInstallStatus();
-});
+document.addEventListener('DOMContentLoaded', checkInstallStatus);
 
 // --- GLOBAALIT MUUTTUJAT ---
 let myName = localStorage.getItem('appro_name') || null;
@@ -207,9 +205,9 @@ window.toggleIndividualTask = function(taskId) {
 
 window.toggleGMCompactMode = function() {
     isGMCompactMode = !isGMCompactMode;
-    window.localTaskCompactState = {}; // Nollaa yksittäiset avaukset
+    window.localTaskCompactState = {}; // Nollaa yksittäiset ja pakottaa kaikki!
     const btn = document.getElementById('gmCompactToggleBtn');
-    if (btn) btn.innerText = isGMCompactMode ? 'LAAJENNA NÄKYMÄ' : 'SUPISTA NÄKYMÄ';
+    if (btn) btn.innerText = isGMCompactMode ? 'LAAJENNA NÄKYMÄ KAIKISTA' : 'SUPISTA NÄKYMÄ KAIKISTA';
     db.ref('gameState').once('value', snap => {
         renderActiveTasks(snap.val().activeTasks || {}, snap.val().config || {});
     });
@@ -229,7 +227,7 @@ window.resetGame = function() {
     if (confirm("VAROITUS: Tämä poistaa kaikki tiedot. Jatketaanko?")) {
         const newResetId = Date.now().toString();
         db.ref('gameState').set({
-            players: [], tasks: defaultTasks, usedTaskIds: [], activeTasks: {}, history: [], eventLog: {}, resetId: newResetId,
+            players: [], tasks: defaultTasks, usedTaskIds: [], activeTasks: {}, history: {}, eventLog: {}, resetId: newResetId,
             config: { 
                 useCooldowns: true, strictVolunteer: false, excludeUsedTasks: true, bdayHero: null,
                 visibility: { title: true, points: true, drawCount: false, desc: false, minus: true, bday: true },
@@ -316,6 +314,7 @@ db.ref('gameState').on('value', (snap) => {
     lastKnownTasks = JSON.parse(JSON.stringify(data.activeTasks || {}));
 });
 
+// KORJAUS 5: Älykäs muisti popupeille
 function checkForNewWinnerPopups(newTasks) {
     if (!myName) return;
     let addedNew = false;
@@ -328,17 +327,16 @@ function checkForNewWinnerPopups(newTasks) {
         
         if (wasJustLocked && !newTask.isHero) {
             const isMeSelected = (newTask.participants || []).some(r => r.name === myName);
-            // Tarkista onko pelaajalle jo näytetty TÄMÄ nimenomainen tehtävä aiemmin
             if (isMeSelected && !seenPopups.includes(taskId)) {
                 pendingWinnerTasks.push(newTask.n);
-                seenPopups.push(taskId); // Merkitään näkdyksi
+                seenPopups.push(taskId); 
                 addedNew = true;
             }
         }
     });
     
     if (addedNew) {
-        localStorage.setItem('appro_seen_popups', JSON.stringify(seenPopups)); // Tallennetaan muistiin
+        localStorage.setItem('appro_seen_popups', JSON.stringify(seenPopups)); 
         if (winnerTimeout) clearTimeout(winnerTimeout);
         winnerTimeout = setTimeout(() => {
             const html = pendingWinnerTasks.length > 1 
@@ -434,17 +432,23 @@ function renderActiveTasks(tasksObj, config) {
         
         let card = container.querySelector(`[data-task-id="${taskId}"]`);
         
+        // KORJAUS 4: SULAVAT ANIMAATIOT RAKENTEESSA
         if (!card) {
             card = document.createElement('div');
             card.setAttribute('data-task-id', taskId);
             card.innerHTML = `
                 <div class="t-status"></div>
-                <div class="blur-reveal-area" ontouchstart="">
-                    <div class="t-header"></div>
-                    <div class="t-desc compact-transition"></div>
+                <div class="t-header"></div>
+                <div class="compact-participants-text"></div>
+                <div class="smooth-collapse">
+                    <div>
+                        <div class="blur-reveal-area" ontouchstart="">
+                            <div class="t-desc"></div>
+                        </div>
+                        <div class="t-action"></div>
+                        <div class="t-gm gm-only"></div>
+                    </div>
                 </div>
-                <div class="t-action compact-transition"></div>
-                <div class="t-gm gm-only"></div>
             `;
             container.appendChild(card);
         }
@@ -471,8 +475,7 @@ function renderActiveTasks(tasksObj, config) {
             let stageText = ''; let stageBg = ''; let textColor = '#ffffff'; let pulseClass = '';
             
             if (isHeroTask) {
-                if (isLocked) { stageText = '3. PISTEYTÄ SANKARI'; stageBg = 'var(--hero-gold)'; textColor = '#000000'; pulseClass = 'stage-pulse'; }
-                else { stageText = '1. LUKITSE TEHTÄVÄ'; stageBg = 'var(--gm-accent)'; }
+                stageText = '3. PISTEYTÄ SANKARI'; stageBg = 'var(--hero-gold)'; textColor = '#000000'; pulseClass = 'stage-pulse'; 
             } else {
                 if (isLocked) { stageText = '3. PISTEYTÄ SUORITUKSET'; stageBg = 'var(--hero-gold)'; textColor = '#000000'; pulseClass = 'stage-pulse'; } 
                 else if (taskData.drawn) { stageText = '2. LUKITSE TEHTÄVÄ'; stageBg = 'var(--accent)'; } 
@@ -503,6 +506,19 @@ function renderActiveTasks(tasksObj, config) {
         if ((showFull || vis.minus) && taskData.m) { tagsHtml += `<div class="xp-badge" style="margin-bottom:10px; background:rgba(185,50,50,0.15); color:var(--danger); border-color:var(--danger); margin-right:5px;">⚠️ MIINUS-UHKA</div>`; }
         if ((showFull || vis.bday) && taskData.b) { tagsHtml += `<div class="xp-badge" style="margin-bottom:10px; background:rgba(194,120,33,0.15); color:var(--gm-accent); border-color:var(--gm-accent);">🎂 SANKARIBONUS</div>`; }
         headerHtml += `<div>${tagsHtml}</div>`;
+
+        // KORJAUS 6: Kompakti nimitieto otsikon alle
+        let compactNamesHtml = "";
+        if (isGM && !isHeroTask) {
+            if (results.length > 0) {
+                let names = results.map(r => r.name).join(', ');
+                let label = taskData.drawn ? "ARVOTTU:" : "ILMOITTAUTUNEET:";
+                let color = taskData.drawn ? "var(--success)" : "var(--accent)";
+                compactNamesHtml = `<span style="color:${color};">${label}</span> <span style="color:#fff;">${names}</span>`;
+            } else if (!isLocked) {
+                compactNamesHtml = `<span style="color:var(--muted);">Ei ilmoittautuneita vielä.</span>`;
+            }
+        }
 
         let descHtml = '';
         const shouldShowDesc = showFull || vis.desc;
@@ -540,6 +556,8 @@ function renderActiveTasks(tasksObj, config) {
 
         let gmHtml = '';
         if (isGM) {
+            gmHtml += `<div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:12px;">`;
+            
             if (!isHeroTask && !isLocked) {
                 const hasParticipants = results.length > 0;
                 const isDrawn = taskData.drawn;
@@ -547,7 +565,6 @@ function renderActiveTasks(tasksObj, config) {
                 const lockOpacity = (hasParticipants && isDrawn) ? '1' : '0.4';
                 const lockPulse = (hasParticipants && isDrawn) ? 'box-shadow: 0 0 15px var(--success); transform: scale(1.02);' : '';
 
-                gmHtml += `<div class="compact-transition" style="border-top:1px solid rgba(255,255,255,0.1); padding-top:12px; margin-top:15px;">`;
                 gmHtml += `
                     <div class="volunteer-selector-grid" id="grid-${taskId}"></div>
                     <div class="admin-row-stack">
@@ -558,14 +575,14 @@ function renderActiveTasks(tasksObj, config) {
                         <button class="btn btn-success" style="margin:0; font-size:0.75rem; padding:12px; opacity:${lockOpacity}; ${lockPulse} transition:all 0.3s;" onclick="lockParticipants('${taskId}')">LUKITSE VALINNAT</button>
                     </div>
                 `;
-                gmHtml += `</div>`;
             }
             
             gmHtml += `<div id="scoring-${taskId}" style="display:${isLocked || isHeroTask ? 'block' : 'none'};"></div>`;
-            gmHtml += `<div class="compact-transition" style="display:flex; gap:10px; margin-top:8px;">
+            gmHtml += `<div style="display:flex; gap:10px; margin-top:8px;">
                             <button class="btn btn-success" id="finish-${taskId}" style="display:${(isLocked || isHeroTask) ? 'block' : 'none'}; flex:2; margin:0;" onclick="showScoring('${taskId}')">MERKITSE VALMIIKSI</button>
                             <button class="btn btn-secondary" style="flex:1; font-size:0.6rem; padding:8px; margin:0;" onclick="toggleGMSpy('${taskId}')">SPEKSIT</button>
                        </div>`;
+            gmHtml += `</div>`;
         }
 
         const updateNode = (selector, newHtml) => {
@@ -575,6 +592,7 @@ function renderActiveTasks(tasksObj, config) {
 
         updateNode('.t-status', statusHtml);
         updateNode('.t-header', headerHtml);
+        updateNode('.compact-participants-text', compactNamesHtml);
         updateNode('.t-desc', descHtml);
         updateNode('.t-action', actionHtml);
         updateNode('.t-gm', gmHtml);
@@ -585,50 +603,26 @@ function renderActiveTasks(tasksObj, config) {
                 updateDrawCountSelect(taskId, taskData);
             }
             if (isLocked || isHeroTask) {
-                renderScoringArea(taskId, results, isHeroTask, taskData.heroWin);
+                renderScoringArea(taskId, results, isHeroTask, taskData.heroWin, taskData.heroReviewed);
             }
         }
     });
 }
 
+// KORJAUS 1: Arvonta kaikkiin käynnistää massiivisen kerrannais-animaation!
 function drawAllTasks() {
     db.ref('gameState/activeTasks').once('value', snap => {
         const tasks = snap.val() || {};
         let drawsTriggered = 0;
-        let updatesStart = {};
-
         Object.keys(tasks).forEach(taskId => {
             const taskData = tasks[taskId];
             if (!taskData.locked && !taskData.isHero && (taskData.participants || []).length > 0 && !taskData.drawn) {
-                updatesStart[`${taskId}/isLotteryRunning`] = true;
+                drawRandom(taskId, true);
                 drawsTriggered++;
             }
         });
-
-        if (drawsTriggered === 0) { alert("Ei arvottavia tehtäviä."); return; }
-
-        logEvent(`Massatoiminto: Arvonta käynnistetty ${drawsTriggered} tehtävään.`);
-        db.ref('gameState/activeTasks').update(updatesStart);
-
-        // Odotetaan 2 sekuntia rulettianimaation pyörimistä kaikkialla ruudulla
-        setTimeout(() => {
-            let updatesFinish = {};
-            Object.keys(tasks).forEach(taskId => {
-                if (updatesStart[`${taskId}/isLotteryRunning`]) {
-                    const taskData = tasks[taskId];
-                    const sel = document.getElementById(`drawCount-${taskId}`);
-                    const count = sel ? (parseInt(sel.value) || 1) : 1;
-                    let list = taskData.participants || [];
-                    let shuffled = [...list].sort(() => 0.5 - Math.random());
-                    let winners = shuffled.slice(0, count).map(p => ({ ...p, win: true }));
-
-                    updatesFinish[`${taskId}/participants`] = winners;
-                    updatesFinish[`${taskId}/isLotteryRunning`] = false;
-                    updatesFinish[`${taskId}/drawn`] = true;
-                }
-            });
-            db.ref('gameState/activeTasks').update(updatesFinish);
-        }, 2000);
+        if (drawsTriggered > 0) logEvent(`Massatoiminto: Arvonta käynnistetty ${drawsTriggered} tehtävään!`);
+        else alert("Ei arvottavia tehtäviä.");
     });
 }
 
@@ -684,7 +678,7 @@ function drawRandom(taskId, isMassAction = false) {
         
         setTimeout(() => {
             let shuffled = [...list].sort(() => 0.5 - Math.random());
-            let winners = shuffled.slice(0, count).map(p => ({ ...p, win: true }));
+            let winners = shuffled.slice(0, count).map(p => ({ ...p, win: true, reviewed: false })); // KORJAUS 3: Oletuksena win, mutta ei vielä tarkistettu
             
             db.ref(`gameState/activeTasks/${taskId}`).update({ participants: winners, isLotteryRunning: false, drawn: true });
             if (!isMassAction) logEvent(`Arvottu ${count} suorittajaa tehtävään: ${taskData.n}`);
@@ -813,7 +807,7 @@ function volunteer(taskId) {
                 list.splice(idx, 1);
                 joined = false;
             } else {
-                list.push({ name: myName, win: true });
+                list.push({ name: myName, win: true, reviewed: false });
                 joined = true;
             }
             return list;
@@ -834,7 +828,7 @@ function toggleParticipant(taskId, name) {
             list.splice(idx, 1);
             added = false;
         } else {
-            list.push({ name: name, win: true });
+            list.push({ name: name, win: true, reviewed: false });
             added = true;
         }
         return list;
@@ -919,32 +913,43 @@ function showScoring(taskId, isMassAction = false) {
 }
 
 window.toggleHeroTaskWin = function(taskId) {
-    db.ref(`gameState/activeTasks/${taskId}`).once('value', s => {
-        const current = s.val().heroWin;
-        const newVal = current === false ? true : false;
-        db.ref(`gameState/activeTasks/${taskId}/heroWin`).set(newVal);
+    db.ref(`gameState/activeTasks/${taskId}`).transaction(t => {
+        if(t) {
+            t.heroWin = t.heroWin === false ? true : false;
+            t.heroReviewed = true;
+        }
+        return t;
     });
 };
 
-function renderScoringArea(taskId, results, isHeroTask, heroWinState) {
+// KORJAUS 3: Selkeä erottelu, kenen pisteet on kuitattu ja kenen ei
+function renderScoringArea(taskId, results, isHeroTask, heroWinState, heroReviewed) {
     const sArea = document.getElementById(`scoring-${taskId}`);
     if(!sArea) return; 
     
     sArea.innerHTML = '';
-    
     const box = document.createElement('div');
     box.className = "scoring-box"; 
     
     if (isHeroTask) {
         box.innerHTML = `<p style="font-size:0.75rem; color:var(--hero-gold); margin:0 0 12px 0; text-align:center; font-weight:900; letter-spacing:1px;">⚠️ PISTEYTÄ SANKARIN SUORITUS ⚠️</p>`;
         const isWin = heroWinState !== false; 
+        
+        let btnClass = isWin ? 'score-btn-win' : 'score-btn-fail';
+        let btnText = isWin ? 'WIN' : 'FAIL';
+        
+        if (!heroReviewed && isWin) {
+            btnClass = 'score-btn-default';
+            btnText = 'WIN (Oletus)';
+        }
+
         const row = document.createElement('div');
         row.className = 'player-row is-hero'; 
         row.style.padding = '8px';
         row.innerHTML = `
             <span>🎂 SYNTTÄRISANKARI</span>
-            <button class="btn" style="width:70px; margin:0; padding:5px; background:${isWin?'var(--success)':'var(--danger)'}; color:#ffffff;" 
-                onclick='toggleHeroTaskWin("${taskId}")'>${isWin?'WIN':'FAIL'}</button>
+            <button class="btn ${btnClass}" style="width:auto; min-width:90px; margin:0; padding:8px; font-size:0.7rem;" 
+                onclick='toggleHeroTaskWin("${taskId}")'>${btnText}</button>
         `;
         box.appendChild(row);
     } else {
@@ -952,9 +957,17 @@ function renderScoringArea(taskId, results, isHeroTask, heroWinState) {
         if (results.length === 0) box.innerHTML += `<p style="font-size:0.6rem; color:var(--muted); text-align:center;">Ei suorittajia.</p>`;
         
         results.forEach((r, i) => {
+            let btnClass = r.win ? 'score-btn-win' : 'score-btn-fail';
+            let btnText = r.win ? 'WIN' : 'FAIL';
+            
+            if (!r.reviewed && r.win) {
+                btnClass = 'score-btn-default';
+                btnText = 'WIN (Oletus)';
+            }
+
             const row = document.createElement('div');
             row.className = 'player-row'; row.style.padding = '8px';
-            row.innerHTML = `<span>${r.name}</span><button class="btn" style="width:70px; margin:0; padding:5px; background:${r.win?'var(--success)':'var(--danger)'}; color:#ffffff;" onclick='toggleWin("${taskId}", ${i})'>${r.win?'WIN':'FAIL'}</button>`;
+            row.innerHTML = `<span>${r.name}</span><button class="btn ${btnClass}" style="width:auto; min-width:90px; margin:0; padding:8px; font-size:0.7rem;" onclick='toggleWin("${taskId}", ${i})'>${btnText}</button>`;
             box.appendChild(row);
         });
     }
@@ -973,7 +986,15 @@ function updateDrawCountSelect(taskId, task) {
     }
 }
 
-function toggleWin(taskId, i) { db.ref(`gameState/activeTasks/${taskId}/participants/${i}/win`).transaction(w => !w); }
+function toggleWin(taskId, i) { 
+    db.ref(`gameState/activeTasks/${taskId}/participants/${i}`).transaction(p => {
+        if(p) {
+            p.win = !p.win;
+            p.reviewed = true; // GM Koski valintaan!
+        }
+        return p;
+    });
+}
 
 function confirmRandomize() {
     db.ref('gameState').once('value', snap => {
@@ -1028,7 +1049,7 @@ function confirmRandomize() {
         let updates = {};
         updates[`gameState/activeTasks/${instanceId}`] = { 
             ...t, 
-            locked: false, 
+            locked: t.isHero ? true : false, // KORJAUS 1: Sankari suoraan lukkoon
             participants: [], 
             drawn: false,
             bannedPlayers: bannedFromThisTask 
@@ -1061,7 +1082,7 @@ function selectManualTask(idx) {
         const instanceId = "t_" + Date.now();
         db.ref(`gameState/activeTasks/${instanceId}`).set({ 
             ...t, 
-            locked: false, 
+            locked: t.isHero ? true : false, // KORJAUS 1
             participants: [], 
             drawn: false,
             bannedPlayers: bannedFromThisTask 
