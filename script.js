@@ -195,28 +195,26 @@ window.toggleGMCompactMode = function() {
     isGMCompactMode = !isGMCompactMode;
     const btn = document.getElementById('gmCompactToggleBtn');
     if (btn) btn.innerText = isGMCompactMode ? 'LAAJENNA NÄKYMÄ' : 'SUPISTA NÄKYMÄ';
-    triggerRender();
+    db.ref('gameState').once('value', snap => {
+        const d = snap.val();
+        renderActiveTasks(d.activeTasks || {}, d.config || {});
+    });
 };
 
 window.togglePlayerCompactMode = function() {
     isPlayerCompactMode = !isPlayerCompactMode;
     const btn = document.getElementById('playerCompactToggleBtn');
     if (btn) btn.innerText = isPlayerCompactMode ? 'LAAJENNA NÄKYMÄ' : 'SUPISTA NÄKYMÄ';
-    triggerRender();
-};
-
-function triggerRender() {
     db.ref('gameState').once('value', snap => {
         const d = snap.val();
         renderActiveTasks(d.activeTasks || {}, d.config || {});
     });
-}
+};
 
-// KORJATTU NOLLAUS: Tyhjentää ruudun välittömästi odottamatta palvelinta (Toimii offlinessa)
 window.resetGame = function() {
     if (confirm("VAROITUS: Tämä poistaa kaikki tiedot. Jatketaanko?")) {
         const newResetId = Date.now().toString();
-        const resetData = {
+        db.ref('gameState').set({
             players: [],
             tasks: defaultTasks,
             usedTaskIds: [],
@@ -232,14 +230,7 @@ window.resetGame = function() {
                 visibility: { title: true, points: true, drawCount: false, desc: false, minus: true, bday: true },
                 heroDraw: { include: true, weighted: false, interval: 4, drawCount: 0 }
             }
-        };
-        
-        // Tallennus (menee jonoon jos laite on offline)
-        db.ref('gameState').set(resetData).catch(err => console.log("Offline tallennus odottaa verkkoa."));
-        
-        // Puhdistetaan käyttöliittymä välittömästi riippumatta nettiyhteydestä
-        localStorage.clear(); 
-        location.reload();
+        }).then(() => { localStorage.clear(); location.reload(); });
     }
 };
 
@@ -272,7 +263,6 @@ db.ref('gameState').on('value', (snap) => {
                 localStorage.removeItem('appro_name');
             }
             updateIdentityUI();
-            checkInstallStatus(); 
         }
     }
     
@@ -418,6 +408,10 @@ function renderActiveTasks(tasksObj, config) {
         }
     });
 
+    // Etsi synttärisankarin nimi
+    const heroName = (config.bdayHero !== null && allPlayers[config.bdayHero]) ? allPlayers[config.bdayHero].name : null;
+    const amIHero = (myName && heroName === myName);
+
     currentIds.forEach((taskId) => {
         const taskData = tasksObj[taskId];
         const isLocked = !!taskData.locked;
@@ -444,9 +438,11 @@ function renderActiveTasks(tasksObj, config) {
             container.appendChild(card);
         }
 
+        // KORJATTU LAJITTELULOGIIKKA: Sankaritehtävä nousee sankarilla AINA ylimmäksi
         let flexOrder = 10;
         if (!isGM && myName) {
-            if (isLocked && isMePart && !isHeroTask) flexOrder = 1;
+            if (isHeroTask && amIHero) flexOrder = 0; // Sankaritehtävä nousee sankarille ensimmäiseksi
+            else if (isLocked && isMePart && !isHeroTask) flexOrder = 1;
             else if (!isLocked && !isHeroTask) flexOrder = 2;
             else flexOrder = 3;
         } else {
@@ -505,7 +501,7 @@ function renderActiveTasks(tasksObj, config) {
         if (isSpying && isGMCompactMode) {
             descHtml += `<style>
                 .compact-view [data-task-id="${taskId}"] { padding: 24px !important; }
-                .compact-view [data-task-id="${taskId}"] .instruction-card { display: block !important; }
+                .compact-view [data-task-id="${taskId}"] .instruction-area { display: block !important; }
                 .compact-view [data-task-id="${taskId}"] .task-description { display: block !important; }
                 .compact-view [data-task-id="${taskId}"] .t-gm .btn { padding: 18px !important; font-size: 0.8rem !important; }
             </style>`;
@@ -514,11 +510,16 @@ function renderActiveTasks(tasksObj, config) {
         const shouldShowDesc = showFull || vis.desc;
         if (shouldShowDesc) {
             const displayDesc = (taskData.d && taskData.d.trim() !== "") ? taskData.d : "Ei ohjeita.";
-            descHtml += `<div class="instruction-card"><p><strong>OHJEET:</strong><br>${displayDesc}</p></div>`;
+            // UUSI: Dokumenttimaisuudesta eroon. Vain siisti teksti alue.
+            descHtml += `<div class="instruction-area">
+                            <div class="instruction-label">TEHTÄVÄN KUVAUS</div>
+                            <p class="instruction-text">${displayDesc}</p>
+                         </div>`;
+            
             if (isLocked && !isHeroTask) {
                 const drawnPlayers = results.map(r => r.name);
                 if (drawnPlayers.length > 0) {
-                    descHtml += `<div style="margin-top:10px; font-weight:900; color:var(--success); font-size:0.8rem;">SUORITTAJAT: ${drawnPlayers.join(', ')}</div>`;
+                    descHtml += `<div style="margin-top:15px; font-weight:900; color:var(--accent); font-size:0.8rem; text-transform: uppercase;">SUORITTAJAT: <span style="color:#ffffff;">${drawnPlayers.join(', ')}</span></div>`;
                 }
             }
         } else {
@@ -711,14 +712,20 @@ function renderGMGrid(taskId, results, isLocked, isShuffling, showCD, taskData) 
 
 function toggleGMSpy(taskId) {
     localSpyState[taskId] = !localSpyState[taskId];
-    triggerRender();
+    db.ref('gameState').once('value', snap => {
+        const d = snap.val();
+        renderActiveTasks(d.activeTasks || {}, d.config || {});
+    });
 }
 
 function setRole(r) {
     document.body.className = r + '-mode';
     document.getElementById('btnPlayer').classList.toggle('active', r === 'player');
     document.getElementById('btnGM').classList.toggle('active', r === 'gm');
-    triggerRender();
+    db.ref('gameState').once('value', snap => {
+        const d = snap.val();
+        renderActiveTasks(d.activeTasks || {}, d.config || {});
+    });
 }
 
 let gmHoldTimer;
@@ -822,7 +829,7 @@ function lockParticipants(taskId, isMassAction = false) {
         
         if (d.config?.useCooldowns) {
             const updatedPlayers = allPlayers.map(p => {
-                if (drawnNames.includes(p.name)) p.cooldown = true; 
+                if (drawnNames.includes(p.name)) p.cooldown = 1; 
                 return p;
             });
             db.ref('gameState/players').set(updatedPlayers);
@@ -959,10 +966,10 @@ function confirmRandomize() {
         
         if (config.useCooldowns) {
             const updatedPlayers = allPlayers.map(p => {
-                if (p.cooldown) {
-                    bannedFromThisTask.push(p.name);
-                }
-                return { ...p, cooldown: false }; 
+                let cd = p.cooldown === true ? 1 : (p.cooldown || 0); 
+                if (cd > 0) bannedFromThisTask.push(p.name);
+                if (cd > 0) cd--; 
+                return { ...p, cooldown: cd }; 
             });
             db.ref('gameState/players').set(updatedPlayers);
         }
@@ -1022,10 +1029,10 @@ function selectManualTask(idx) {
         let bannedFromThisTask = [];
         if (d.config?.useCooldowns) {
             const updatedPlayers = allPlayers.map(p => {
-                if (p.cooldown) {
-                    bannedFromThisTask.push(p.name);
-                }
-                return { ...p, cooldown: false }; 
+                let cd = p.cooldown === true ? 1 : (p.cooldown || 0); 
+                if (cd > 0) bannedFromThisTask.push(p.name);
+                if (cd > 0) cd--; 
+                return { ...p, cooldown: cd }; 
             });
             db.ref('gameState/players').set(updatedPlayers);
         }
@@ -1082,7 +1089,7 @@ function adminAddPlayer() {
     db.ref('gameState/players').once('value', snap => {
         let p = snap.val() || [];
         if(!p.find(x => x.name === n)) { 
-            p.push({ name: n, score: 0, cooldown: false }); 
+            p.push({ name: n, score: 0, cooldown: 0 }); 
             db.ref('gameState/players').set(p); 
             input.value = ''; 
             logEvent(`Admin lisäsi pelaajan: ${n}`);
@@ -1112,7 +1119,7 @@ function setBdayHero(idx) {
 }
 
 function adminToggleCooldown(idx) { 
-    const newState = !allPlayers[idx].cooldown;
+    const newState = allPlayers[idx].cooldown > 0 ? 0 : 1;
     db.ref(`gameState/players/${idx}/cooldown`).set(newState); 
 }
 
@@ -1153,9 +1160,9 @@ function renderLeaderboard(showCD, heroId) {
         const pIdx = allPlayers.findIndex(x => x.name === p.name);
         const isHero = heroId !== null && pIdx === heroId;
         const div = document.createElement('div');
-        div.className = `player-row ${p.name === myName ? 'me' : ''} ${isHero ? 'is-hero' : ''} ${p.cooldown ? 'on-cooldown' : ''}`;
+        div.className = `player-row ${p.name === myName ? 'me' : ''} ${isHero ? 'is-hero' : ''} ${p.cooldown > 0 ? 'on-cooldown' : ''}`;
         
-        const cdText = (showCD && p.cooldown) ? ' <small style="color:var(--danger)">[JÄÄHY]</small>' : '';
+        const cdText = (showCD && p.cooldown > 0) ? ' <small style="color:var(--danger)">[JÄÄHY]</small>' : '';
         div.innerHTML = `<span>${isHero?'🎂 ':''}${p.name}${cdText}</span><span class="xp-badge">${p.score} XP</span>`;
         list.appendChild(div);
     });
@@ -1179,7 +1186,7 @@ function renderAdminPlayerList(heroId) {
                     <span style="font-size:0.8rem; font-weight:bold;">${p.name} (${p.score})</span>
                     <div style="display:flex; gap:4px;">
                         <button class="btn" style="width:32px; padding:5px; margin:0; background:${heroBg}; color:${heroColor}; border:1px solid ${heroBorder};" onclick="setBdayHero(${i})">🎂</button>
-                        <button class="btn ${p.cooldown ? 'btn-success' : 'btn-secondary'}" style="width:auto; font-size:0.5rem; padding:5px; margin:0;" onclick="adminToggleCooldown(${i})">${p.cooldown ? 'VAP' : 'J'}</button>
+                        <button class="btn ${p.cooldown > 0 ? 'btn-success' : 'btn-secondary'}" style="width:auto; font-size:0.5rem; padding:5px; margin:0;" onclick="adminToggleCooldown(${i})">${p.cooldown > 0 ? 'VAP' : 'J'}</button>
                         <button class="btn btn-secondary" style="width:28px; padding:5px; margin:0;" onclick="adjustScore(${i}, 1)">+</button>
                         <button class="btn btn-secondary" style="width:28px; padding:5px; margin:0;" onclick="adjustScore(${i}, -1)">-</button>
                         <button class="btn btn-danger" style="width:28px; padding:5px; margin:0;" onclick="removePlayer(${i})">X</button>
