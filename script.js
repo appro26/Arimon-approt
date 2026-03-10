@@ -190,7 +190,6 @@ function logEvent(msg) {
     db.ref('gameState/eventLog').push({ time, msg });
 }
 
-// KORJAUS 1 & 3: JS-pohjainen luokan vaihto pitää animaation sulavana
 window.toggleIndividualTask = function(taskId) {
     const card = document.querySelector(`[data-task-id="${taskId}"]`);
     if (!card) return;
@@ -352,7 +351,8 @@ function checkForNewWinnerPopups(newTasks) {
         localStorage.setItem('appro_seen_popups', JSON.stringify(seenPopups)); 
         if (winnerTimeout) clearTimeout(winnerTimeout);
         winnerTimeout = setTimeout(() => {
-            const html = pendingWinnerTasks.map(n => `<div>${n}</div>`).join('');
+            // KORJAUS 2: Pelaajan voittolaatikoiden erottelu usean tehtävän kohdalla
+            const html = pendingWinnerTasks.map(n => `<div class="winner-task-box">${n}</div>`).join('');
             triggerWinnerOverlay(html);
             pendingWinnerTasks = []; 
         }, 500);
@@ -452,14 +452,13 @@ function renderActiveTasks(tasksObj, config) {
         if (!card) {
             card = document.createElement('div');
             card.setAttribute('data-task-id', taskId);
-            // HUOM: CSS-luokat on heitetty JS-logiikan päälle, jotta grid 0fr toimii
             card.innerHTML = `
                 <div class="t-status"></div>
                 <div class="t-header"></div>
                 <div class="compact-participants-text"></div>
                 <div class="smooth-collapse">
-                    <div class="collapse-inner">
-                        <div class="blur-reveal-area" ontouchstart="">
+                    <div>
+                        <div class="blur-reveal-area ${isSpying ? 'blur-removed' : ''}" ontouchstart="">
                             <div class="t-desc"></div>
                         </div>
                         <div class="t-action"></div>
@@ -468,15 +467,14 @@ function renderActiveTasks(tasksObj, config) {
                 </div>
             `;
             container.appendChild(card);
+        } else {
+            const blurArea = card.querySelector('.blur-reveal-area');
+            if (blurArea) {
+                if (isSpying) blurArea.classList.add('blur-removed');
+                else blurArea.classList.remove('blur-removed');
+            }
         }
 
-        const blurArea = card.querySelector('.blur-reveal-area');
-        if (blurArea) {
-            if (isSpying) blurArea.classList.add('blur-removed');
-            else blurArea.classList.remove('blur-removed');
-        }
-
-        // TÄRKEÄÄ: CSS-luokan asetus kortille lennosta
         card.className = `card task-box active-task-item ${taskIsCompact ? 'compact-view-card' : ''} ${isGM && isLocked && !isSpying ? 'is-scoring' : ''}`;
         card.classList.toggle('hero-task-gold', isHeroTask);
         card.classList.toggle('participating', !isGM && !isHeroTask && isLocked && isMePart);
@@ -670,7 +668,6 @@ function drawAllTasks() {
         logEvent(`Admin (${adminName}) / Massatoiminto: Arvonta käynnistetty ${drawsTriggered} tehtävään!`);
         db.ref('gameState/activeTasks').update(updatesStart);
 
-        // KORJAUS 1: Puolet nopeampi mylly (1000ms)
         setTimeout(() => {
             let updatesFinish = {};
             Object.keys(tasks).forEach(taskId => {
@@ -746,7 +743,6 @@ function drawRandom(taskId, isMassAction = false) {
 
         db.ref(`gameState/activeTasks/${taskId}`).update({ isLotteryRunning: true });
         
-        // KORJAUS 1: Puolet nopeampi mylly (1000ms)
         setTimeout(() => {
             let shuffled = [...list].sort(() => 0.5 - Math.random());
             let winners = shuffled.slice(0, count).map(p => ({ ...p, win: true, reviewed: false })); 
