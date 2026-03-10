@@ -368,7 +368,7 @@ function showXPAnimation(points) {
     xpTimeout = setTimeout(() => {
         const pop = document.getElementById('xpPopUp');
         if(!pop) return;
-        pop.style.display = 'block';
+        pop.style.display = 'flex';
         
         if (pendingXP > 0) {
             pop.className = 'xp-popup success xp-animate';
@@ -484,7 +484,7 @@ function renderActiveTasks(tasksObj, config) {
                 stageText = '3. PISTEYTÄ SANKARI'; stageBg = 'var(--success)'; pulseClass = 'stage-pulse'; 
             } else {
                 if (isLocked) { stageText = '3. PISTEYTÄ SUORITUKSET'; stageBg = 'var(--success)'; pulseClass = 'stage-pulse'; } 
-                else if (taskData.drawn) { stageText = '2. LUKITSE TEHTÄVÄ'; stageBg = 'var(--accent)'; } 
+                else if (taskData.drawn) { stageText = '2. LUKITSE TEHTÄVÄT'; stageBg = 'var(--accent)'; } 
                 else { stageText = '1. ARVO PELAAJAT'; stageBg = '#a36114'; }
             }
 
@@ -1319,7 +1319,7 @@ function renderLeaderboard(showCD, heroId) {
         const pIdx = allPlayers.findIndex(x => x.name === p.name);
         const isHero = heroId !== null && pIdx === heroId;
         const div = document.createElement('div');
-        div.className = `player-row ${p.name === myName ? 'me' : ''} ${isHero ? 'is-hero' : ''} ${p.cooldown > 0 ? 'on-cooldown' : ''}`;
+        div.className = `player-row ${p.name === myName ? 'me' : ''} ${isHero ? 'is-hero' : ''}`;
         
         const cdText = (showCD && p.cooldown > 0) ? ' <small style="color:var(--danger)">[JÄÄHY]</small>' : '';
         
@@ -1327,7 +1327,9 @@ function renderLeaderboard(showCD, heroId) {
         if (leaderboardDirections[p.name] === 'up') dirIcon = ' <span style="color:var(--success); font-size:0.8rem; font-weight:900;">▲</span>';
         else if (leaderboardDirections[p.name] === 'down') dirIcon = ' <span style="color:var(--danger); font-size:0.8rem; font-weight:900;">▼</span>';
 
-        div.innerHTML = `<span>${isHero?'🎂 ':''}${p.name}${cdText}${dirIcon}</span><span class="xp-badge">${p.score} XP</span>`;
+        const rankStr = `<span style="color:var(--muted); font-size:0.8rem; margin-right:8px; font-weight:900;">${leaderboardPrevRanks[p.name]}.</span>`;
+
+        div.innerHTML = `<span>${rankStr}${isHero?'🎂 ':''}${p.name}${cdText}${dirIcon}</span><span class="xp-badge">${p.score} XP</span>`;
         list.appendChild(div);
     });
 }
