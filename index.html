@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="icon.png">
 
-    <link rel="stylesheet" href="style.css?v=17">
+    <link rel="stylesheet" href="style.css?v=18">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
 
@@ -160,6 +160,15 @@
                     <textarea id="newTaskDesc" placeholder="Kuvaus/Ohjeet" rows="3"></textarea>
                     
                     <div class="admin-task-controls">
+                        <div class="number-input-item" style="margin-bottom: 10px;">
+                            <label>Tehtävän kategoria:</label>
+                            <select id="newTaskCategory" style="margin-bottom: 0;">
+                                <option value="pokka">🗣️ POKKA / SOSIAALINEN</option>
+                                <option value="liikunta">🏃 TOIMINTA / LIIKUNTA</option>
+                                <option value="juoma">🍻 JUOMA / KULUTUS</option>
+                            </select>
+                        </div>
+                        
                         <div class="number-inputs-row">
                             <div class="number-input-item">
                                 <label>Suositeltu pelaajamäärä:</label>
@@ -205,7 +214,7 @@
         </div>
 
         <div class="card" id="historyCard" style="margin-top: 20px; position: relative; z-index: 10;">
-            <h2>Aiemmat tehtävät</h2>
+            <h2 id="historyTitle">Aiemmat tehtävät</h2>
             <div id="taskHistoryList" style="font-size: 0.8rem; color: var(--muted);"></div>
         </div>
 
