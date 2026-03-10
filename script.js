@@ -69,6 +69,7 @@ let wasInGame = false;
 
 let isPlayerCompactMode = false;
 let isGMCompactMode = false;
+window.localTaskCompactState = {}; // UUSI: Yksittäisten korttien tila
 
 let pendingWinnerTasks = [];
 let winnerTimeout = null;
@@ -191,13 +192,24 @@ function logEvent(msg) {
     db.ref('gameState/eventLog').push({ time, msg });
 }
 
+// UUSI: Yksittäisen kortin supistuksen vaihto (vain GM)
+window.toggleIndividualTask = function(taskId) {
+    if (window.localTaskCompactState[taskId] === undefined) {
+        window.localTaskCompactState[taskId] = !isGMCompactMode;
+    } else {
+        window.localTaskCompactState[taskId] = !window.localTaskCompactState[taskId];
+    }
+    db.ref('gameState').once('value', snap => {
+        renderActiveTasks(snap.val().activeTasks || {}, snap.val().config || {});
+    });
+};
+
 window.toggleGMCompactMode = function() {
     isGMCompactMode = !isGMCompactMode;
     const btn = document.getElementById('gmCompactToggleBtn');
     if (btn) btn.innerText = isGMCompactMode ? 'LAAJENNA NÄKYMÄ' : 'SUPISTA NÄKYMÄ';
     db.ref('gameState').once('value', snap => {
-        const d = snap.val();
-        renderActiveTasks(d.activeTasks || {}, d.config || {});
+        renderActiveTasks(snap.val().activeTasks || {}, snap.val().config || {});
     });
 };
 
@@ -206,8 +218,7 @@ window.togglePlayerCompactMode = function() {
     const btn = document.getElementById('playerCompactToggleBtn');
     if (btn) btn.innerText = isPlayerCompactMode ? 'LAAJENNA NÄKYMÄ' : 'SUPISTA NÄKYMÄ';
     db.ref('gameState').once('value', snap => {
-        const d = snap.val();
-        renderActiveTasks(d.activeTasks || {}, d.config || {});
+        renderActiveTasks(snap.val().activeTasks || {}, snap.val().config || {});
     });
 };
 
@@ -215,18 +226,9 @@ window.resetGame = function() {
     if (confirm("VAROITUS: Tämä poistaa kaikki tiedot. Jatketaanko?")) {
         const newResetId = Date.now().toString();
         db.ref('gameState').set({
-            players: [],
-            tasks: defaultTasks,
-            usedTaskIds: [],
-            activeTasks: {},
-            history: [],
-            eventLog: {},
-            resetId: newResetId,
+            players: [], tasks: defaultTasks, usedTaskIds: [], activeTasks: {}, history: {}, eventLog: {}, resetId: newResetId,
             config: { 
-                useCooldowns: true, 
-                strictVolunteer: false,
-                excludeUsedTasks: true, 
-                bdayHero: null,
+                useCooldowns: true, strictVolunteer: false, excludeUsedTasks: true, bdayHero: null,
                 visibility: { title: true, points: true, drawCount: false, desc: false, minus: true, bday: true },
                 heroDraw: { include: true, weighted: false, interval: 4, drawCount: 0 }
             }
@@ -282,14 +284,8 @@ db.ref('gameState').on('value', (snap) => {
     updateManualTaskSelect();
     renderHistory();
     
-    if(document.getElementById('adminPanel').style.display === 'block') {
-        const activeTag = document.activeElement ? document.activeElement.tagName : '';
-        if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA' && activeTag !== 'SELECT') {
-            renderAdminPlayerList(heroId);
-            renderTaskLibrary();
-        }
-        renderEventLog(data.eventLog);
-        
+    // KORJAUS: Asetetaan checkboxit heti riippumatta siitä onko paneeli auki
+    if (document.getElementById('useCooldowns')) {
         document.getElementById('useCooldowns').checked = !!config.useCooldowns;
         document.getElementById('strictVolunteer').checked = !!config.strictVolunteer;
         document.getElementById('excludeUsedTasks').checked = !!config.excludeUsedTasks;
@@ -304,6 +300,15 @@ db.ref('gameState').on('value', (snap) => {
         document.getElementById('incHero').checked = !!heroDrawConfig.include;
         document.getElementById('weightHero').checked = !!heroDrawConfig.weighted;
         document.getElementById('heroInterval').value = heroDrawConfig.interval || 4;
+    }
+
+    if(document.getElementById('adminPanel').style.display === 'block') {
+        const activeTag = document.activeElement ? document.activeElement.tagName : '';
+        if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA' && activeTag !== 'SELECT') {
+            renderAdminPlayerList(heroId);
+            renderTaskLibrary();
+        }
+        renderEventLog(data.eventLog);
     }
 
     checkForNewWinnerPopups(data.activeTasks || {});
@@ -389,10 +394,6 @@ function renderActiveTasks(tasksObj, config) {
     container.style.display = 'flex';
     container.style.flexDirection = 'column';
     
-    if (isGM && isGMCompactMode) container.classList.add('compact-view');
-    else if (!isGM && isPlayerCompactMode) container.classList.add('compact-view');
-    else container.classList.remove('compact-view');
-    
     const globalControls = document.getElementById('gmGlobalControls');
     if (globalControls) {
         globalControls.style.display = (isGM && Object.keys(tasksObj).length > 0) ? 'block' : 'none';
@@ -408,7 +409,6 @@ function renderActiveTasks(tasksObj, config) {
         }
     });
 
-    // Etsi synttärisankarin nimi
     const heroName = (config.bdayHero !== null && allPlayers[config.bdayHero]) ? allPlayers[config.bdayHero].name : null;
     const amIHero = (myName && heroName === myName);
 
@@ -422,11 +422,16 @@ function renderActiveTasks(tasksObj, config) {
         const isSpying = (isGM && localSpyState[taskId]);
         const showFull = isLocked || isHeroTask || isSpying;
         
+        // YKSITTÄINEN SUPISTUSTILA
+        let taskIsCompact = isGM ? isGMCompactMode : isPlayerCompactMode;
+        if (isGM && window.localTaskCompactState && window.localTaskCompactState[taskId] !== undefined) {
+            taskIsCompact = window.localTaskCompactState[taskId];
+        }
+        
         let card = container.querySelector(`[data-task-id="${taskId}"]`);
         
         if (!card) {
             card = document.createElement('div');
-            card.className = 'card task-box active-task-item';
             card.setAttribute('data-task-id', taskId);
             card.innerHTML = `
                 <div class="t-status"></div>
@@ -438,10 +443,16 @@ function renderActiveTasks(tasksObj, config) {
             container.appendChild(card);
         }
 
-        // KORJATTU LAJITTELULOGIIKKA: Sankaritehtävä nousee sankarilla AINA ylimmäksi
+        // TÄRKEÄÄ: Määritellään kortin CSS-luokat tässä aina uusiksi
+        card.className = `card task-box active-task-item ${taskIsCompact ? 'compact-view-card' : ''} ${isGM && isLocked ? 'is-scoring' : ''}`;
+        card.classList.toggle('hero-task-gold', isHeroTask);
+        card.classList.toggle('participating', !isGM && !isHeroTask && isLocked && isMePart);
+        card.classList.toggle('not-participating', !isGM && !isHeroTask && isLocked && !isMePart);
+
+        // KORJAUS: Sankaritehtävät pakotetaan AINA ylimmäksi jos pelaaja on itse sankari
         let flexOrder = 10;
         if (!isGM && myName) {
-            if (isHeroTask && amIHero) flexOrder = 0; // Sankaritehtävä nousee sankarille ensimmäiseksi
+            if (isHeroTask && amIHero) flexOrder = 0; 
             else if (isLocked && isMePart && !isHeroTask) flexOrder = 1;
             else if (!isLocked && !isHeroTask) flexOrder = 2;
             else flexOrder = 3;
@@ -450,22 +461,29 @@ function renderActiveTasks(tasksObj, config) {
         }
         card.style.order = flexOrder;
 
-        card.classList.toggle('hero-task-gold', isHeroTask);
-        card.classList.toggle('participating', !isGM && !isHeroTask && isLocked && isMePart);
-        card.classList.toggle('not-participating', !isGM && !isHeroTask && isLocked && !isMePart);
-
+        // --- 1. STATUS ---
         let statusHtml = '';
         if (isGM) {
-            statusHtml += `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">`;
+            // UUSI GM VAIHE-LOGIIKKA (1-2-3)
+            let stageText = ''; let stageBg = ''; let textColor = '#ffffff'; let pulseClass = '';
+            
             if (isHeroTask) {
-                statusHtml += `<span class="task-status-tag" style="background: var(--hero-gold); color: black; margin:0;">ODOTTAA PISTEYTYSTÄ</span>`;
-            } else if (!isLocked) {
-                statusHtml += `<span class="task-status-tag" style="background: var(--gm-accent); color: white; margin:0;">${taskData.drawn ? 'ODOTTAA LUKITUSTA' : 'ODOTTAA ARVONTAA'}</span>`;
+                if (isLocked) { stageText = '3. PISTEYTÄ SANKARI'; stageBg = 'var(--hero-gold)'; textColor = '#000000'; pulseClass = 'stage-pulse'; }
+                else { stageText = '1. LUKITSE TEHTÄVÄ'; stageBg = 'var(--gm-accent)'; }
             } else {
-                statusHtml += `<span class="task-status-tag" style="background: var(--success); color: white; margin:0;">ODOTTAA PISTEYTYSTÄ</span>`;
+                if (isLocked) { stageText = '3. PISTEYTÄ SUORITUKSET'; stageBg = 'var(--hero-gold)'; textColor = '#000000'; pulseClass = 'stage-pulse'; } 
+                else if (taskData.drawn) { stageText = '2. LUKITSE TEHTÄVÄ'; stageBg = 'var(--accent)'; } 
+                else { stageText = '1. ARVO / VALITSE'; stageBg = 'var(--gm-accent)'; }
             }
-            statusHtml += `<button class="btn btn-danger" style="width:auto; margin:0; padding:4px 8px; font-size:0.6rem;" onclick="deleteActiveTask('${taskId}')">X POISTA</button>`;
-            statusHtml += `</div>`;
+
+            statusHtml += `<div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">`;
+            statusHtml += `<div><span class="task-status-tag ${pulseClass}" style="background: ${stageBg}; color: ${textColor}; margin:0; border: 1px solid rgba(0,0,0,0.5);">${stageText}</span></div>`;
+            
+            const toggleIcon = taskIsCompact ? '⬜ LAAJENNA' : '➖ SUPISTA';
+            statusHtml += `<div style="display:flex; gap:6px;">`;
+            statusHtml += `<button class="btn btn-secondary" style="width:auto; margin:0; padding:6px 10px; font-size:0.55rem;" onclick="toggleIndividualTask('${taskId}')">${toggleIcon}</button>`;
+            statusHtml += `<button class="btn btn-danger" style="width:auto; margin:0; padding:6px 10px; font-size:0.55rem;" onclick="deleteActiveTask('${taskId}')">X POISTA</button>`;
+            statusHtml += `</div></div>`;
         } else {
             if (isHeroTask) {
                 statusHtml += `<div class="task-status-tag" style="background: var(--hero-gold); color: black; font-weight: 900;">✨ SANKARITEHTÄVÄ ✨</div>`;
@@ -481,41 +499,20 @@ function renderActiveTasks(tasksObj, config) {
         headerHtml += `<h1 style="margin:5px 0;">${displayTitle}</h1>`;
 
         let tagsHtml = '';
-        if (showFull || vis.points) {
-            tagsHtml += `<div class="xp-badge" style="display:inline-block; margin-bottom:10px; margin-right:5px;">${taskData.p} XP</div>`;
-        }
-        
-        if (!isHeroTask && (showFull || vis.drawCount)) {
-            tagsHtml += `<div class="xp-badge" style="display:inline-block; margin-bottom:10px; background:rgba(255,255,255,0.1); color:var(--text); border-color:rgba(255,255,255,0.2); margin-right:5px;">👥 MAX ${taskData.r || 1} SUORITTAJAA</div>`;
-        }
-
-        if ((showFull || vis.minus) && taskData.m) {
-            tagsHtml += `<div class="xp-badge" style="display:inline-block; margin-bottom:10px; background:rgba(185,50,50,0.15); color:var(--danger); border-color:var(--danger); margin-right:5px;">⚠️ MIINUS-UHKA</div>`;
-        }
-        if ((showFull || vis.bday) && taskData.b) {
-            tagsHtml += `<div class="xp-badge" style="display:inline-block; margin-bottom:10px; background:rgba(194,120,33,0.15); color:var(--gm-accent); border-color:var(--gm-accent);">🎂 SANKARIBONUS</div>`;
-        }
+        if (showFull || vis.points) { tagsHtml += `<div class="xp-badge" style="margin-bottom:10px; margin-right:5px;">${taskData.p} XP</div>`; }
+        if (!isHeroTask && (showFull || vis.drawCount)) { tagsHtml += `<div class="xp-badge" style="margin-bottom:10px; background:rgba(255,255,255,0.05); color:var(--text); border-color:rgba(255,255,255,0.2); margin-right:5px;">👥 MAX ${taskData.r || 1} SUORITTAJAA</div>`; }
+        if ((showFull || vis.minus) && taskData.m) { tagsHtml += `<div class="xp-badge" style="margin-bottom:10px; background:rgba(185,50,50,0.15); color:var(--danger); border-color:var(--danger); margin-right:5px;">⚠️ MIINUS-UHKA</div>`; }
+        if ((showFull || vis.bday) && taskData.b) { tagsHtml += `<div class="xp-badge" style="margin-bottom:10px; background:rgba(194,120,33,0.15); color:var(--gm-accent); border-color:var(--gm-accent);">🎂 SANKARIBONUS</div>`; }
         headerHtml += `<div>${tagsHtml}</div>`;
 
         let descHtml = '';
-        if (isSpying && isGMCompactMode) {
-            descHtml += `<style>
-                .compact-view [data-task-id="${taskId}"] { padding: 24px !important; }
-                .compact-view [data-task-id="${taskId}"] .instruction-area { display: block !important; }
-                .compact-view [data-task-id="${taskId}"] .task-description { display: block !important; }
-                .compact-view [data-task-id="${taskId}"] .t-gm .btn { padding: 18px !important; font-size: 0.8rem !important; }
-            </style>`;
-        }
-
         const shouldShowDesc = showFull || vis.desc;
         if (shouldShowDesc) {
             const displayDesc = (taskData.d && taskData.d.trim() !== "") ? taskData.d : "Ei ohjeita.";
-            // UUSI: Dokumenttimaisuudesta eroon. Vain siisti teksti alue.
             descHtml += `<div class="instruction-area">
                             <div class="instruction-label">TEHTÄVÄN KUVAUS</div>
                             <p class="instruction-text">${displayDesc}</p>
                          </div>`;
-            
             if (isLocked && !isHeroTask) {
                 const drawnPlayers = results.map(r => r.name);
                 if (drawnPlayers.length > 0) {
@@ -908,11 +905,6 @@ function renderScoringArea(taskId, results, isHeroTask, heroWinState) {
     sArea.innerHTML = '';
     
     const box = document.createElement('div');
-    box.style.border = "2px dashed var(--hero-gold)";
-    box.style.background = "rgba(197, 161, 77, 0.08)";
-    box.style.padding = "15px";
-    box.style.borderRadius = "10px";
-    box.style.marginTop = "15px";
     box.className = "scoring-box"; 
     
     if (isHeroTask) {
