@@ -55,24 +55,18 @@ body {
 .role-btn.player.active { background: var(--accent); color: #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
 .role-btn.gm.active { background: var(--gm-accent); color: #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
 
-.role-btn.gm:active::after {
-    content: ''; position: absolute; bottom: 0; left: 0; height: 4px;
-    background: rgba(255,255,255,0.3); animation: hold-progress 0.8s linear forwards;
-}
-@keyframes hold-progress { from { width: 0%; } to { width: 100%; } }
-
 /* ==========================================
-   3. KORTIT JA MULTI-TASK (UUSI MUOTOILU & EROTTELU)
+   3. KORTIT JA MULTI-TASK
    ========================================== */
-#activeTasksContainer { display: flex; flex-direction: column; }
+#activeTasksContainer { display: flex; flex-direction: column; gap: 20px; }
 
 .card { 
     background: var(--surface); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-    border-radius: var(--radius); padding: 24px; margin-bottom: 25px; 
+    border-radius: var(--radius); padding: 24px; 
     border: 1px solid rgba(255,255,255,0.1); 
     border-top: 1px solid rgba(255,255,255,0.2);
-    border-bottom: 5px solid rgba(255,255,255,0.15); /* KORJAUS 1: Voimakas erottelu alakulmaan */
-    box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+    border-bottom: 5px solid rgba(255,255,255,0.15); /* Parempi erottelu korteille */
+    box-shadow: 0 15px 35px rgba(0,0,0,0.9);
     animation: slideIn 0.4s ease-out; position: relative; contain: content;
 }
 
@@ -117,7 +111,6 @@ body {
 .task-status-tag.muted { background: var(--surface-light); color: var(--muted); box-shadow: none; border: 1px solid rgba(255,255,255,0.1);}
 
 .stage-pulse { animation: pulse-gold 2s infinite; }
-
 @keyframes pulse-gold {
     0% { box-shadow: 0 0 0 0 rgba(212, 174, 83, 0.4); }
     70% { box-shadow: 0 0 0 10px rgba(212, 174, 83, 0); }
@@ -131,32 +124,55 @@ body {
 }
 .participating .xp-badge { background: rgba(31, 138, 98, 0.15); border-color: rgba(31, 138, 98, 0.5); }
 
-.instruction-area {
-    margin-top: 15px; padding-top: 15px;
-    border-top: 1px solid rgba(255,255,255,0.1);
-    animation: slideIn 0.3s ease-out;
+/* UUSI: Sulava animaatio supistukselle */
+.compact-transition {
+    max-height: 800px;
+    opacity: 1;
+    overflow: hidden;
+    transition: max-height 0.3s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease, margin 0.3s ease, padding 0.3s ease;
 }
+
+/* ==========================================
+   4. GM PISTEYTYKSEN HIMMENNYS JA KOPIOINNIN ESTO
+   ========================================== */
+.blur-reveal-area {
+    /* Estää puhelimen tekstivalinnan ja suurennuslasin */
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    transition: opacity 0.2s ease, filter 0.2s ease;
+}
+
+.gm-mode .is-scoring .blur-reveal-area {
+    opacity: 0.15;
+    filter: grayscale(1) blur(3px);
+    pointer-events: auto; /* Antaa koskea alueeseen kirkastusta varten */
+}
+
+/* Kirkastuu vain kun tätä nimenomaista aluetta painetaan */
+.gm-mode .is-scoring .blur-reveal-area:active {
+    opacity: 1; filter: none; 
+}
+
+/* UUSI OHJEALUE */
+.instruction-area { margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); }
 .participating .instruction-area { border-top: 1px dashed rgba(31, 138, 98, 0.5); }
 .hero-task-gold .instruction-area { border-top: 1px dashed rgba(212, 174, 83, 0.4); }
 
-.instruction-label {
-    font-size: 0.65rem; color: var(--accent); text-transform: uppercase;
-    letter-spacing: 2px; margin-bottom: 8px; font-weight: 800; opacity: 0.8;
-}
+.instruction-label { font-size: 0.65rem; color: var(--accent); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px; font-weight: 800; opacity: 0.8; }
 .participating .instruction-label { color: var(--success); }
 .hero-task-gold .instruction-label { color: var(--hero-gold); }
 
 .instruction-text { font-size: 1.05rem; line-height: 1.5; margin: 0; color: var(--muted); }
 .participating .instruction-text { font-size: 1.3rem; font-weight: 700; color: #ffffff; text-shadow: 0 2px 8px rgba(0,0,0,0.9); line-height: 1.4; }
-
 .task-description { line-height: 1.6; margin: 15px 0; font-size: 1.05rem; color: var(--muted); font-weight: 700; }
 
 /* ==========================================
-   4. PAINIKKEET
+   5. PAINIKKEET JA LAATIKOT
    ========================================== */
 .btn { 
     font-family: inherit; border-radius: 10px; border: none; font-weight: 800; padding: 18px; 
-    text-transform: uppercase; cursor: pointer; transition: transform 0.1s ease-out; 
+    text-transform: uppercase; cursor: pointer; transition: transform 0.1s ease-out, opacity 0.3s ease; 
     width: 100%; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; 
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.6); text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
@@ -167,34 +183,12 @@ body {
 .btn-success { background: var(--success); color: #ffffff; border: 1px solid rgba(255,255,255,0.2); }
 .btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); font-size: 0.7rem; padding: 10px; box-shadow: none; text-shadow: none; }
 
-/* ==========================================
-   5. GM PISTEYTYKSEN HIMMENNYS (VAIN KUN PAINETAAN)
-   ========================================== */
-.gm-mode .is-scoring .t-header,
-.gm-mode .is-scoring .t-desc {
-    opacity: 0.15; /* KORJAUS 3: Voimakas himmennys oletuksena */
-    filter: grayscale(1) blur(2px);
-    transition: opacity 0.15s ease, filter 0.15s ease;
-    pointer-events: none; /* Estää vahinkoklikkaukset tekstistä */
-}
-
-/* KORJAUS 3: Kirkastuu vain sormella/hiirellä pohjassa pitämällä (:active) */
-.gm-mode .is-scoring:active .t-header,
-.gm-mode .is-scoring:active .t-desc {
-    opacity: 1; filter: none; 
-}
-
 .scoring-box { 
-    border: 2px solid var(--hero-gold) !important;
-    background: rgba(212, 174, 83, 0.15) !important;
-    box-shadow: 0 0 25px rgba(212, 174, 83, 0.3) !important;
-    padding: 15px; border-radius: 12px; margin-top: 15px;
-    transform: scale(1.02); margin-bottom: 20px;
+    border: 2px solid var(--hero-gold) !important; background: rgba(212, 174, 83, 0.15) !important;
+    box-shadow: 0 0 25px rgba(212, 174, 83, 0.3) !important; padding: 15px; border-radius: 12px; 
+    margin-top: 15px; transform: scale(1.02); margin-bottom: 20px;
 }
 
-/* ==========================================
-   6. PELAAJARIVIT JA LOMAKEYKSIKÖT
-   ========================================== */
 .player-row { 
     display: flex; justify-content: space-between; align-items: center; 
     padding: 14px 18px; background: rgba(20,20,20,0.6); border-radius: 8px; 
@@ -236,14 +230,13 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
 #adminPlayerList .btn:active { transform: scale(0.85); }
 
 /* ==========================================
-   9. ANIMAATIOT JA VOITTAJA-ILMOITUS
+   6. ANIMAATIOT JA VOITTAJA-ILMOITUS
    ========================================== */
 .roulette-focus { background: var(--accent) !important; color: #ffffff !important; transform: scale(1.08) !important; box-shadow: 0 0 15px var(--accent-glow); z-index: 10; }
 .xp-popup {
     position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
     font-weight: 900; font-size: 4.5rem; z-index: 3100; pointer-events: none; display: none;
-    text-shadow: 0 0 30px rgba(0,0,0,0.9), 0 5px 15px rgba(0,0,0,0.5);
-    -webkit-text-stroke: 2px rgba(255,255,255,0.2);
+    text-shadow: 0 0 30px rgba(0,0,0,0.9), 0 5px 15px rgba(0,0,0,0.5); -webkit-text-stroke: 2px rgba(255,255,255,0.2);
 }
 .xp-animate { display: block !important; animation: xp-bouncy-float 2.2s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
 @keyframes xp-bouncy-float {
@@ -269,9 +262,6 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
 @keyframes shrink { from { width: 100%; } to { width: 0%; } }
 @keyframes winner-pop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-/* ==========================================
-   10. APULUOKAT JA MOBIILISKAALAUS
-   ========================================== */
 .player-mode .gm-only { display: none !important; }
 .gm-mode .player-only { display: none !important; }
 @keyframes slideIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
@@ -287,7 +277,7 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
 }
 
 /* ==========================================
-   11. HISTORIA JA LOKI
+   7. HISTORIA JA LOKI
    ========================================== */
 #taskHistoryList { display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; padding-right: 5px; }
 .history-item { background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px; border-left: 3px solid var(--accent); display: flex; justify-content: space-between; align-items: center; animation: slideIn 0.3s ease-out; }
@@ -299,34 +289,46 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
 #historyCard { min-height: auto; }
 
 /* ==========================================
-   12. COMPACT MODE (SUPER TIIVIS - GM PÄIVITYS)
+   8. COMPACT MODE (SUPER TIIVIS - GM PÄIVITYS)
    ========================================== */
 .compact-view-card { 
-    padding: 8px 12px !important; 
+    padding: 10px 12px !important; 
     min-height: auto !important; 
-    margin-bottom: 10px !important; 
+    margin-bottom: 15px !important; 
     border-radius: 12px !important;
-    background: rgba(10, 10, 10, 0.9) !important;
-    border-bottom: 3px solid rgba(255,255,255,0.2) !important;
+    background: rgba(10, 10, 10, 0.95) !important;
 }
+
+/* Kun kortti supistetaan, elementit menevät piiloon sulavasti */
+.compact-view-card .compact-transition { 
+    max-height: 0px !important; 
+    opacity: 0 !important; 
+    margin: 0 !important; 
+    padding: 0 !important; 
+    border: none !important;
+}
+
+/* GM-Kortin yläosan tiivistys */
 .compact-view-card .task-status-tag { font-size: 0.55rem; padding: 3px 6px; margin-bottom: 4px; }
-.compact-view-card h1 { font-size: 0.9rem !important; margin: 2px 0 4px 0 !important; line-height: 1.1; text-shadow: none !important; }
+.compact-view-card h1 { font-size: 0.95rem !important; margin: 2px 0 4px 0 !important; line-height: 1.1; text-shadow: none !important; }
 .compact-view-card .xp-badge { font-size: 0.55rem; padding: 2px 4px; margin-bottom: 4px; }
 
-/* Piilotetaan kaikki ylimääräinen selitys */
-.compact-view-card .instruction-area,
-.compact-view-card .task-description { display: none !important; }
+/* Tiivis Pelaajavalitsin GM:lle (Vierekkäin ja matala) */
+.compact-view-card .volunteer-selector-grid { 
+    display: flex !important; flex-wrap: wrap; gap: 4px !important; margin-bottom: 4px !important; 
+}
+.compact-view-card .volunteer-selector-grid .btn { 
+    flex: 1 1 auto; min-width: 25%; padding: 6px !important; font-size: 0.6rem !important; margin: 0 !important; border-radius: 6px !important; 
+}
+/* Piilota ei-valitut jos lukittu jo valmiiksi (turvallisuus) */
+.compact-view-card.is-scoring .volunteer-selector-grid .btn:not(.selected-participant) { display: none !important; }
 
-/* Supersupistetut ohjaimet GM:lle */
-.compact-view-card .t-gm { margin-top: 4px !important; padding-top: 4px !important; border-top: none; }
-.compact-view-card .volunteer-selector-grid { display: flex !important; flex-wrap: wrap; margin-bottom: 4px !important; gap: 4px !important; }
-.compact-view-card .volunteer-selector-grid .btn:not(.selected-participant) { display: none !important; }
+/* Tiiviit napit */
+.compact-view-card select { padding: 4px !important; font-size: 0.7rem !important; margin: 0 !important; border-radius: 6px !important; height: auto !important; }
+.compact-view-card .admin-row-stack { margin-bottom: 2px !important; gap: 4px !important; }
+.compact-view-card .admin-row-stack .btn { padding: 8px !important; font-size: 0.65rem !important; margin:0 !important; border-radius: 6px !important;}
+.compact-view-card .t-status .btn-danger { padding: 6px 8px; font-size: 0.6rem; }
 
-/* Puristetaan nappeja kasaan */
-.compact-view-card .btn { padding: 6px 8px !important; font-size: 0.6rem !important; margin-bottom: 4px !important; border-radius: 6px !important; }
-.compact-view-card select { padding: 4px 6px !important; font-size: 0.7rem !important; margin-bottom: 4px !important; border-radius: 6px !important; height: auto !important; }
-.compact-view-card .admin-row-stack { margin-bottom: 2px !important; gap: 4px !important; align-items: stretch; }
-
-/* Pisteytyslaatikko mahtuu tiiviimmin */
+/* Pisteytyslaatikko mini-koossa */
 .compact-view-card .scoring-box { padding: 6px !important; margin-top: 4px !important; transform: none !important; box-shadow: none !important; margin-bottom: 4px !important;}
-.compact-view-card .player-row { padding: 2px 6px !important; margin-bottom: 2px !important; font-size: 0.75rem !important; }
+.compact-view-card .player-row { padding: 4px 8px !important; margin-bottom: 2px !important; font-size: 0.75rem !important; }
