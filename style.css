@@ -65,11 +65,10 @@ body {
     border-radius: var(--radius); padding: 24px; margin-bottom: 25px; 
     border: 1px solid rgba(255,255,255,0.1); border-top: 1px solid rgba(255,255,255,0.2);
     border-bottom: 5px solid rgba(255,255,255,0.15); box-shadow: 0 15px 35px rgba(0,0,0,0.9);
-    animation: slideIn 0.4s ease-out; position: relative; contain: content;
-    width: 100%;
+    animation: slideIn 0.4s ease-out; position: relative; transition: padding 0.3s ease;
 }
 
-.active-task-item { border-left: 5px solid var(--accent); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.active-task-item { border-left: 5px solid var(--accent); }
 
 .active-task-item.participating {
     background: linear-gradient(145deg, #05140d, #000000) !important;
@@ -123,17 +122,20 @@ body {
 }
 .participating .xp-badge { background: rgba(31, 138, 98, 0.15); border-color: rgba(31, 138, 98, 0.5); }
 
+/* SILKINPEHMEÄ SUPISTUS-ANIMAATIO CSS GRIDILLÄ */
 .smooth-collapse {
-    max-height: 1000px;
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
     opacity: 1;
-    overflow: hidden;
-    transition: max-height 0.4s ease-in-out, opacity 0.3s ease, margin 0.3s ease, padding 0.3s ease;
 }
+.smooth-collapse > div { overflow: hidden; }
 
 /* ==========================================
    4. GM PISTEYTYKSEN HIMMENNYS JA KOPIOINNIN ESTO
    ========================================== */
 .blur-reveal-area {
+    /* Järeä kopioinnin esto */
     -webkit-touch-callout: none !important; -webkit-user-select: none !important;
     -khtml-user-select: none !important; -moz-user-select: none !important;
     -ms-user-select: none !important; user-select: none !important;
@@ -183,6 +185,7 @@ body {
 .score-btn-win { background: var(--success) !important; border: 2px solid #ffffff !important; color: #ffffff !important;}
 .score-btn-fail { background: var(--danger) !important; border: 2px solid #ffffff !important; color: #ffffff !important;}
 
+/* KORJAUS 2: Leaderboard ei himmene jäähyllä */
 .player-row { 
     display: flex; justify-content: space-between; align-items: center; 
     padding: 14px 18px; background: rgba(20,20,20,0.6); border-radius: 8px; 
@@ -224,34 +227,39 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
 #adminPlayerList .btn:active { transform: scale(0.85); }
 
 /* ==========================================
-   6. ANIMAATIOT (UUSI KIMALTELEVA JALOKIVI XP)
+   6. ANIMAATIOT (UUSI HOLLOW XP EFEKTI)
    ========================================== */
-.roulette-focus { background: var(--accent) !important; color: #ffffff !important; transform: scale(1.08) !important; box-shadow: 0 0 15px var(--accent-glow); z-index: 10; }
+.roulette-focus { background: #a36114 !important; color: #ffffff !important; transform: scale(1.08) !important; box-shadow: 0 0 20px #a36114; z-index: 10; }
 
-/* KORJAUS 3: Parempi erottuvuus ja järeämpi varjo XP-tekstille */
+/* KORJAUS 5: Ääriviiva-teksti ilman sotkuja (Text-shadow matriisi) */
 .xp-popup {
     position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    font-weight: 900; font-size: 5.5rem; z-index: 5000; pointer-events: none; display: none;
-    text-align: center; letter-spacing: 0px; background: transparent !important; border: none !important; box-shadow: none !important; padding: 0;
+    font-weight: 900; font-size: 6rem; z-index: 5000; pointer-events: none; display: none;
+    text-align: center; letter-spacing: 2px;
+    color: transparent !important; background: transparent !important; border: none !important; box-shadow: none !important; padding: 0;
 }
 .xp-popup.success {
-    color: #4ade80 !important;
-    -webkit-text-stroke: 2px #ffffff;
-    filter: drop-shadow(0px 6px 4px rgba(0,0,0,1)) drop-shadow(0px 0px 25px rgba(34, 197, 94, 1));
+    text-shadow: 
+         -2px -2px 0 #4ade80, 0 -2px 0 #4ade80, 2px -2px 0 #4ade80,
+         -2px  0   0 #4ade80,                     2px  0   0 #4ade80,
+         -2px  2px 0 #4ade80, 0  2px 0 #4ade80, 2px  2px 0 #4ade80,
+         0 0 35px rgba(34, 197, 94, 0.8), 0 0 10px rgba(34, 197, 94, 0.5);
 }
 .xp-popup.danger {
-    color: #f87171 !important;
-    -webkit-text-stroke: 2px #ffffff;
-    filter: drop-shadow(0px 6px 4px rgba(0,0,0,1)) drop-shadow(0px 0px 25px rgba(239, 68, 68, 1));
+    text-shadow: 
+         -2px -2px 0 #f87171, 0 -2px 0 #f87171, 2px -2px 0 #f87171,
+         -2px  0   0 #f87171,                     2px  0   0 #f87171,
+         -2px  2px 0 #f87171, 0  2px 0 #f87171, 2px  2px 0 #f87171,
+         0 0 35px rgba(239, 68, 68, 0.8), 0 0 10px rgba(239, 68, 68, 0.5);
 }
 
-.xp-animate { animation: xp-float-awesome 2.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+.xp-animate { animation: xp-float-awesome 2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
 
 @keyframes xp-float-awesome {
-    0% { opacity: 0; transform: translate(-50%, 40px) scale(0.5); }
+    0% { opacity: 0; transform: translate(-50%, 50px) scale(0.5); }
     15% { opacity: 1; transform: translate(-50%, -10px) scale(1.1); }
     30% { transform: translate(-50%, 0px) scale(1); }
-    80% { opacity: 1; transform: translate(-50%, -30px) scale(1); }
+    80% { opacity: 1; transform: translate(-50%, -20px) scale(1); }
     100% { opacity: 0; transform: translate(-50%, -60px) scale(0.8); }
 }
 
@@ -265,6 +273,7 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
 .winner-content h1 { color: var(--success); font-size: 3rem; margin-bottom: 10px; text-shadow: 0 0 20px var(--success); }
 .winner-content p { font-size: 1.4rem; color: var(--text); font-weight: 700; }
 
+/* KORJAUS 4: Keskittää kauniisti useammatkin voittotehtävät! */
 #winnerTaskNames { 
     font-size: 1.5rem; color: var(--accent); margin: 0 0 20px 0; text-transform: uppercase; 
     word-wrap: break-word; hyphens: auto; line-height: 1.4; font-weight: 900; 
@@ -305,29 +314,23 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
    ========================================== */
 .compact-view-card { 
     padding: 12px 14px !important; 
-    min-height: auto !important; 
     border-radius: 12px !important;
     background: rgba(10, 10, 10, 0.95) !important;
 }
 
+/* Kun kääre laitetaan nollaan, asiat menevät piiloon sulavasti */
 .compact-view-card .smooth-collapse { 
-    max-height: 0px !important; 
-    opacity: 0 !important; 
-    margin: 0 !important; 
-    padding: 0 !important; 
-}
-
-/* KORJAUS 1: Arvonta-ruudukko (napit) piilotetaan KOKONAAN supistetussa tilassa! */
-.compact-view-card .volunteer-selector-grid {
-    display: none !important;
+    grid-template-rows: 0fr !important;
+    opacity: 0 !important;
 }
 
 .compact-view-card .task-status-tag { font-size: 0.55rem; padding: 3px 6px; margin-bottom: 4px; }
 .compact-view-card h1 { font-size: 1rem !important; margin: 4px 0 6px 0 !important; line-height: 1.1; text-shadow: none !important; }
 .compact-view-card .xp-badge { font-size: 0.55rem; padding: 2px 4px; margin-bottom: 4px; }
 
+/* Vain supistetussa tilassa näkyvä nimilista */
 .compact-participants-text { display: none; }
 .compact-view-card .compact-participants-text { display: block !important; margin-bottom: 8px; }
 
-.compact-view-card .scoring-box { padding: 8px !important; margin-top: 4px !important; transform: none !important; box-shadow: none !important; margin-bottom: 4px !important;}
-.compact-view-card .player-row { padding: 4px 8px !important; margin-bottom: 4px !important; font-size: 0.75rem !important; }
+/* KORJAUS 1: Arvonta-ruudukko JA PISTEYTYS piilotetaan kokonaan supistetussa tilassa! */
+.compact-view-card .t-gm { display: none !important; }
