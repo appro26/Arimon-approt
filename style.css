@@ -71,7 +71,6 @@ body {
 
 .active-task-item { border-left: 5px solid var(--accent); }
 
-/* HOLD-TILA (JÄÄDYTETTY TEHTÄVÄ) */
 .active-task-item.task-on-hold {
     background: repeating-linear-gradient(45deg, rgba(0,0,0,0.8), rgba(0,0,0,0.8) 10px, rgba(20,20,20,0.9) 10px, rgba(20,20,20,0.9) 20px) !important;
     border: 2px dashed rgba(255,255,255,0.4) !important;
@@ -212,7 +211,7 @@ body {
 }
 .player-row.me { border-color: rgba(37, 138, 163, 0.6); background: rgba(37, 138, 163, 0.15); font-weight: 700; }
 .player-row.is-hero { border-color: rgba(212, 174, 83, 0.6); background: rgba(212, 174, 83, 0.15); font-weight: 700; }
-.player-row.on-cooldown { border-left: 4px solid var(--danger); }
+.player-row.on-cooldown { border-left: 4px solid var(--danger); background: rgba(20,20,20,0.8); }
 
 input:not([type="checkbox"]), textarea, select { 
     background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); color: var(--text); 
@@ -250,16 +249,23 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
    ========================================== */
 .roulette-focus { background: #a36114 !important; color: #ffffff !important; transform: scale(1.08) !important; box-shadow: 0 0 20px #a36114; z-index: 10; }
 
+/* KORJAUS 3: UUSI VÄRIKÄS JA SELKEÄ XP EFEKTI */
 .xp-popup {
     position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
     font-weight: 900; font-size: 6.5rem; z-index: 5000; pointer-events: none; display: none;
     text-align: center; letter-spacing: 2px;
     background: transparent !important; border: none !important; box-shadow: none !important; padding: 0;
-    color: transparent !important; 
-    -webkit-text-stroke: 4px #ffffff; 
+    /* Musta vahva ääriviiva kontrastin tuomiseksi */
+    -webkit-text-stroke: 2px #000000; 
 }
-.xp-popup.success { filter: drop-shadow(0px 0px 30px #16a34a) drop-shadow(0px 8px 10px rgba(0,0,0,0.9)); }
-.xp-popup.danger { filter: drop-shadow(0px 0px 30px #dc2626) drop-shadow(0px 8px 10px rgba(0,0,0,0.9)); }
+.xp-popup.success {
+    color: #4ade80 !important; /* Kirkas solid vihreä */
+    filter: drop-shadow(0px 0px 20px rgba(34, 197, 94, 0.8)) drop-shadow(0px 5px 5px rgba(0,0,0,0.8));
+}
+.xp-popup.danger {
+    color: #f87171 !important; /* Kirkas solid punainen */
+    filter: drop-shadow(0px 0px 20px rgba(239, 68, 68, 0.8)) drop-shadow(0px 5px 5px rgba(0,0,0,0.8));
+}
 
 .xp-animate { animation: xp-float-awesome 2.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
 
@@ -343,3 +349,6 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
     display: grid; grid-template-rows: 1fr !important; opacity: 1 !important; 
 }
 .compact-inner-text { margin-top: 4px; margin-bottom: 6px; }
+
+.compact-view-card .volunteer-selector-grid { display: none !important; }
+.compact-view-card .scoring-box { display: none !important; } 
