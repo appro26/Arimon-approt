@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="icon.png">
 
-    <link rel="stylesheet" href="style.css?v=12">
+    <link rel="stylesheet" href="style.css?v=13">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
 
@@ -60,10 +60,10 @@
 
         <div class="gm-only" id="gmGlobalControls" style="display:none; margin-bottom: 15px;">
             <div class="admin-grid-layout" style="flex-wrap: wrap;">
-                <button class="btn btn-gm" onclick="drawAllTasks()" style="font-size: 0.65rem; padding: 12px; flex: 1; background: #a36114;">ARVO KAIKKIIN</button>
-                <button class="btn btn-primary" onclick="lockAllTasks()" style="font-size: 0.65rem; padding: 12px; flex: 1;">LUKITSE KAIKKI</button>
+                <button class="btn btn-gm" onclick="drawAllTasks()" style="font-size: 0.65rem; padding: 12px; flex: 1; background: #a36114;">1. ARVO PELAAJAT</button>
+                <button class="btn btn-primary" onclick="lockAllTasks()" style="font-size: 0.65rem; padding: 12px; flex: 1;">2. LUKITSE KAIKKI</button>
+                <button class="btn btn-success" onclick="finishAllTasks()" style="font-size: 0.65rem; padding: 12px; flex-basis: 100%; margin-top: -5px;">3. MERKITSE VALMIIT KERRALLA</button>
                 <button class="btn btn-secondary" id="gmCompactToggleBtn" onclick="toggleGMCompactMode()" style="font-size: 0.65rem; padding: 12px; flex-basis: 100%; margin-top: -5px;">SUPISTA NÄKYMÄ KAIKISTA</button>
-                <button class="btn btn-success" onclick="finishAllTasks()" style="font-size: 0.65rem; padding: 12px; flex-basis: 100%; margin-top: -5px;">MERKITSE VALMIIT KERRALLA</button>
             </div>
         </div>
 
@@ -210,7 +210,7 @@
         </div>
     </div>
 
-    <div id="xpPopUp" class="xp-popup">+2 XP</div>
+    <div id="xpPopUp" class="xp-popup"></div>
 
     <div id="lotteryWinner" class="winner-overlay" style="display:none;">
         <div class="winner-content">
