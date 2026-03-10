@@ -76,7 +76,6 @@ let leaderboardDirections = {};
 const APP_NAME = "Arimon Approt";
 document.title = APP_NAME;
 
-// --- TEHTÄVÄPAKKA (PÄIVITETTY: KILPAILUT + SANKARI 1XP) ---
 const defaultTasks = [
     { id: 1, n: "Mise en place", d: "Varmista, että kaikilla pöytäseurueen jäsenillä on lasissa juotavaa (myös vettä). Jos jollain on tyhjää, täytä lasia omalla juomallasi tai vedellä.", p: 2, m: 2, b: false, r: 2, k: 'juoma' },
     { id: 2, n: "Uudelleenkäynnistys (Reboot)", d: "Kaikkien suorittajien on juotava lasi vettä yhdeltä istumalta 'järjestelmän vakauttamiseksi'.", p: 1, m: 3, b: false, r: 3, k: 'juoma' },
@@ -145,7 +144,6 @@ const defaultTasks = [
     { id: 81, n: "Admin-komento", d: "Valitsemasi pelaaja joutuu kertomaan vitsin tai juomaan lasin vettä.", p: 2, m: 0, b: false, r: 2, k: 'pokka' }, 
     { id: 82, n: "Victory Dance", d: "Tee lyhyt ja energinen voittotanssi baarin lattialla (PUBG tyyliin).", p: 3, m: 1, b: false, r: 1, k: 'pokka' },
     
-    // --- UUDET TEHTÄVÄT ---
     { id: 103, n: "Palvelimen hätätuuletus", d: "Jos näet sytytetyn kynttilän, sammuta se heiluttamalla paperia tai servettiä, jota pidät huulien välissä.", p: 3, m: true, b: false, r: 1, k: 'liikunta' },
     { id: 104, n: "Valkokastikkeen pohja", d: "Tilaa lasi maitoa tai kermaa (kermasta GM antaa extra pisteen). Jos juot lasin tyhjäksi saat 1 extra pisteen.", p: 1, m: true, b: false, r: 1, k: 'juoma' },
     { id: 105, n: "Hylätty Dacia", d: "Ota selfie likaisimman auton kanssa mitä löydät.", p: 1, m: true, b: false, r: 1, k: 'liikunta' },
@@ -156,7 +154,6 @@ const defaultTasks = [
     { id: 110, n: "Laajakaistan maksimointi", d: "Juo juoma käyttämällä vähintään viittä pilliä samaan aikaan.", p: 1, m: true, b: false, r: 1, k: 'juoma' },
     { id: 111, n: "Tasting-lusikka", d: "Juo juoma käyttämällä lusikkaa.", p: 3, m: true, b: false, r: 1, k: 'juoma' },
 
-    // --- UUDET KILPAILUTEHTÄVÄT (20 kpl, 1v1 dynamiikka, m: true -> ± samat pisteet) ---
     { id: 112, n: "Flashbang-tuijotuskisa", d: "Pelaajat ottavat mittaa toisistaan tuijotuskisassa. Se, joka räpäyttää silmiään, kääntää katseensa tai nauraa ensin, on häviäjä.", p: 2, m: true, b: false, r: 2, k: 'kilpailu' },
     { id: 113, n: "DDoS-hyökkäys", d: "GM antaa pitkän ja vaikean sanan tai lauseen. Kilpailijoiden pitää kirjoittaa se ryhmän WhatsAppiin/chattiin. Ensimmäisenä täysin virheettömän viestin lähettänyt voittaa.", p: 2, m: true, b: false, r: 2, k: 'kilpailu' },
     { id: 114, n: "Sudden Death -puttikisa", d: "Kumpikin heittää vuorotellen lasinalusta pystyssä olevaan tyhjään tuoppiin n. 2 metrin päästä. Heitetään 3 heittoa per pelaaja. Se, joka saa enemmän 'putteja' sisään, voittaa.", p: 3, m: true, b: false, r: 2, k: 'kilpailu' },
@@ -178,7 +175,6 @@ const defaultTasks = [
     { id: 130, n: "Ping-viive", d: "Laskentakisa. Kilpailijoiden pitää vuorotellen laskea taaksepäin sadasta alaspäin miinus seitsemän (100, 93, 86...). Ensimmäinen, joka sekoaa laskuissa tai miettii yli 3 sekuntia, häviää.", p: 3, m: true, b: false, r: 2, k: 'kilpailu' },
     { id: 131, n: "Tarkka-ampujan vakaus", d: "Kumpikin ottaa oman juomalasinsa ja nostaa sen suoralla kädellä eteensä ilmaan. Se, kenen käsi alkaa täristä liikaa, laskee alas tai koukistuu ensin, häviää.", p: 3, m: true, b: false, r: 2, k: 'kilpailu' },
 
-    // --- SANKARITEHTÄVÄT (KORJATTU: KAIKKI p: 1) ---
     { id: 83, n: "Admin-huolto (Sankari)", d: "Sankarin on kerättävä seurueen kaikki tyhjät tölkit/lasit ja vietävä ne tiskille yksin.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'liikunta' },
     { id: 84, n: "Kiekon etsintä (Sankari)", d: "Sankari joutuu nousemaan ylös ja kävelemään baarin ympäri etsimässä 'kadonnutta kiekkoa'.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'liikunta' },
     { id: 85, n: "PUBG Emote (Sankari)", d: "Sankarin on esitettävä jokin PUBG-pelin tuuletus tai liike baarin keskellä mahdollisimman näyttävästi.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'pokka' },
@@ -273,7 +269,7 @@ window.resetGame = function() {
                 useCooldowns: true, strictVolunteer: false, excludeUsedTasks: true, bdayHero: null,
                 visibility: { title: true, points: true, category: true, drawCount: false, desc: false, minus: true, bday: true },
                 heroDraw: { include: true, weighted: false, interval: 4, drawCount: 0 },
-                disableHeroBonus: false, forceSinglePlayer: false 
+                disableHeroBonus: false, forceSinglePlayer: false, alwaysMinusOne: true // UUSI KYTKIN (Oletuksena päällä!)
             }
         }).then(() => { localStorage.clear(); location.reload(); });
     }
@@ -312,7 +308,7 @@ db.ref('gameState').on('value', (snap) => {
     }
     
     taskLibrary = (data.tasks || []).map(t => {
-        if (t.id >= 83 && t.id <= 102) return { ...t, isHero: true, p: 1 }; // Varmistus sankaripisteille
+        if (t.id >= 83 && t.id <= 102) return { ...t, isHero: true, p: 1 }; 
         return t;
     });
 
@@ -350,6 +346,9 @@ db.ref('gameState').on('value', (snap) => {
 
         if(document.getElementById('disableHeroBonus')) document.getElementById('disableHeroBonus').checked = !!config.disableHeroBonus;
         if(document.getElementById('forceSinglePlayer')) document.getElementById('forceSinglePlayer').checked = !!config.forceSinglePlayer;
+        
+        // PÄIVITETÄÄN UUDEN KYTKIMEN UI (Jos puuttuu db:stä, oletetaan true)
+        if(document.getElementById('alwaysMinusOne')) document.getElementById('alwaysMinusOne').checked = config.alwaysMinusOne !== false;
     }
 
     if(document.getElementById('adminPanel').style.display === 'block') {
@@ -581,7 +580,7 @@ function renderActiveTasks(tasksObj, config) {
             if (taskData.k === 'pokka') { catName = '🗣️ POKKA'; catClass = 'badge-pokka'; }
             if (taskData.k === 'liikunta') { catName = '🏃 TOIMINTA'; catClass = 'badge-liikunta'; }
             if (taskData.k === 'juoma') { catName = '🍻 JUOMA'; catClass = 'badge-juoma'; }
-            if (taskData.k === 'kilpailu') { catName = '⚔️ KILPAILU'; catClass = 'badge-kilpailu'; } // UUSI LUOKKA
+            if (taskData.k === 'kilpailu') { catName = '⚔️ KILPAILU'; catClass = 'badge-kilpailu'; }
             tagsHtml += `<div class="xp-badge ${catClass}" style="margin-bottom:10px; margin-right:5px;">${catName}</div>`;
         }
 
@@ -1015,11 +1014,13 @@ function lockParticipants(taskId, isMassAction = false) {
     });
 }
 
+// KORJAUS: UUSI PISTEYTYSLOGIIKKA "AINA -1" KYTKIMELLÄ
 function showScoring(taskId, isMassAction = false, extConfig = null) {
     db.ref('gameState').once('value', snap => {
         const d = snap.val();
         const config = extConfig || d.config || {}; 
         const disableBonus = !!config.disableHeroBonus; 
+        const alwaysMinusOne = config.alwaysMinusOne !== false; // Oletuksena true jos puuttuu
         
         const taskInstance = d.activeTasks[taskId];
         if(!taskInstance) return;
@@ -1037,8 +1038,11 @@ function showScoring(taskId, isMassAction = false, extConfig = null) {
             if (taskInstance.isHero) {
                 if (idx === heroId) {
                     const heroWon = taskInstance.heroWin !== false;
-                    if (heroWon) earned += taskInstance.p;
-                    else if (taskInstance.m) earned -= taskInstance.p;
+                    if (heroWon) {
+                        earned += taskInstance.p;
+                    } else if (taskInstance.m) {
+                        earned -= alwaysMinusOne ? 1 : taskInstance.p;
+                    }
                     winnersNames.push(p.name);
                 }
             } else {
@@ -1048,7 +1052,7 @@ function showScoring(taskId, isMassAction = false, extConfig = null) {
                         earned += taskInstance.p; 
                         winnersNames.push(p.name); 
                     } else if(taskInstance.m) {
-                        earned -= taskInstance.p; // Tämä tekee miinuksesta aina yhtä suuren kuin palkkio!
+                        earned -= alwaysMinusOne ? 1 : taskInstance.p;
                     }
                 } else if (idx === heroId && taskInstance.b && !disableBonus) {
                     if (taskCompletedBySomeone) earned += 1; 
