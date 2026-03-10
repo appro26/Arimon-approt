@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="icon.png">
 
-    <link rel="stylesheet" href="style.css?v=16">
+    <link rel="stylesheet" href="style.css?v=17">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
 
@@ -54,11 +54,11 @@
             KIRJAUDU SISÄÄN
         </div>
 
-        <div class="player-only" style="margin-bottom: 15px;">
+        <div class="player-only" style="margin-bottom: 15px; position: relative; z-index: 50;">
             <button class="btn btn-secondary" id="playerCompactToggleBtn" onclick="togglePlayerCompactMode()" style="font-size: 0.65rem; padding: 12px; width: 100%; margin: 0;">SUPISTA NÄKYMÄ</button>
         </div>
 
-        <div class="gm-only" id="gmGlobalControls" style="display:none; margin-bottom: 15px;">
+        <div class="gm-only" id="gmGlobalControls" style="display:none; margin-bottom: 15px; position: relative; z-index: 50;">
             <div class="admin-grid-layout" style="flex-wrap: wrap;">
                 <button class="btn btn-arvo" onclick="drawAllTasks()" style="font-size: 0.65rem; padding: 12px; flex: 1;">1. ARVO PELAAJAT</button>
                 <button class="btn btn-primary" onclick="lockAllTasks()" style="font-size: 0.65rem; padding: 12px; flex: 1;">2. LUKITSE TEHTÄVÄT</button>
@@ -69,7 +69,7 @@
 
         <div id="activeTasksContainer"></div>
 
-        <div class="gm-only">
+        <div class="gm-only" style="position: relative; z-index: 50;">
             <div class="admin-grid-layout" style="margin-bottom: 20px;">
                 <button class="btn btn-arvo" onclick="confirmRandomize()">ARVO UUSI TEHTÄVÄ</button>
                 <button class="btn btn-secondary" onclick="toggleAdminPanel()">ADMIN-PANEELI</button>
@@ -199,12 +199,12 @@
             </div>
         </div>
 
-        <div class="card">
+        <div class="card" style="position: relative; z-index: 10;">
             <h2>Leaderboard</h2>
             <div id="playerList"></div>
         </div>
 
-        <div class="card" id="historyCard" style="margin-top: 20px;">
+        <div class="card" id="historyCard" style="margin-top: 20px; position: relative; z-index: 10;">
             <h2>Aiemmat tehtävät</h2>
             <div id="taskHistoryList" style="font-size: 0.8rem; color: var(--muted);"></div>
         </div>
@@ -217,7 +217,7 @@
         <div class="winner-content">
             <h1 style="margin:0;">🎉 SINUT VALITTIIN!</h1>
             <p style="font-size:1.1rem; color:var(--muted); margin:10px 0;">TEHTÄVÄT:</p>
-            <div id="winnerTaskNames" style="color:var(--accent); font-size:1.5rem; margin:0 0 20px 0; text-transform: uppercase; line-height:1.4; font-weight:900; text-align: center;"></div>
+            <div id="winnerTaskNames"></div>
             <div class="timer-bar" style="background:var(--accent); height:4px; width:100%; border-radius:2px;"></div>
             <p style="font-size:0.8rem; color:var(--muted); margin-top:15px; font-weight:900;">VALMISTAUDU SUORITTAMAAN</p>
         </div>
