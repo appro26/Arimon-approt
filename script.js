@@ -69,7 +69,7 @@ let wasInGame = false;
 
 let isPlayerCompactMode = false;
 let isGMCompactMode = false;
-window.localTaskCompactState = {}; // UUSI: Yksittäisten korttien tila
+window.localTaskCompactState = {}; // KORJAUS 5: Yksittäisen kortin oma tila
 
 let pendingWinnerTasks = [];
 let winnerTimeout = null;
@@ -206,6 +206,7 @@ window.toggleIndividualTask = function(taskId) {
 
 window.toggleGMCompactMode = function() {
     isGMCompactMode = !isGMCompactMode;
+    window.localTaskCompactState = {}; // KORJAUS 5: Ylikirjoittaa yksittäiset avaukset
     const btn = document.getElementById('gmCompactToggleBtn');
     if (btn) btn.innerText = isGMCompactMode ? 'LAAJENNA NÄKYMÄ' : 'SUPISTA NÄKYMÄ';
     db.ref('gameState').once('value', snap => {
@@ -215,6 +216,7 @@ window.toggleGMCompactMode = function() {
 
 window.togglePlayerCompactMode = function() {
     isPlayerCompactMode = !isPlayerCompactMode;
+    window.localTaskCompactState = {}; // KORJAUS 5: Ylikirjoittaa yksittäiset avaukset
     const btn = document.getElementById('playerCompactToggleBtn');
     if (btn) btn.innerText = isPlayerCompactMode ? 'LAAJENNA NÄKYMÄ' : 'SUPISTA NÄKYMÄ';
     db.ref('gameState').once('value', snap => {
@@ -284,7 +286,7 @@ db.ref('gameState').on('value', (snap) => {
     updateManualTaskSelect();
     renderHistory();
     
-    // KORJAUS: Asetetaan checkboxit heti riippumatta siitä onko paneeli auki
+    // KORJAUS 6: Asetetaan checkboxit heti riippumatta siitä onko paneeli auki
     if (document.getElementById('useCooldowns')) {
         document.getElementById('useCooldowns').checked = !!config.useCooldowns;
         document.getElementById('strictVolunteer').checked = !!config.strictVolunteer;
@@ -433,6 +435,8 @@ function renderActiveTasks(tasksObj, config) {
         if (!card) {
             card = document.createElement('div');
             card.setAttribute('data-task-id', taskId);
+            // KORJAUS 3: ontouchstart mahdollistaa :active pseudoluokan mobiilissa!
+            card.setAttribute('ontouchstart', ''); 
             card.innerHTML = `
                 <div class="t-status"></div>
                 <div class="t-header"></div>
@@ -513,6 +517,7 @@ function renderActiveTasks(tasksObj, config) {
                             <div class="instruction-label">TEHTÄVÄN KUVAUS</div>
                             <p class="instruction-text">${displayDesc}</p>
                          </div>`;
+            
             if (isLocked && !isHeroTask) {
                 const drawnPlayers = results.map(r => r.name);
                 if (drawnPlayers.length > 0) {
@@ -541,22 +546,35 @@ function renderActiveTasks(tasksObj, config) {
 
         let gmHtml = '';
         if (isGM) {
-            gmHtml += `<div style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.05); padding-top:15px;">`;
+            gmHtml += `<div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:12px;">`;
+            
             if (!isHeroTask) {
-                gmHtml += `
-                    <div class="volunteer-selector-grid" id="grid-${taskId}"></div>
-                    <div class="admin-row-stack">
-                        <div style="display:flex; gap:10px; flex:1;">
-                            <select id="drawCount-${taskId}" style="flex:1; margin:0;" onchange="updateTaskDrawCount('${taskId}', this.value)"></select>
-                            <button class="btn btn-gm" style="flex:2; margin:0;" onclick="drawRandom('${taskId}')">ARVO PELAAJAT</button>
+                if (!isLocked) {
+                    // KORJAUS 2: Napit näkyvät vain oikeissa vaiheissa
+                    const hasParticipants = results.length > 0;
+                    const isDrawn = taskData.drawn;
+                    
+                    const drawOpacity = isDrawn ? '0.4' : '1';
+                    const lockOpacity = (hasParticipants && isDrawn) ? '1' : '0.4';
+                    const lockPulse = (hasParticipants && isDrawn) ? 'box-shadow: 0 0 15px var(--success); transform: scale(1.02);' : '';
+
+                    gmHtml += `
+                        <div class="volunteer-selector-grid" id="grid-${taskId}"></div>
+                        <div class="admin-row-stack">
+                            <div style="display:flex; gap:8px; flex:1; opacity:${drawOpacity}; transition:all 0.3s;">
+                                <select id="drawCount-${taskId}" style="flex:1; margin:0;" onchange="updateTaskDrawCount('${taskId}', this.value)"></select>
+                                <button class="btn btn-gm" style="flex:2; margin:0;" onclick="drawRandom('${taskId}')">ARVO PELAAJAT</button>
+                            </div>
+                            <button class="btn btn-success" style="margin:0; font-size:0.75rem; padding:12px; opacity:${lockOpacity}; ${lockPulse} transition:all 0.3s;" onclick="lockParticipants('${taskId}')">LUKITSE VALINNAT</button>
                         </div>
-                        <button class="btn btn-success" style="margin:0; font-size:0.75rem; padding:12px;" onclick="lockParticipants('${taskId}')">LUKITSE VALINNAT</button>
-                    </div>
-                `;
+                    `;
+                }
+                // Jos on lukittu, arvontaruudukkoa EI ENÄÄ PIIRRETÄ ollenkaan (Säästää massiivisesti tilaa!)
             }
+            
             gmHtml += `<div id="scoring-${taskId}"></div>`;
             gmHtml += `
-                <div style="display:flex; gap:10px; margin-top:10px;">
+                <div style="display:flex; gap:10px; margin-top:8px;">
                     <button class="btn btn-success" id="finish-${taskId}" style="display:${(isLocked || isHeroTask) ? 'block' : 'none'}; flex:2; margin:0;" onclick="showScoring('${taskId}')">MERKITSE VALMIIKSI</button>
                     <button class="btn btn-secondary" style="flex:1; font-size:0.6rem; padding:8px; margin:0;" onclick="toggleGMSpy('${taskId}')">SPEKSIT</button>
                 </div>
@@ -575,7 +593,8 @@ function renderActiveTasks(tasksObj, config) {
         updateNode('.t-gm', gmHtml);
 
         if (isGM) {
-            if (!isHeroTask) {
+            // Renderöidään valintaruudukko vain jos sitä ei ole lukittu
+            if (!isHeroTask && !isLocked) {
                 renderGMGrid(taskId, results, isLocked, taskData.isLotteryRunning, config.useCooldowns, taskData);
                 updateDrawCountSelect(taskId, taskData);
             }
