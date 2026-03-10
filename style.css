@@ -41,7 +41,7 @@ body {
 .role-switcher { 
     position: fixed; top: calc(15px + env(safe-area-inset-top)); left: 10px; right: 10px; 
     height: 54px; display: flex; z-index: 1000; 
-    background: rgba(10, 10, 10, 0.75); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+    background: rgba(10, 10, 10, 0.85); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
     border-radius: 27px; border: 1px solid rgba(255,255,255,0.15); padding: 5px; 
     box-shadow: 0 4px 20px rgba(0,0,0,0.8); overflow: hidden;
 }
@@ -62,18 +62,20 @@ body {
 @keyframes hold-progress { from { width: 0%; } to { width: 100%; } }
 
 /* ==========================================
-   3. KORTIT JA MULTI-TASK
+   3. KORTIT JA MULTI-TASK (KORJATTU MARGINAALI!)
    ========================================== */
-#activeTasksContainer { display: flex; flex-direction: column; }
+#activeTasksContainer { display: flex; flex-direction: column; width: 100%; }
 
 .card { 
     background: var(--surface); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-    border-radius: var(--radius); padding: 24px; margin-bottom: 25px; /* TÄMÄ RIVI PUUTTUI AIEMMIN! */
+    border-radius: var(--radius); padding: 24px; 
+    margin-bottom: 25px; /* TÄMÄ ESTÄÄ PÄÄLLEKKÄISYYDEN */
     border: 1px solid rgba(255,255,255,0.1); 
     border-top: 1px solid rgba(255,255,255,0.2);
-    border-bottom: 5px solid rgba(255,255,255,0.15); 
+    border-bottom: 4px solid rgba(255,255,255,0.15); /* Parempi visuaalinen erottelu */
     box-shadow: 0 15px 35px rgba(0,0,0,0.9);
-    animation: slideIn 0.4s ease-out; position: relative;
+    animation: slideIn 0.4s ease-out; position: relative; contain: content;
+    width: 100%;
 }
 
 .active-task-item { border-left: 5px solid var(--accent); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
@@ -81,18 +83,18 @@ body {
 .active-task-item.participating {
     background: linear-gradient(145deg, #05140d, #000000) !important;
     border: 2px solid var(--success) !important;
-    border-bottom: 5px solid var(--success) !important;
+    border-bottom: 4px solid var(--success) !important;
     border-left: 8px solid var(--success) !important;
     box-shadow: 0 5px 30px rgba(31, 138, 98, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1);
     transform: translateY(-3px); z-index: 10;
 }
 
-.active-task-item.not-participating { opacity: 0.55; filter: grayscale(0.7); border-left: 5px solid rgba(255,255,255,0.1); border-bottom: 5px solid rgba(255,255,255,0.05); background: rgba(10, 10, 10, 0.6); }
+.active-task-item.not-participating { opacity: 0.55; filter: grayscale(0.7); border-left: 5px solid rgba(255,255,255,0.1); border-bottom: 4px solid rgba(255,255,255,0.05); background: rgba(10, 10, 10, 0.6); }
 
 .active-task-item.hero-task-gold {
     background: linear-gradient(145deg, #1a150a, #000000) !important;
     border: 1px solid rgba(212, 174, 83, 0.3) !important;
-    border-bottom: 5px solid rgba(212, 174, 83, 0.4) !important;
+    border-bottom: 4px solid rgba(212, 174, 83, 0.4) !important;
     border-left: 6px solid var(--hero-gold) !important;
     box-shadow: 0 15px 40px rgba(212, 174, 83, 0.15), inset 0 1px 0 rgba(255,255,255,0.1);
 }
@@ -112,7 +114,7 @@ body {
     font-size: 0.7rem; font-weight: 900; background: var(--success); color: #ffffff;
     padding: 6px 14px; border-radius: 20px; display: inline-block; margin-bottom: 15px;
     text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15);
 }
 .task-status-tag.muted { background: var(--surface-light); color: var(--muted); box-shadow: none; border: 1px solid rgba(255,255,255,0.1);}
 
@@ -130,31 +132,36 @@ body {
 }
 .participating .xp-badge { background: rgba(31, 138, 98, 0.15); border-color: rgba(31, 138, 98, 0.5); }
 
-.compact-transition {
-    max-height: 800px;
+/* UUSI: SULAVA CSS GRID -ANIMAATIO (Suositeltu tapa moderneille selaimille) */
+.smooth-collapse {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1), margin 0.3s ease, padding 0.3s ease, opacity 0.2s ease;
     opacity: 1;
-    overflow: hidden;
-    transition: max-height 0.3s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease, margin 0.3s ease, padding 0.3s ease;
 }
+.smooth-collapse > div { overflow: hidden; }
 
 /* ==========================================
    4. GM PISTEYTYKSEN HIMMENNYS JA KOPIOINNIN ESTO
    ========================================== */
 .blur-reveal-area {
-    /* Vahvennettu kopioinnin esto, jotta puhelin ei erehdy */
-    -webkit-user-select: none !important;
-    user-select: none !important;
+    /* Tiukka kopioinnin esto iOS ja Android -laitteille */
     -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    -khtml-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    user-select: none !important;
     transition: opacity 0.2s ease, filter 0.2s ease;
 }
 
 .gm-mode .is-scoring .blur-reveal-area {
     opacity: 0.15;
     filter: grayscale(1) blur(3px);
-    pointer-events: auto; 
+    pointer-events: auto; /* Antaa koskea alueeseen kirkastusta varten */
 }
 
-/* Kirkastuu vain kun tätä nimenomaista aluetta painetaan */
+/* Kirkastuu vain kun TÄTÄ nimenomaista aluetta painetaan (ei napeista) */
 .gm-mode .is-scoring .blur-reveal-area:active {
     opacity: 1; filter: none; 
 }
@@ -177,7 +184,7 @@ body {
    ========================================== */
 .btn { 
     font-family: inherit; border-radius: 10px; border: none; font-weight: 800; padding: 18px; 
-    text-transform: uppercase; cursor: pointer; transition: transform 0.1s ease-out, opacity 0.3s ease; 
+    text-transform: uppercase; cursor: pointer; transition: transform 0.1s ease-out, opacity 0.3s ease, background 0.3s ease; 
     width: 100%; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; 
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.6); text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
@@ -193,6 +200,11 @@ body {
     box-shadow: 0 0 25px rgba(212, 174, 83, 0.3) !important; padding: 15px; border-radius: 12px; 
     margin-top: 15px; transform: scale(1.02); margin-bottom: 20px;
 }
+
+/* Pisteytysnapin uudet oletus-tilat */
+.score-btn-default { background: rgba(31, 138, 98, 0.3) !important; border: 1px dashed rgba(255,255,255,0.5) !important; color: #ccc !important;}
+.score-btn-win { background: var(--success) !important; border: 2px solid #ffffff !important; color: #ffffff !important;}
+.score-btn-fail { background: var(--danger) !important; border: 2px solid #ffffff !important; color: #ffffff !important;}
 
 .player-row { 
     display: flex; justify-content: space-between; align-items: center; 
@@ -297,42 +309,27 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
    8. COMPACT MODE (SUPER TIIVIS - GM PÄIVITYS)
    ========================================== */
 .compact-view-card { 
-    padding: 10px 12px !important; 
+    padding: 12px 14px !important; 
     min-height: auto !important; 
-    margin-bottom: 15px !important; 
     border-radius: 12px !important;
     background: rgba(10, 10, 10, 0.95) !important;
 }
 
-/* Liuku-animaatio tiiviiseen tilaan siirryttäessä */
-.compact-view-card .compact-transition { 
-    max-height: 0px !important; 
-    opacity: 0 !important; 
-    margin: 0 !important; 
-    padding: 0 !important; 
-    border: none !important;
+/* Kun kääre laitetaan nollaan, asiat menevät piiloon sulavasti */
+.compact-view-card .smooth-collapse { 
+    grid-template-rows: 0fr !important;
+    opacity: 0 !important;
 }
 
 /* GM-Kortin yläosan tiivistys */
 .compact-view-card .task-status-tag { font-size: 0.55rem; padding: 3px 6px; margin-bottom: 4px; }
-.compact-view-card h1 { font-size: 0.95rem !important; margin: 2px 0 4px 0 !important; line-height: 1.1; text-shadow: none !important; }
+.compact-view-card h1 { font-size: 1rem !important; margin: 4px 0 6px 0 !important; line-height: 1.1; text-shadow: none !important; }
 .compact-view-card .xp-badge { font-size: 0.55rem; padding: 2px 4px; margin-bottom: 4px; }
 
-/* Tiivis Pelaajavalitsin GM:lle (Vierekkäin ja matala) */
-.compact-view-card .volunteer-selector-grid { 
-    display: flex !important; flex-wrap: wrap; gap: 4px !important; margin-bottom: 4px !important; 
-}
-.compact-view-card .volunteer-selector-grid .btn { 
-    flex: 1 1 auto; min-width: 25%; padding: 6px !important; font-size: 0.6rem !important; margin: 0 !important; border-radius: 6px !important; 
-}
-.compact-view-card.is-scoring .volunteer-selector-grid .btn:not(.selected-participant) { display: none !important; }
-
-/* Tiiviit napit */
-.compact-view-card select { padding: 4px !important; font-size: 0.7rem !important; margin: 0 !important; border-radius: 6px !important; height: auto !important; }
-.compact-view-card .admin-row-stack { margin-bottom: 2px !important; gap: 4px !important; }
-.compact-view-card .admin-row-stack .btn { padding: 8px !important; font-size: 0.65rem !important; margin:0 !important; border-radius: 6px !important;}
-.compact-view-card .t-status .btn-danger { padding: 6px 8px; font-size: 0.6rem; }
+/* Vain supistetussa tilassa näkyvä nimilista */
+.compact-participants-text { display: none; }
+.compact-view-card .compact-participants-text { display: block !important; margin-bottom: 8px; }
 
 /* Pisteytyslaatikko mini-koossa */
-.compact-view-card .scoring-box { padding: 6px !important; margin-top: 4px !important; transform: none !important; box-shadow: none !important; margin-bottom: 4px !important;}
-.compact-view-card .player-row { padding: 4px 8px !important; margin-bottom: 2px !important; font-size: 0.75rem !important; }
+.compact-view-card .scoring-box { padding: 8px !important; margin-top: 4px !important; transform: none !important; box-shadow: none !important; margin-bottom: 4px !important;}
+.compact-view-card .player-row { padding: 4px 8px !important; margin-bottom: 4px !important; font-size: 0.75rem !important; }
