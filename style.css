@@ -6,23 +6,23 @@
     --bg: #000000;               
     
     /* Elegantti tumma pinta ja sub-pinta */
-    --surface: #0a0a0a;          
+    --surface: rgba(15, 15, 15, 0.7); /* Lasi-efektiä varten */         
     --surface-light: #1a1a1a;    
     
-    /* Pehmennetty valkoinen ja harmaa */
-    --text: #e2e8f0;             
-    --muted: #64748b;            
+    /* Pehmennetty valkoinen ja harmaa (Vaalennnettu luettavuuden vuoksi) */
+    --text: #ffffff;             
+    --muted: #8899ac; /* Aiempaa kirkkaampi harmaa auringonpaistetta varten */           
     
     /* Silmäystävälliset matta/jalokivisävyt */
     --accent: #258aa3;           /* Rauhallinen tumma syaani/petroli */
-    --accent-glow: rgba(37, 138, 163, 0.15); 
+    --accent-glow: rgba(37, 138, 163, 0.25); 
     
     --gm-accent: #c27821;        /* Poltettu oranssi */
-    --gm-glow: rgba(194, 120, 33, 0.15);
+    --gm-glow: rgba(194, 120, 33, 0.25);
     
-    --success: #1f8a62;          /* Sammaleen/Metsän vihreä */
-    --danger: #b93232;           /* Himmeä karmiininpunainen */
-    --hero-gold: #c5a14d;        /* Himmeä antiikkikulta */
+    --success: #23a373;          /* Kirkkaampi smaragdinvihreä */
+    --danger: #cc3b3b;           /* Kirkkaampi karmiininpunainen */
+    --hero-gold: #d4ae53;        /* Kirkkaampi antiikkikulta */
     
     --radius: 16px;              
 }
@@ -55,7 +55,7 @@ body {
 }
 
 /* ==========================================
-   2. ROOLI-KYTKIN
+   2. ROOLI-KYTKIN (LASI-EFEKTI)
    ========================================== */
 .role-switcher { 
     position: fixed; 
@@ -65,32 +65,21 @@ body {
     height: 54px; 
     display: flex; 
     z-index: 1000; 
-    background: rgba(0, 0, 0, 0.85); 
+    background: rgba(10, 10, 10, 0.75); 
     backdrop-filter: blur(15px); 
+    -webkit-backdrop-filter: blur(15px);
     border-radius: 27px; 
-    border: 1px solid rgba(255,255,255,0.06); 
+    border: 1px solid rgba(255,255,255,0.15); 
     padding: 5px; 
     overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.8);
 }
 
 .role-btn { 
-    flex: 1; 
-    border: none; 
-    color: var(--muted); 
-    background: transparent; 
-    font-weight: 700; 
-    font-size: 0.75rem; 
-    text-transform: uppercase; 
-    cursor: pointer; 
-    border-radius: 22px; 
-    transition: 0.3s; 
-    position: relative;
-    z-index: 2;
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-    -webkit-touch-callout: none;
+    flex: 1; border: none; color: var(--muted); background: transparent; 
+    font-weight: 700; font-size: 0.75rem; text-transform: uppercase; 
+    cursor: pointer; border-radius: 22px; transition: 0.3s; position: relative; z-index: 2;
+    -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; -webkit-touch-callout: none;
 }
 
 .role-btn.player.active { background: var(--accent); color: #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
@@ -105,51 +94,58 @@ body {
 @keyframes hold-progress { from { width: 0%; } to { width: 100%; } }
 
 /* ==========================================
-   3. KORTIT JA MULTI-TASK
+   3. KORTIT JA MULTI-TASK (UUSI LASITYYLI & KONTRASTI)
    ========================================== */
 #activeTasksContainer { display: flex; flex-direction: column; }
 
 .card { 
-    background: linear-gradient(145deg, #121212, #050505);
+    background: var(--surface);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border-radius: var(--radius); 
     padding: 24px; 
     margin-bottom: 25px; 
-    border: 1px solid rgba(255,255,255,0.1); 
-    box-shadow: 0 10px 30px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.12); /* Kirkkaampi reuna erottuvuuteen */
+    border-top: 1px solid rgba(255,255,255,0.2); /* Valonheijastus yläreunassa */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.05);
     animation: slideIn 0.4s ease-out; 
     position: relative;
     contain: content;
     min-height: 180px;
 }
 
-.active-task-item { border-left: 4px solid var(--accent); transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+.active-task-item { 
+    border-left: 5px solid var(--accent); 
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+}
 
+/* OMAN TEHTÄVÄN VOIMAKAS KOROSTUS */
 .active-task-item.participating {
-    border: 1px solid rgba(37, 138, 163, 0.4) !important;
-    border-left: 4px solid var(--accent) !important;
-    background: linear-gradient(145deg, #0d1a1e, #030303) !important;
-    box-shadow: 0 15px 35px rgba(37, 138, 163, 0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+    background: rgba(13, 26, 30, 0.85) !important;
+    border: 1px solid rgba(37, 138, 163, 0.5) !important;
+    border-left: 6px solid var(--accent) !important;
+    box-shadow: 0 10px 40px rgba(37, 138, 163, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1);
     transform: translateY(-3px); z-index: 10;
 }
 
 .active-task-item.not-participating {
-    opacity: 0.6; filter: grayscale(0.6);
-    border-left: 4px solid var(--surface-light);
-    background: linear-gradient(145deg, #0a0a0a, #000000);
+    opacity: 0.55; filter: grayscale(0.7);
+    border-left: 5px solid rgba(255,255,255,0.1);
+    background: rgba(10, 10, 10, 0.6);
 }
 
 .active-task-item.hero-task-gold {
-    border: 1px solid rgba(197, 161, 77, 0.3) !important;
-    border-left: 4px solid var(--hero-gold) !important;
-    background: linear-gradient(145deg, #18150d, #050505) !important;
-    box-shadow: 0 15px 35px rgba(197, 161, 77, 0.1), inset 0 1px 0 rgba(255,255,255,0.05);
+    background: rgba(26, 22, 13, 0.85) !important;
+    border: 1px solid rgba(197, 161, 77, 0.4) !important;
+    border-left: 6px solid var(--hero-gold) !important;
+    box-shadow: 0 15px 40px rgba(197, 161, 77, 0.15), inset 0 1px 0 rgba(255,255,255,0.1);
 }
 
 .active-task-item h1 { 
     font-weight: 900; color: var(--accent); text-transform: uppercase; 
     letter-spacing: -0.5px; margin: 10px 0 15px 0; 
     word-wrap: break-word; overflow-wrap: break-word; hyphens: auto;
-    max-width: 100%; line-height: 1.2; text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+    max-width: 100%; line-height: 1.2; text-shadow: 0 2px 6px rgba(0,0,0,0.9);
 }
 
 .active-task-item.hero-task-gold h1 { color: var(--hero-gold); }
@@ -159,29 +155,66 @@ body {
 .task-status-tag {
     font-size: 0.7rem; font-weight: 900; background: var(--success); color: #ffffff;
     padding: 6px 14px; border-radius: 20px; display: inline-block; margin-bottom: 15px;
-    text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
     animation: pulse-green 2.5s infinite; 
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
-.task-status-tag.muted { background: var(--surface-light); color: var(--text); animation: none; box-shadow: none; }
+.task-status-tag.muted { background: var(--surface-light); color: var(--muted); animation: none; box-shadow: none; border: 1px solid rgba(255,255,255,0.1);}
 
 @keyframes pulse-green {
-    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(31, 138, 98, 0.3); }
-    70% { transform: scale(1.03); box-shadow: 0 0 0 10px rgba(31, 138, 98, 0); }
-    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(31, 138, 98, 0); }
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(35, 163, 115, 0.4); }
+    70% { transform: scale(1.03); box-shadow: 0 0 0 12px rgba(35, 163, 115, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(35, 163, 115, 0); }
 }
 
-.xp-badge { background: rgba(37, 138, 163, 0.15); color: var(--accent); font-weight: 900; padding: 5px 12px; border-radius: 8px; font-size: 0.7rem; border: 1px solid rgba(37, 138, 163, 0.3); }
+.xp-badge { 
+    background: rgba(37, 138, 163, 0.2); color: #ffffff; font-weight: 900; 
+    padding: 6px 12px; border-radius: 8px; font-size: 0.7rem; 
+    border: 1px solid rgba(37, 138, 163, 0.5); text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+}
 
+/* YLEINEN OHJEKORTTI */
 .instruction-card {
-    background: rgba(255, 255, 255, 0.02); padding: 20px; border-radius: 10px; margin-top: 15px;
-    border: 1px solid rgba(255,255,255,0.02); border-left: 3px solid var(--accent);
-    text-align: left; animation: slideIn 0.3s ease-out; box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
+    background: rgba(255, 255, 255, 0.05); padding: 20px; border-radius: 12px; margin-top: 15px;
+    border: 1px solid rgba(255,255,255,0.08); border-left: 4px solid var(--accent);
+    text-align: left; animation: slideIn 0.3s ease-out; box-shadow: inset 0 2px 10px rgba(0,0,0,0.4);
 }
-.participating .instruction-card { border-left-color: var(--success); background: rgba(31, 138, 98, 0.05); border-top: 1px solid rgba(31, 138, 98, 0.1); }
-.hero-task-gold .instruction-card { border-left-color: var(--hero-gold); background: rgba(197, 161, 77, 0.03); }
+
+/* OMAN TEHTÄVÄN OHJEKORTTI (SUPER-KOROSTETTU) */
+.participating .instruction-card { 
+    border-left: 6px solid var(--success); 
+    background: rgba(35, 163, 115, 0.15); 
+    border: 1px solid rgba(35, 163, 115, 0.4); 
+    box-shadow: 0 5px 25px rgba(35, 163, 115, 0.15), inset 0 2px 15px rgba(0,0,0,0.4);
+}
+
+.hero-task-gold .instruction-card { 
+    border-left-color: var(--hero-gold); 
+    background: rgba(212, 174, 83, 0.1); 
+    border: 1px solid rgba(212, 174, 83, 0.3);
+}
 
 .instruction-card p { font-size: 1.05rem !important; line-height: 1.6; margin: 0; color: var(--text); }
-.task-description { transition: opacity 0.3s ease; line-height: 1.6; margin: 15px 0; font-size: 1rem; color: var(--muted); }
+
+/* OMAN TEHTÄVÄN TEKSTI-KOROSTUKSET */
+.participating .instruction-card p {
+    font-size: 1.15rem !important;
+    font-weight: 700;
+    color: #ffffff;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.9); /* Luettavuus auringossa */
+}
+
+.participating .instruction-card strong {
+    color: var(--success);
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: block;
+    margin-bottom: 8px;
+    text-shadow: 0 0 10px rgba(35, 163, 115, 0.5);
+}
+
+.task-description { transition: opacity 0.3s ease; line-height: 1.6; margin: 15px 0; font-size: 1.05rem; color: var(--muted); font-weight: 700; }
 
 /* ==========================================
    4. PAINIKKEET
@@ -191,34 +224,35 @@ body {
     text-transform: uppercase; cursor: pointer; 
     transition: transform 0.1s ease-out, background 0.15s ease-out, box-shadow 0.15s ease-out; 
     width: 100%; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; 
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.6); text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
 .btn:active { transform: scale(0.95); } 
-.btn-primary { background: var(--accent); color: #ffffff; }
-.btn-gm { background: var(--gm-accent); color: #ffffff; }
-.btn-secondary { background: var(--surface-light); color: var(--text); border: 1px solid rgba(255,255,255,0.04); box-shadow: none; }
-.btn-success { background: var(--success); color: #ffffff; }
-.btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); font-size: 0.7rem; padding: 10px; box-shadow: none; }
+.btn-primary { background: var(--accent); color: #ffffff; border: 1px solid rgba(255,255,255,0.1); }
+.btn-gm { background: var(--gm-accent); color: #ffffff; border: 1px solid rgba(255,255,255,0.1); }
+.btn-secondary { background: rgba(255,255,255,0.08); color: #ffffff; border: 1px solid rgba(255,255,255,0.1); box-shadow: none; }
+.btn-success { background: var(--success); color: #ffffff; border: 1px solid rgba(255,255,255,0.2); }
+.btn-danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); font-size: 0.7rem; padding: 10px; box-shadow: none; text-shadow: none; }
 
 /* ==========================================
    5. PELAAJARIVIT JA LEADERBOARD
    ========================================== */
 .player-row { 
     display: flex; justify-content: space-between; align-items: center; 
-    padding: 14px 18px; background: var(--surface); border-radius: 8px; 
-    margin-bottom: 7px; border: 1px solid rgba(255,255,255,0.05); transition: all 0.3s ease;
+    padding: 14px 18px; background: rgba(20,20,20,0.6); border-radius: 8px; 
+    margin-bottom: 7px; border: 1px solid rgba(255,255,255,0.08); transition: all 0.3s ease;
 }
-.player-row.me { border-color: rgba(37, 138, 163, 0.5); background: rgba(37, 138, 163, 0.08); }
-.player-row.is-hero { border-color: rgba(194, 120, 33, 0.5); background: rgba(194, 120, 33, 0.08); }
-.player-row.on-cooldown { opacity: 0.6; border-left: 3px solid var(--danger); }
+.player-row.me { border-color: rgba(37, 138, 163, 0.6); background: rgba(37, 138, 163, 0.15); font-weight: 700; }
+.player-row.is-hero { border-color: rgba(212, 174, 83, 0.6); background: rgba(212, 174, 83, 0.15); font-weight: 700; }
+.player-row.on-cooldown { opacity: 0.6; border-left: 4px solid var(--danger); }
 
 /* ==========================================
    7. LOMAKEYKSIKÖT
    ========================================== */
 input:not([type="checkbox"]), textarea, select { 
-    background: var(--surface); border: 1px solid rgba(255,255,255,0.05); color: var(--text); 
+    background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); color: var(--text); 
     padding: 14px; border-radius: 8px; width: 100%; margin-bottom: 10px; font-family: inherit; font-size: 1rem;
 }
+input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
 input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; accent-color: var(--accent); flex-shrink: 0; }
 
 /* ==========================================
@@ -226,12 +260,12 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
    ========================================== */
 .admin-grid-layout { display: flex; gap: 10px; margin-bottom: 15px; }
 .admin-grid-layout .btn { margin: 0; flex: 1; }
-.admin-settings-list { background: rgba(255, 255, 255, 0.01); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.03); }
-.checkbox-stack { display: flex; flex-direction: column; gap: 12px; background: rgba(255, 255, 255, 0.01); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.02); }
+.admin-settings-list { background: rgba(255, 255, 255, 0.03); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.05); }
+.checkbox-stack { display: flex; flex-direction: column; gap: 12px; background: rgba(255, 255, 255, 0.02); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
 .admin-row-stack { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
 .admin-row-stack input, .admin-row-stack textarea { margin-bottom: 0; flex: 1; }
 .admin-row-stack .btn { margin-bottom: 0; width: auto; white-space: nowrap; }
-.admin-add-task-form { background: rgba(255, 255, 255, 0.02); padding: 15px; border-radius: 12px; margin-top: 10px; }
+.admin-add-task-form { background: rgba(255, 255, 255, 0.03); padding: 15px; border-radius: 12px; margin-top: 10px; }
 
 .number-inputs-row { display: flex; gap: 10px; margin-bottom: 10px; }
 .number-input-item { flex: 1; display: flex; flex-direction: column; }
@@ -247,10 +281,9 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
 
 .volunteer-selector-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px; }
 
-.btn.on-cooldown { border: 1px solid var(--danger) !important; color: var(--danger) !important; background: rgba(185, 50, 50, 0.1) !important; }
+.btn.on-cooldown { border: 1px solid var(--danger) !important; color: var(--danger) !important; background: rgba(204, 59, 59, 0.1) !important; }
 .btn.selected-participant { background: var(--accent) !important; color: #ffffff !important; border: 1px solid rgba(255,255,255,0.4) !important; }
 
-/* Admin pelaajalistan napit reagoivat voimakkaasti */
 #adminPlayerList .btn { transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1); }
 #adminPlayerList .btn:active { transform: scale(0.85); }
 
@@ -264,15 +297,16 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
 
 .scoring-box { animation: pulse-gold 2s infinite; }
 @keyframes pulse-gold {
-    0% { box-shadow: 0 0 0 0 rgba(197, 161, 77, 0.3); }
-    70% { box-shadow: 0 0 0 8px rgba(197, 161, 77, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(197, 161, 77, 0); }
+    0% { box-shadow: 0 0 0 0 rgba(212, 174, 83, 0.3); }
+    70% { box-shadow: 0 0 0 8px rgba(212, 174, 83, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(212, 174, 83, 0); }
 }
 
 .xp-popup {
     position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    font-weight: 900; font-size: 4rem; z-index: 3100; pointer-events: none; display: none;
-    text-shadow: 0 0 20px rgba(0,0,0,0.8);
+    font-weight: 900; font-size: 4.5rem; z-index: 3100; pointer-events: none; display: none;
+    text-shadow: 0 0 30px rgba(0,0,0,0.9), 0 5px 15px rgba(0,0,0,0.5);
+    -webkit-text-stroke: 2px rgba(255,255,255,0.2);
 }
 
 .xp-animate { display: block !important; animation: xp-bouncy-float 2.2s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
@@ -288,22 +322,20 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
 
 .winner-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.98); z-index: 4000;
-    display: none; flex-direction: column; align-items: center; justify-content: center;
+    background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    z-index: 4000; display: none; flex-direction: column; align-items: center; justify-content: center;
     text-align: center; padding: 20px;
 }
 .winner-content { animation: winner-pop 0.5s cubic-bezier(0.17, 0.89, 0.32, 1.49); width: 100%; max-width: 90%; }
-.winner-content h1 { color: var(--success); font-size: 3rem; margin-bottom: 10px; text-shadow: 0 0 15px var(--success); }
+.winner-content h1 { color: var(--success); font-size: 3rem; margin-bottom: 10px; text-shadow: 0 0 20px var(--success); }
 
 #winnerTaskNames {
     font-size: 1.5rem; color: var(--accent); margin: 0 0 20px 0; text-transform: uppercase;
     word-wrap: break-word; overflow-wrap: break-word; hyphens: auto; line-height: 1.3;
 }
 
-.winner-content p { font-size: 1.4rem; color: var(--text); }
-
-/* KORJAUS 2: Synkronoitu nopeutettu latauspalkki (3.5s -> 2.2s) */
-.timer-bar { animation: shrink 2.2s linear forwards; background: var(--success) !important; } 
+.winner-content p { font-size: 1.4rem; color: var(--text); font-weight: 700; }
+.timer-bar { animation: shrink 2.2s linear forwards; background: var(--success) !important; box-shadow: 0 0 10px var(--success); } 
 
 @keyframes shrink { from { width: 100%; } to { width: 0%; } }
 @keyframes winner-pop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -314,12 +346,12 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
 .player-mode .gm-only { display: none !important; }
 .gm-mode .player-only { display: none !important; }
 
-@keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
 @media (max-width: 480px) {
     .volunteer-selector-grid { grid-template-columns: repeat(2, 1fr); }
     .container { padding-top: 100px; }
-    .winner-content h1 { font-size: 2rem; }
+    .winner-content h1 { font-size: 2.2rem; }
     #winnerTaskNames { font-size: 1.3rem; }
     .btn { padding: 16px; font-size: 0.8rem; }
     .admin-row-stack { flex-direction: column; align-items: stretch; }
@@ -330,12 +362,12 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
    11. HISTORIA JA LOKI
    ========================================== */
 #taskHistoryList { display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; padding-right: 5px; }
-.history-item { background: rgba(255,255,255,0.02); padding: 10px 15px; border-radius: 8px; border-left: 3px solid var(--accent); display: flex; justify-content: space-between; align-items: center; animation: slideIn 0.3s ease-out; }
+.history-item { background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px; border-left: 3px solid var(--accent); display: flex; justify-content: space-between; align-items: center; animation: slideIn 0.3s ease-out; }
 .history-item .task-name { font-weight: 700; font-size: 0.9rem; color: var(--text); }
 .history-item .task-time { font-size: 0.65rem; color: var(--muted); }
 
-#adminEventLog { background: var(--surface); border-radius: 8px; padding: 10px; font-family: 'Courier New', monospace; font-size: 0.7rem; max-height: 150px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.03); }
-.log-entry { padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.02); line-height: 1.4; }
+#adminEventLog { background: rgba(0,0,0,0.5); border-radius: 8px; padding: 10px; font-family: 'Courier New', monospace; font-size: 0.7rem; max-height: 150px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1); }
+.log-entry { padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); line-height: 1.4; }
 .log-entry .time { color: var(--muted); margin-right: 8px; }
 
 #historyCard { min-height: auto; }
@@ -344,14 +376,14 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
    12. COMPACT MODE (SUPER TIIVIS)
    ========================================== */
 .compact-view .active-task-item {
-    padding: 10px 12px; 
+    padding: 12px 14px; 
     min-height: auto;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
 }
 
-.compact-view .task-status-tag { font-size: 0.6rem; padding: 3px 8px; margin-bottom: 4px; }
-.compact-view .active-task-item h1 { font-size: 0.95rem; margin: 2px 0 4px 0; line-height: 1.1; }
-.compact-view .xp-badge { font-size: 0.6rem; padding: 2px 6px; margin-bottom: 4px; }
+.compact-view .task-status-tag { font-size: 0.65rem; padding: 4px 10px; margin-bottom: 6px; }
+.compact-view .active-task-item h1 { font-size: 1rem; margin: 4px 0 6px 0; line-height: 1.1; }
+.compact-view .xp-badge { font-size: 0.65rem; padding: 4px 8px; margin-bottom: 6px; }
 
 .compact-view .instruction-card,
 .compact-view .task-description {
@@ -359,22 +391,22 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
 }
 
 .compact-view .t-gm {
-    margin-top: 6px;
-    padding-top: 6px;
-    border-top: 1px solid rgba(255,255,255,0.05);
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255,255,255,0.1);
 }
 
 .compact-view .volunteer-selector-grid {
     display: flex !important;
     flex-wrap: wrap;
-    margin-bottom: 6px;
-    gap: 4px;
+    margin-bottom: 8px;
+    gap: 6px;
 }
 .compact-view .volunteer-selector-grid .btn:not(.selected-participant) {
     display: none !important;
 }
 
-.compact-view .btn { padding: 8px; font-size: 0.65rem; margin-bottom: 4px; border-radius: 6px; }
-.compact-view select { padding: 6px; font-size: 0.8rem; margin-bottom: 4px; border-radius: 6px; }
-.compact-view .admin-row-stack { margin-bottom: 4px; gap: 6px; }
-.compact-view .t-status .btn-danger { padding: 4px 6px; font-size: 0.55rem; }
+.compact-view .btn { padding: 10px; font-size: 0.7rem; margin-bottom: 6px; border-radius: 8px; }
+.compact-view select { padding: 8px; font-size: 0.85rem; margin-bottom: 6px; border-radius: 8px; }
+.compact-view .admin-row-stack { margin-bottom: 6px; gap: 8px; }
+.compact-view .t-status .btn-danger { padding: 6px 8px; font-size: 0.6rem; }
