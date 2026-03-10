@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="icon.png">
 
-    <link rel="stylesheet" href="style.css?v=14">
+    <link rel="stylesheet" href="style.css?v=15">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
 
@@ -60,7 +60,7 @@
 
         <div class="gm-only" id="gmGlobalControls" style="display:none; margin-bottom: 15px;">
             <div class="admin-grid-layout" style="flex-wrap: wrap;">
-                <button class="btn btn-gm" onclick="drawAllTasks()" style="font-size: 0.65rem; padding: 12px; flex: 1; background: #a36114;">1. ARVO PELAAJAT</button>
+                <button class="btn btn-arvo" onclick="drawAllTasks()" style="font-size: 0.65rem; padding: 12px; flex: 1;">1. ARVO PELAAJAT</button>
                 <button class="btn btn-primary" onclick="lockAllTasks()" style="font-size: 0.65rem; padding: 12px; flex: 1;">2. LUKITSE TEHTÄVÄT</button>
                 <button class="btn btn-success" onclick="finishAllTasks()" style="font-size: 0.65rem; padding: 12px; flex-basis: 100%; margin-top: -5px;">3. MERKITSE VALMIIT KERRALLA</button>
                 <button class="btn btn-secondary" id="gmCompactToggleBtn" onclick="toggleGMCompactMode()" style="font-size: 0.65rem; padding: 12px; flex-basis: 100%; margin-top: -5px;">SUPISTA NÄKYMÄ KAIKISTA</button>
@@ -71,7 +71,7 @@
 
         <div class="gm-only">
             <div class="admin-grid-layout" style="margin-bottom: 20px;">
-                <button class="btn btn-gm" onclick="confirmRandomize()">ARVO UUSI TEHTÄVÄ</button>
+                <button class="btn btn-arvo" onclick="confirmRandomize()">ARVO UUSI TEHTÄVÄ</button>
                 <button class="btn btn-secondary" onclick="toggleAdminPanel()">ADMIN-PANEELI</button>
             </div>
             
@@ -217,7 +217,7 @@
         <div class="winner-content">
             <h1 style="margin:0;">🎉 SINUT VALITTIIN!</h1>
             <p style="font-size:1.1rem; color:var(--muted); margin:10px 0;">TEHTÄVÄT:</p>
-            <div id="winnerTaskNames" style="color:var(--accent); font-size:1.5rem; margin:0 0 20px 0; text-transform: uppercase; line-height:1.3; font-weight:900; text-align: left; padding-left: 10px;"></div>
+            <div id="winnerTaskNames" style="color:var(--accent); font-size:1.5rem; margin:0 0 20px 0; text-transform: uppercase; line-height:1.4; font-weight:900; text-align: center;"></div>
             <div class="timer-bar" style="background:var(--accent); height:4px; width:100%; border-radius:2px;"></div>
             <p style="font-size:0.8rem; color:var(--muted); margin-top:15px; font-weight:900;">VALMISTAUDU SUORITTAMAAN</p>
         </div>
