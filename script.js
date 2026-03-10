@@ -69,6 +69,7 @@ let winnerTimeout = null;
 let pendingXP = 0;
 let xpTimeout = null;
 
+// Leaderboard Nuolilogiikan muuttujat
 let leaderboardScoresStr = "";
 let leaderboardPrevRanks = {};
 let leaderboardDirections = {};
@@ -78,101 +79,95 @@ document.title = APP_NAME;
 
 // --- TEHTÄVÄPAKKA ---
 const defaultTasks = [
-    { id: 1, n: "Mise en place", d: "Varmista, että kaikilla pöytäseurueen jäsenillä on lasissa juotavaa (myös vettä). Jos jollain on tyhjää, täytä se.", p: 2, m: 2, b: false, r: 2 },
+    { id: 1, n: "Mise en place", d: "Varmista, että kaikilla pöytäseurueen jäsenillä on lasissa juotavaa (myös vettä). Jos jollain on tyhjää, täytä lasia omalla juomallasi tai vedellä.", p: 2, m: 2, b: false, r: 2 },
     { id: 2, n: "Uudelleenkäynnistys (Reboot)", d: "Kaikkien suorittajien on juotava lasi vettä yhdeltä istumalta 'järjestelmän vakauttamiseksi'.", p: 1, m: 3, b: false, r: 3 },
     { id: 3, n: "Holari-yritys", d: "Heitä lasinalunen tyhjään tuoppiin tai lasiin 2 metrin etäisyydeltä. Kolme yritystä.", p: 2, m: 2, b: false, r: 2 },
     { id: 4, n: "Air Drop saapuu", d: "Tilaa synttärisankarille juoma (mieto tai alkoholiton käy).", p: 3, m: 1, b: true, r: 1 },
     { id: 5, n: "Gordon Ramsay -palautekierros", d: "Kehu nykyisen baarin miljöötä tai juomavalikoimaa yhdelle tuntemattomalle asiakkaalle 'ammattilaisen otteella'.", p: 2, m: 1, b: false, r: 1 },
-    { id: 6, n: "Tikettijärjestelmän ruuhka", d: "Kuuntele synttärisankarin yksi valitsema muisto menneisyydestä keskeyttämättä. Lopuksi analysoi 'ratkaisu'.", p: 1, m: 2, b: true, r: 2 },
+    { id: 6, n: "Tikettijärjestelmän ruuhka", d: "Kuuntele synttärisankarin yksi valitsema muisto tai ongelma menneisyydestä keskeyttämättä. Lopuksi analysoi 'ratkaisu'.", p: 1, m: 2, b: true, r: 2 },
     { id: 7, n: "Spotterin rooli", d: "Seuraa synttärisankarin lasia 5 minuutin ajan. Jos hän aikoo laskea sen pöydälle ilman alusta, estä se tai aseta alunen alle.", p: 2, m: 1, b: false, r: 1 },
     { id: 8, n: "Level 3 -kypärä", d: "Pidä mukanasi jotain outoa esinettä (esim. tyhjä tölkki tai pilli) seuraavaan baariin asti hukkaamatta sitä.", p: 2, m: 2, b: false, r: 2 },
     { id: 9, n: "Uunilohi palaa pohjaan", d: "Suorittajien on poistuttava välittömästi ulos 'tuulettumaan' 2 minuutiksi ilman puhelimia.", p: 1, m: 4, b: false, r: 4 },
     { id: 10, n: "BIOS-päivitys", d: "Kerro synttärisankarille yksi asia, jota hän ei vielä tiennyt sinusta (IT-salaisuus).", p: 1, m: 1, b: false, r: 1 },
     { id: 11, n: "Caddy-palvelu", d: "Kanna synttärisankarin takkia tai laukkua seuraavaan siirtymään (tai baarin sisällä siirtyessä).", p: 2, m: 1, b: true, r: 1 },
-    { id: 12, n: "Pochinki Loot", d: "Hae koko seurueelle nippu ilmaisia servettejä tai pillejä tiskiltä ja jaa ne tasaisesti.", p: 1, m: 1, b: false, r: 1 },
-    { id: 13, n: "Sous-chefin suositus", d: "Valitse synttärisankarille seuraava juoma listalta (hän maksaa itse, jos tehtävä ei vaadi ostamista).", p: 1, m: 1, b: true, r: 1 },
+    { id: 12, n: "Pochinki Loot", d: "Hae koko seurueelle nippu ilmaisia servettejä tai pillejä tiskiltä ja jaa ne. Esineen saajan on kannettava sitä mukana seuraavaan baariin saakka tai tulee -1 xp.", p: 1, m: 1, b: false, r: 1 },
     { id: 14, n: "Palomuuri (Firewall)", d: "Seiso synttärisankarin ja muiden asiakkaiden välissä 'suojana' 3 minuutin ajan.", p: 2, m: 2, b: false, r: 2 },
     { id: 15, n: "OB-linja (Out of Bounds)", d: "Käy koskettamassa baarin kaukaisinta seinää ja palaa takaisin sanomatta sanaakaan matkalla.", p: 1, m: 3, b: false, r: 3 },
     { id: 16, n: "Red Zone", d: "Kukaan suorittajista ei saa käyttää sanaa 'joo' tai 'ei' seuraavan 5 minuutin aikana.", p: 2, m: 5, b: false, r: 5 },
-    { id: 17, n: "Lautasliina-origami", d: "Taittele lautasliinasta jokin tunnistettava hahmo tai esine ja lahjoita se sankarille.", p: 1, m: 1, b: false, r: 1 },
     { id: 18, n: "Ping-testi", d: "Heitä yläfemma kaikkien muiden seurueen jäsenten kanssa mahdollisimman nopeasti (alle 10 sekuntia).", p: 1, m: 1, b: false, r: 1 },
-    { id: 19, n: "Mandatory-kierto", d: "Ennen kuin istut alas, sinun on kierrettävä valittu pöytä tai tuoli myötäpäivään ympäri.", p: 1, m: 4, b: false, r: 4 },
-    { id: 20, n: "Pan Melee Only", d: "Pitele kädessäsi paistinpannua muistuttavaa esinettä (esim. lautanen tai pyöreä alunen) koko seuraavan puheen ajan.", p: 1, m: 1, b: false, r: 1 },
-    { id: 21, n: "Keittiömestarin tervehdys", d: "Tarjoa sankarille pieni suolainen välipala (pähkinöitä, sipsejä tms. baarista).", p: 3, m: 1, b: true, r: 1 },
-    { id: 22, n: "Etätuki-istunto", d: "Selitä synttärisankarille mahdollisimman monimutkaisesti, miten jokin arkipäiväinen esine (esim. kynä) toimii.", p: 1, m: 1, b: false, r: 1 },
-    { id: 23, n: "Putterin tarkkuus", d: "Liu'uta kolikko pöytää pitkin mahdollisimman lähelle reunaa tippumatta. Kolme yritystä.", p: 2, m: 2, b: false, r: 2 },
-    { id: 24, n: "Med Kit -huolto", d: "Käy ostamassa sankarille jotain nesteyttävää tai särkylääkettä 'valmiiksi' kaappiin/laukkuun.", p: 3, m: 1, b: true, r: 1 },
-    { id: 25, n: "Jälkiruokalista", d: "Lue ääneen keksitty 'ylistyspuhe' synttärisankarille käyttäen mahdollisimman monta ruoka-aiheista sanaa.", p: 2, m: 1, b: true, r: 1 },
+    { id: 19, n: "Mandatory-kierto", d: "Nouse ylös! Ennen kuin istut alas, sinun on kierrettävä valittu pöytä tai tuoli myötäpäivään ympäri.", p: 1, m: 4, b: false, r: 4 },
+    { id: 22, n: "Etätuki-istunto", d: "Selitä toiselle pelaajalle mahdollisimman monimutkaisesti, miten jokin arkipäiväinen esine (esim. kynä) toimii.", p: 1, m: 1, b: false, r: 1 },
+    { id: 23, n: "Putterin tarkkuus", d: "Liu'uta lasi pöytää pitkin mahdollisimman lähelle reunaa tippumatta. Kolme yritystä.", p: 2, m: 2, b: false, r: 2 },
+    { id: 24, n: "Med Kit -huolto", d: "Hae synttärisankarille lasi vettä.", p: 3, m: 1, b: true, r: 1 },
     { id: 26, n: "Käyttäjävirhe (User Error)", d: "Sano 'Olen pahoillani, kyseessä oli käyttäjävirhe' aina kun joku seurueesta tekee jotain kömpelöä seuraavan 10 min aikana.", p: 2, m: 1, b: false, r: 1 },
     { id: 27, n: "Fore!", d: "Huuda 'FORE!' (kohtuullisella volyymilla) aina kun joku seurueesta nousee seisomaan. Kesto 5 minuuttia.", p: 1, m: 2, b: false, r: 2 },
     { id: 28, n: "Blue Zone -siirtymä", d: "Seuraavaan baariin siirryttäessä suorittajien on kuljettava viimeisenä ja varmistettava, ettei ketään jää jälkeen.", p: 1, m: 2, b: false, r: 2 },
     { id: 29, n: "Raaka-aineanalyysi", d: "Tunnista sokkona (silmät kiinni) mitä juomaa sankarisi lasissa on hajun perusteella.", p: 2, m: 1, b: false, r: 1 },
-    { id: 30, n: "Pilvipalvelun varmuuskopio", d: "Ota yhteisselfie koko porukasta (tai mahdollisimman monesta) ja varmista, että se on 'tallessa'.", p: 1, m: 1, b: true, r: 1 },
-    { id: 31, n: "Tree Kick -epäonni", d: "Matki puuta (seiso yhdellä jalalla kädet sivuilla) 30 sekuntia kesken keskustelun.", p: 2, m: 2, b: false, r: 2 },
-    { id: 32, n: "Winner Winner Chicken Dinner", d: "Tilaa sankarille (ja itsellesi jos haluat) pientä syötävää, kuten kanansiipiä tai vastaavaa.", p: 3, m: 1, b: true, r: 1 },
-    { id: 33, n: "Suoritin-rasitus", d: "Rumputa pöytää sormillasi kuin olisit kirjoittamassa koodia erittäin nopeasti 30 sekuntia.", p: 1, m: 1, b: false, r: 1 },
-    { id: 34, n: "Verkkosilta (Bridge)", d: "Pidä molempia käsiä pöydällä 'siltana' seuraavan 5 minuutin ajan. Et saa irrottaa niitä.", p: 1, m: 1, b: false, r: 2 },
+    { id: 32, n: "Winner Winner Chicken Dinner", d: "Nouse ylös, tuuleta näyttävästi ja esitä syöväsi voiton kunniaksi kuvitteellista kana-ateriaa. Huuda lopuksi 'Winner Winner Chicken Dinner!'", p: 3, m: 1, b: true, r: 1 },
     { id: 35, n: "Red Zone Survival", d: "Kyykisty pöydän alle suojaan 30 sekunniksi välittömästi, kun joku huutaa 'POMMI!'.", p: 1, m: 1, b: false, r: 3 },
-    { id: 36, n: "Pro-tason draiveri", d: "Heitä roskasi (esim. karkkipaperi) roskikseen vähintään 3 metrin päästä. Onnistuttava!", p: 2, m: 1, b: false, r: 1 },
+    { id: 36, n: "Pro-tason draiveri", d: "Heitä roskasi (esim. karkkipaperi tai kuitti) roskikseen vähintään 3 metrin päästä. Onnistuttava!", p: 2, m: 1, b: false, r: 1 },
     { id: 37, n: "Tukipyyntö (Support Ticket)", d: "Käy kysymässä baarimikolta: 'Voitteko auttaa, minulla on yhteysongelma?'", p: 3, m: 1, b: false, r: 1 },
     { id: 38, n: "Salasanan vaihto", d: "Keksi sankarille uusi lempinimi, jota kaikkien on käytettävä seuraavat 10 minuuttia.", p: 2, m: 1, b: true, r: 1 },
     { id: 39, n: "UAV aktivoitu", d: "Käy tarkistamassa onko baarin toisessa huoneessa tai tiskillä tilaa ja raportoi takaisin.", p: 1, m: 0, b: false, r: 1 },
     { id: 40, n: "Kiekon etsintä", d: "Etsi baarin lattialta tai pöytien alta jokin pudonnut esine ja palauta se omistajalle.", p: 1, m: 1, b: false, r: 2 },
     { id: 41, n: "Sous-viden lämpö", d: "Hiero sankarille hartioita 1 minuutin ajan 'lämmittääksesi' hänet seuraavaan baariin.", p: 1, m: 0, b: true, r: 1 },
-    { id: 42, n: "Kovalevyn eheytys", d: "Järjestä kaikki lompakkosi kolikot tai kortit suuruusjärjestykseen pöydälle.", p: 1, m: 0, b: false, r: 1 },
     { id: 43, n: "Bridge Camping", d: "Seiso baarin oviaukon tai kapean kohdan lähellä 2 minuuttia 'vartioimassa' kulkua.", p: 2, m: 1, b: false, r: 2 },
     { id: 44, n: "Levyaseman virhe", d: "Vaihda kenkiäsi päittäin (vasen oikeaan ja oikea vasempaan) 5 minuutin ajaksi.", p: 2, m: 1, b: false, r: 1 },
-    { id: 45, n: "Ping-mittaus", d: "Pistele sormella sankaria olkapäähän ja sano 'Ping' aina kun hän ottaa kulauksen juomastaan.", p: 1, m: 0, b: true, r: 1 },
+    { id: 45, n: "Ping-mittaus", d: "Tökkää sormella viereisiä pelaajia olkapäähän ja sano 'Ping' aina kun he ottavat kulauksen juomastaan.", p: 1, m: 0, b: true, r: 1 },
     { id: 46, n: "Ethernet-kaapeli", d: "Muodosta 'yhteys' pitämällä kädestä kiinni naapuria 3 minuutin ajan keskeytyksettä.", p: 1, m: 1, b: false, r: 3 },
-    { id: 47, n: "Flare Gun", d: "Nosta molemmat kädet ylös ja huuda 'TÄÄLLÄ OLLAAN!' mahdollisimman vakuuttavasti.", p: 2, m: 1, b: false, r: 1 },
-    { id: 48, n: "Flippaava kiekko", d: "Pyörähdä 360 astetta paikallasi 3 kertaa aina kun joku seurueesta vaihtaa asentoa.", p: 2, m: 1, b: false, r: 1 },
+    { id: 48, n: "Flippaava kiekko", d: "Pyörähdä 360 astetta paikallasi kerran aina kun joku seurueesta katsoo puhelintaan.", p: 2, m: 1, b: false, r: 1 },
     { id: 49, n: "Salty Player", d: "Kerro jokin asia, joka sinua ärsyttää (IT-ongelma tai huono grippi) erittäin intohimoisesti.", p: 1, m: 0, b: false, r: 1 },
-    { id: 50, n: "Zonin reuna", d: "Siirrä tuolisi niin kauas pöydästä kuin mahdollista ja yritä silti pysyä keskustelussa.", p: 2, m: 1, b: false, r: 2 },
-    { id: 51, n: "Anvil-testi", d: "Hiero kahta lasinalusta vastakkain pitäen kovaa ääntä 30 sekuntia putkeen.", p: 1, m: 1, b: false, r: 2 },
+    { id: 50, n: "Zonen reunalla", d: "Siirrä tuolisi niin kauas pöydästä kuin mahdollista ja yritä silti pysyä keskustelussa.", p: 2, m: 1, b: false, r: 2 },
     { id: 52, n: "Komentorivi (CLI)", d: "Puhu seuraavat 3 minuuttia käyttäen vain yhden sanan lauseita. Esim. 'Jano. Juon. Nyt.'", p: 2, m: 1, b: false, r: 1 },
     { id: 53, n: "Ace-tuuletus", d: "Juokse baarin ympäri (tai lyhyt lenkki) kädet levällään kuin olisit tehnyt hole-in-onen.", p: 3, m: 1, b: false, r: 1 },
-    { id: 54, n: "Winner Winner Chicken Dinner", d: "Osta koko seurueelle kierros vettä (tai shotti, jos budjetti sallii).", p: 3, m: 0, b: true, r: 2 },
-    { id: 55, n: "Lagipiikki", d: "Liiku 'nykien' (pysähdy sekunniksi joka askeleella) kun seuraavan kerran nouset ylös.", p: 2, m: 1, b: false, r: 2 },
+    { id: 55, n: "Lagipiikki", d: "Nouse ylös! Liiku nykien lagisesti kun tulet takaisin istumaan.", p: 2, m: 1, b: false, r: 2 },
     { id: 56, n: "Fore!-varoitus", d: "Aina kun joku laskee lasin pöytään, huuda 'FORE!' seuraavan 5 minuutin ajan.", p: 1, m: 1, b: false, r: 1 },
     { id: 57, n: "Lootbox-yllätys", d: "Käy ostamasta sankarille jokin yllätys tiskiltä (pähkinöitä, tikkarit, tms).", p: 3, m: 0, b: true, r: 1 },
-    { id: 58, n: "Stack Overflow", d: "Pinoa vähintään 5 tyhjää lasinalusta päällekkäin ja pidä ne pystyssä 1 minuutti.", p: 1, m: 1, b: false, r: 1 },
+    { id: 58, n: "Stack Overflow", d: "Pinoa 3 tyhjää lasia päällekkäin ja pidä ne pystyssä 1 minuutti.", p: 1, m: 1, b: false, r: 1 },
     { id: 59, n: "Putti-putki", d: "Heitä kolikko tai korkki lasiin metrin päästä. Onnistuttava kerran kolmesta.", p: 2, m: 1, b: false, r: 2 },
     { id: 60, n: "Uunilohi-muisto", d: "Kerro nolo tai hauska muisto ammattikoulun ajoilta. Jos et muista, juo lasi vettä.", p: 1, m: 0, b: true, r: 1 },
     { id: 61, n: "Hardware Reset", d: "Kosketa varpaitasi polvia koukistamatta 15 sekuntia putkeen.", p: 1, m: 1, b: false, r: 2 },
     { id: 62, n: "Ghillie-shotti", d: "Ota huikka juomastasi niin, että yrität olla mahdollisimman näkymätön (esim. takin alla).", p: 1, m: 1, b: false, r: 2 },
     { id: 63, n: "Ob-raja (Out of Bounds)", d: "Seuraavan siirtymän aikana et saa astua katuvalojen varjoihin (tai tiettyihin laattoihin).", p: 2, m: 1, b: false, r: 3 },
     { id: 64, n: "Etätuki-puhelu", d: "Soita (tai teeskentele soittavasi) kaverille ja selitä miten baarijakkara 'asennetaan'.", p: 2, m: 1, b: false, r: 1 },
-    { id: 65, n: "Drop-alueen vartija", d: "Pidä kättäsi sankarin tuolin selkänojalla 5 minuuttia 'suojellen häntä'.", p: 1, m: 1, b: true, r: 1 },
-    { id: 66, n: "Caddy-vinkki", d: "Suosittele sankarille seuraavaa liikettä tai juomaa 'ammattilaisen varmuudella'.", p: 1, m: 0, b: true, r: 1 },
+    { id: 65, n: "Drop-alueen vartija", d: "Pidä kättäsi toisen pelaajan tuolin selkänojalla 5 minuuttia 'suojellen häntä'.", p: 1, m: 1, b: true, r: 1 },
+    { id: 66, n: "Caddy-vinkki", d: "Suosittele toiselle pelaajalle seuraavaa liikettä tai juomaa 'ammattilaisen varmuudella'.", p: 1, m: 0, b: true, r: 1 },
     { id: 67, n: "System Restore", d: "Istu täysin hiljaa ja silmät kiinni 30 sekuntia, kunnes 'boottaus' on valmis.", p: 1, m: 1, b: false, r: 2 },
     { id: 68, n: "Pan-haaste", d: "Pitele juomaasi kaksin käsin kuin se olisi painava paistinpannu seuraavat 5 minuuttia.", p: 1, m: 1, b: false, r: 1 },
     { id: 69, n: "Ankkurilinkki", d: "Pidä jalkaasi toisen pelaajan jalan päällä seuraavan 3 minuutin ajan.", p: 1, m: 1, b: false, r: 2 },
-    { id: 70, n: "Power Supply", d: "Osta sankarille ja itsellesi jotain pientä suolaista purtavaa.", p: 3, m: 0, b: true, r: 1 },
     { id: 71, n: "Scramble-peli", d: "Kaikki suorittajat vaihtavat paikkoja keskenään mahdollisimman nopeasti (juosten).", p: 1, m: 1, b: false, r: 4 },
     { id: 72, n: "Bugiraportti", d: "Luettele 5 asiaa, jotka ovat 'vialla' nykyisessä sijainnissasi (vitsillä).", p: 1, m: 0, b: false, r: 1 },
     { id: 73, n: "Air Drop -paketti", d: "Nosta sankarin juoma ilmaan ja huuda: 'Paketti toimitettu!' aina kun hän aikoo juoda.", p: 2, m: 1, b: true, r: 1 },
     { id: 74, n: "Spotterin silmät", d: "Kuvaile muille pelaajille, mitä tapahtuu sankarin selän takana ilman että hän kääntyy.", p: 1, m: 0, b: true, r: 1 },
-    { id: 75, n: "Terminaattori-mode", d: "Puhu seuraavat 2 minuuttia konemaisella äänellä ilman tunteita.", p: 2, m: 1, b: false, r: 2 },
-    { id: 76, n: "Frisbee-ketjut", d: "Rämistele avaimiasi tai kolikoitasi aina kun joku nauraa (kuin kiekko ketjuissa).", p: 1, m: 1, b: false, r: 1 },
-    { id: 77, n: "Palomuuri-asento", d: "Seiso sankarisi edessä kädet puuskassa 'suojana' 2 minuuttia.", p: 2, m: 1, b: false, r: 1 },
+    { id: 76, n: "Frisbee-ketjut", d: "Kilistä lasiasi jonkun toisen pelaajan lasin reunaan ja huuda 'Ketjuihin!' aina kun hän ottaa ensimmäisen huikan uudesta juomasta.", p: 1, m: 1, b: false, r: 1 },
     { id: 78, n: "Keittiömestarin tarkastus", d: "Maista (luvan kanssa) pienen pieni pala jonkun ruuasta tai tilkkanen juomasta ja anna arvosana.", p: 1, m: 0, b: false, r: 2 },
     { id: 79, n: "Full Auto -sarja", d: "Juo 5 pientä hörppyä juomaasi peräkkäin 'sarjatulella'.", p: 1, m: 0, b: false, r: 2 },
     { id: 80, n: "Kiekon palautus", d: "Käy viemässä tyhjä lasi tiskille (itse valitsemasi) mahdollisimman tyylikkäästi.", p: 1, m: 0, b: false, r: 1 },
     { id: 81, n: "Admin-komento", d: "Sankari saa päättää, kuka suorittajista joutuu kertomaan vitsin tai juomaan lasin vettä.", p: 2, m: 0, b: true, r: 2 },
     { id: 82, n: "Victory Dance", d: "Tee lyhyt ja energinen voittotanssi baarin lattialla (PUBG tyyliin).", p: 3, m: 1, b: false, r: 1 },
     
+    // --- UUDET TEHTÄVÄT (KUVISTA) ---
+    { id: 103, n: "Kynttilän sammutus", d: "Jos näet sytytetyn kynttilän, sammuta se heiluttamalla paperia tai servettiä, jota pidät huulien välissä.", p: 3, m: true, b: false, r: 1 },
+    { id: 104, n: "Maitoa tai kermaa", d: "Tilaa lasi maitoa tai kermaa (kermasta GM antaa extra pisteen). Jos juot lasin tyhjäksi saat 1 extra pisteen.", p: 1, m: true, b: false, r: 1 },
+    { id: 105, n: "Likaisin auto", d: "Ota selfie likaisimman auton kanssa mitä löydät.", p: 1, m: true, b: false, r: 1 },
+    { id: 106, n: "Vieraskielinen", d: "Puhu seuraavassa baarissa ainoastaan jotain muuta kieltä kuin suomea tai englantia.", p: 3, m: true, b: false, r: 1 },
+    { id: 107, n: "Juomatilauksen hypetys", d: "Hypetä jonkun juomatilausta minuutin ajan (jos random GM antaa extra 2 pistettä).", p: 1, m: true, b: false, r: 1 },
+    { id: 108, n: "Sokea ryhmäcocktail", d: "Suunnitelkaa ryhmäcocktail ilman että kukaan tietää cocktailin muita ainesosia kuin omansa ja tilatkaa jokaiselle kyseinen cocktail. Juomalle täytyy antaa nimi ja ryhmän tulee ottaa kuva juoman kanssa.", p: 1, m: false, b: false, r: 3 }, // Tähän poikkeuksellisesti ei miinusta (Kuvan ohje)
+    { id: 109, n: "Juottaja", d: "Seuraavassa baarissa et saa itse juoda, jonkun täytyy juottaa sinua (jos random GM antaa extra 2 pistettä).", p: 2, m: true, b: false, r: 1 },
+    { id: 110, n: "Viisi pilliä", d: "Juo juoma käyttämällä vähintään viittä pilliä samaan aikaan.", p: 1, m: true, b: false, r: 1 },
+    { id: 111, n: "Lusikkajuoma", d: "Juo juoma käyttämällä lusikkaa.", p: 3, m: true, b: false, r: 1 },
+
     // --- SANKARITEHTÄVÄT ---
     { id: 83, n: "Admin-huolto (Sankari)", d: "Sankarin on kerättävä seurueen kaikki tyhjät tölkit/lasit ja vietävä ne tiskille yksin.", p: 2, m: 1, b: true, r: 1, isHero: true },
-    { id: 84, n: "Kiekon etsintä (Sankari)", d: "Sankari joutuu nousemaan ylös ja kävelemään baarin ympäri etsimässä 'kadonnutta kiekkoa' silmät kiinni ohjattuna.", p: 2, m: 1, b: true, r: 1, isHero: true },
+    { id: 84, n: "Kiekon etsintä (Sankari)", d: "Sankari joutuu nousemaan ylös ja kävelemään baarin ympäri etsimässä 'kadonnutta kiekkoa'.", p: 2, m: 1, b: true, r: 1, isHero: true },
     { id: 85, n: "PUBG Emote (Sankari)", d: "Sankarin on esitettävä jokin PUBG-pelin tuuletus tai liike baarin keskellä mahdollisimman näyttävästi.", p: 3, m: 1, b: true, r: 1, isHero: true },
     { id: 86, n: "Koodin katselmointi (Sankari)", d: "Sankarin on keksittävä jokaisesta pelaajasta yksi positiivinen 'kommentti' (kuten koodin katselmoinnissa).", p: 1, m: 0, b: true, r: 1, isHero: true },
     { id: 87, n: "Mise en place -tarkastus (Sankari)", d: "Sankarin on maistettava kolmen eri pelaajan juomaa ja arvattava niiden ainesosat.", p: 2, m: 1, b: true, r: 1, isHero: true },
     { id: 88, n: "Ping-testi (Sankari)", d: "Sankarin on vastattava 'PONG' sekunnin sisällä aina kun joku huutaa 'PING' seuraavan 10 minuutin ajan.", p: 2, m: 1, b: true, r: 1, isHero: true },
     { id: 89, n: "Putti-haaste (Sankari)", d: "Sankarin on heitettävä lasinalunen pystyasennossa olevaan tyhjään tuoppiin. Kolme yritystä.", p: 2, m: 1, b: true, r: 1, isHero: true },
     { id: 90, n: "Blue Zone -juoksu (Sankari)", d: "Sankarin on käytävä koskettamassa baarin ulko-ovea ja palattava 15 sekunnissa takaisin.", p: 2, m: 1, b: true, r: 1, isHero: true },
-    { id: 91, n: "Hardware Troubleshooting (Sankari)", d: "Sankarin on selitettävä jollekin tuntemattomalle asiakkaalle, miten frisbeegolfin pituusdraivi tai IT-tuki toimii.", p: 3, m: 1, b: true, r: 1, isHero: true },
+    { id: 91, n: "Hardware Troubleshooting (Sankari)", d: "Sankarin on selitettävä jollekin pelaajalle tai tuntemattomalle asiakkaalle, miten frisbeegolfin pituusdraivi tai IT-tuki toimii.", p: 3, m: 1, b: true, r: 1, isHero: true },
     { id: 92, n: "Chef's Special (Sankari)", d: "Sankarin on loihdittava 'annos' eli koottava pöydän snacks-kulhosta näyttävä taideteos ja syötävä se.", p: 1, m: 0, b: true, r: 1, isHero: true },
-    { id: 93, n: "Palvelinhuoneen hämärä (Sankari)", d: "Sankarin on suoritettava seuraava tilauksensa tai keskustelunsa kuiskaamalla, kuin hän olisi salaisessa palvelinruumissa.", p: 1, m: 1, b: true, r: 1, isHero: true },
     { id: 94, n: "Range-treeni (Sankari)", d: "Sankarin on 'heitettävä' viisi erilaista frisbeegolf-kiekkoa ja selitettävä niiden lentoradat seurueelle.", p: 2, m: 0, b: true, r: 1, isHero: true },
     { id: 95, n: "Loot-varkaus (Sankari)", d: "Sankarin on onnistuttava ottamaan yksi hörppy jonkun muun lasista niin, ettei kukaan huomaa (stealth mode).", p: 3, m: 1, b: true, r: 1, isHero: true },
     { id: 96, n: "Käyttöjärjestelmän vaihto (Sankari)", d: "Sankarin on vaihdettava kieltä ja puhuttava seuraavat 5 minuuttia pelkkää englantia.", p: 2, m: 1, b: true, r: 1, isHero: true },
@@ -189,7 +184,6 @@ function logEvent(msg) {
     db.ref('gameState/eventLog').push({ time, msg });
 }
 
-// KORJAUS 3: Silkinpehmeät laajennus/supistus animaatiot suoraan CSS-luokilla!
 window.toggleIndividualTask = function(taskId) {
     const card = document.querySelector(`[data-task-id="${taskId}"]`);
     if (!card) return;
@@ -388,7 +382,7 @@ function showXPAnimation(points) {
     xpTimeout = setTimeout(() => {
         const pop = document.getElementById('xpPopUp');
         if(!pop) return;
-        pop.style.display = 'flex';
+        pop.style.display = 'block';
         
         if (pendingXP > 0) {
             pop.className = 'xp-popup success xp-animate';
@@ -456,7 +450,6 @@ function renderActiveTasks(tasksObj, config) {
         if (!card) {
             card = document.createElement('div');
             card.setAttribute('data-task-id', taskId);
-            // KORJAUS 1 & 3: HTML-rakenne, joka tukee sulavaa liukua (kaikki napit on collapse-innerissä)
             card.innerHTML = `
                 <div class="t-status"></div>
                 <div class="t-header"></div>
@@ -673,7 +666,6 @@ function drawAllTasks() {
         logEvent(`Admin (${adminName}) / Massatoiminto: Arvonta käynnistetty ${drawsTriggered} tehtävään!`);
         db.ref('gameState/activeTasks').update(updatesStart);
 
-        // KORJAUS 1: Puolet nopeampi mylly (1000ms)
         setTimeout(() => {
             let updatesFinish = {};
             Object.keys(tasks).forEach(taskId => {
@@ -749,7 +741,6 @@ function drawRandom(taskId, isMassAction = false) {
 
         db.ref(`gameState/activeTasks/${taskId}`).update({ isLotteryRunning: true });
         
-        // KORJAUS 1: Puolet nopeampi mylly (1000ms)
         setTimeout(() => {
             let shuffled = [...list].sort(() => 0.5 - Math.random());
             let winners = shuffled.slice(0, count).map(p => ({ ...p, win: true, reviewed: false })); 
