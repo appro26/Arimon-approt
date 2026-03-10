@@ -58,12 +58,11 @@ body {
 /* ==========================================
    3. KORTIT JA MULTI-TASK
    ========================================== */
-#activeTasksContainer { display: flex; flex-direction: column; gap: 20px; }
+#activeTasksContainer { display: flex; flex-direction: column; gap: 20px; width: 100%; }
 
 .card { 
     background: var(--surface); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-    border-radius: var(--radius); padding: 24px; 
-    margin-bottom: 25px; 
+    border-radius: var(--radius); padding: 24px; margin-bottom: 25px; 
     border: 1px solid rgba(255,255,255,0.1); 
     border-top: 1px solid rgba(255,255,255,0.2);
     border-bottom: 5px solid rgba(255,255,255,0.15); 
@@ -102,6 +101,8 @@ body {
 .active-task-item.hero-task-gold h1 { color: var(--hero-gold); }
 .active-task-item.participating h1 { color: var(--success); }
 
+.card h2 { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; margin: 0 0 15px 0; letter-spacing: 2px; }
+
 .task-status-tag {
     font-size: 0.7rem; font-weight: 900; background: var(--success); color: #ffffff;
     padding: 6px 14px; border-radius: 20px; display: inline-block; margin-bottom: 15px;
@@ -112,9 +113,9 @@ body {
 
 .stage-pulse { animation: pulse-gold 2s infinite; }
 @keyframes pulse-gold {
-    0% { box-shadow: 0 0 0 0 rgba(212, 174, 83, 0.4); }
-    70% { box-shadow: 0 0 0 10px rgba(212, 174, 83, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(212, 174, 83, 0); }
+    0% { box-shadow: 0 0 0 0 rgba(31, 138, 98, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(31, 138, 98, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(31, 138, 98, 0); }
 }
 
 .xp-badge { 
@@ -124,25 +125,39 @@ body {
 }
 .participating .xp-badge { background: rgba(31, 138, 98, 0.15); border-color: rgba(31, 138, 98, 0.5); }
 
-.smooth-collapse {
-    display: grid; grid-template-rows: 1fr;
-    transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1), margin 0.3s ease, padding 0.3s ease, opacity 0.2s ease;
+/* UUSI: Super-sulava max-height animaatio supistukselle */
+.compact-transition {
+    max-height: 1000px;
     opacity: 1;
+    overflow: hidden;
+    transition: max-height 0.4s ease-in-out, opacity 0.3s ease, margin 0.3s ease, padding 0.3s ease;
 }
-.smooth-collapse > div { overflow: hidden; }
 
 /* ==========================================
    4. GM PISTEYTYKSEN HIMMENNYS JA KOPIOINNIN ESTO
    ========================================== */
 .blur-reveal-area {
-    -webkit-touch-callout: none !important; -webkit-user-select: none !important;
-    -khtml-user-select: none !important; -moz-user-select: none !important;
-    -ms-user-select: none !important; user-select: none !important;
+    /* Vahvennettu kopioinnin esto, jotta puhelin ei erehdy */
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    -khtml-user-select: none !important;
+    -moz-user-select: none !important;
+    -ms-user-select: none !important;
+    user-select: none !important;
     transition: opacity 0.2s ease, filter 0.2s ease;
 }
 
-.gm-mode .is-scoring .blur-reveal-area { opacity: 0.15; filter: grayscale(1) blur(3px); pointer-events: auto; }
-.gm-mode .is-scoring .blur-reveal-area:active { opacity: 1; filter: none; }
+.gm-mode .is-scoring .blur-reveal-area {
+    opacity: 0.15;
+    filter: grayscale(1) blur(3px);
+    pointer-events: auto; /* Antaa koskea alueeseen kirkastusta varten */
+}
+
+/* Kirkastuu KUN PAINETAAN TAI KUN SPEKSIT ON AKTIIVINEN */
+.gm-mode .is-scoring .blur-reveal-area:active,
+.gm-mode .is-scoring .blur-reveal-area.blur-removed {
+    opacity: 1 !important; filter: none !important; 
+}
 
 .instruction-area { margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); }
 .participating .instruction-area { border-top: 1px dashed rgba(31, 138, 98, 0.5); }
@@ -175,9 +190,10 @@ body {
 .scoring-box { 
     border: 2px solid var(--hero-gold) !important; background: rgba(212, 174, 83, 0.15) !important;
     box-shadow: 0 0 25px rgba(212, 174, 83, 0.3) !important; padding: 15px; border-radius: 12px; 
-    margin-top: 15px; transform: scale(1.02); margin-bottom: 20px;
+    margin-top: 15px; margin-bottom: 20px;
 }
 
+/* Pisteytysnapin uudet oletus-tilat */
 .score-btn-default { background: rgba(31, 138, 98, 0.3) !important; border: 1px dashed rgba(255,255,255,0.5) !important; color: #ccc !important;}
 .score-btn-win { background: var(--success) !important; border: 2px solid #ffffff !important; color: #ffffff !important;}
 .score-btn-fail { background: var(--danger) !important; border: 2px solid #ffffff !important; color: #ffffff !important;}
@@ -227,24 +243,26 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
    ========================================== */
 .roulette-focus { background: var(--accent) !important; color: #ffffff !important; transform: scale(1.08) !important; box-shadow: 0 0 15px var(--accent-glow); z-index: 10; }
 
+/* Upea uusi XP mitali */
 .xp-popup {
-    position: fixed; top: 60%; left: 50%; transform: translate(-50%, -50%);
-    font-weight: 900; font-size: 3rem; z-index: 5000; pointer-events: none; display: none;
-    padding: 15px 40px; border-radius: 50px; align-items: center; justify-content: center;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.8), inset 0 2px 10px rgba(255,255,255,0.3);
-    border: 2px solid rgba(255,255,255,0.8); color: #ffffff; text-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    font-weight: 900; font-size: 3.5rem; z-index: 5000; pointer-events: none; display: none;
+    padding: 20px 40px; border-radius: 60px; align-items: center; justify-content: center;
+    color: #ffffff; text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 2px 15px rgba(255,255,255,0.4);
+    letter-spacing: 2px;
 }
-.xp-popup.success { background: rgba(31, 138, 98, 0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
-.xp-popup.danger { background: rgba(204, 59, 59, 0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.xp-popup.success { background: linear-gradient(135deg, #1f8a62, #0a422e); border: 2px solid #2ae3a3; }
+.xp-popup.danger { background: linear-gradient(135deg, #cc3b3b, #6e1616); border: 2px solid #ff6b6b; }
 
-.xp-animate { animation: xp-float-up 2.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+.xp-animate { animation: xp-float-awesome 2.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
 
-@keyframes xp-float-up {
-    0% { opacity: 0; transform: translate(-50%, 50px) scale(0.5); }
-    15% { opacity: 1; transform: translate(-50%, 0px) scale(1.1); }
-    25% { transform: translate(-50%, 0px) scale(1); }
-    80% { opacity: 1; transform: translate(-50%, -40px) scale(1); }
-    100% { opacity: 0; transform: translate(-50%, -80px) scale(0.8); }
+@keyframes xp-float-awesome {
+    0% { opacity: 0; transform: translate(-50%, 40px) scale(0.6); }
+    15% { opacity: 1; transform: translate(-50%, -10px) scale(1.1); box-shadow: 0 20px 50px rgba(0,0,0,0.8), inset 0 2px 15px rgba(255,255,255,0.6); }
+    30% { transform: translate(-50%, 0px) scale(1); }
+    80% { opacity: 1; transform: translate(-50%, -30px) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -60px) scale(0.8); }
 }
 
 .winner-overlay {
@@ -297,9 +315,12 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
     background: rgba(10, 10, 10, 0.95) !important;
 }
 
-.compact-view-card .smooth-collapse { 
-    grid-template-rows: 0fr !important;
-    opacity: 0 !important;
+.compact-view-card .compact-transition { 
+    max-height: 0px !important; 
+    opacity: 0 !important; 
+    margin: 0 !important; 
+    padding: 0 !important; 
+    border: none !important;
 }
 
 .compact-view-card .task-status-tag { font-size: 0.55rem; padding: 3px 6px; margin-bottom: 4px; }
