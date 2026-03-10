@@ -245,46 +245,59 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
 #adminPlayerList .btn:active { transform: scale(0.85); }
 
 /* ==========================================
-   6. ANIMAATIOT (JALOKIVI XP)
+   6. ANIMAATIOT (JALOKIVI XP - PÄIVITETTY)
    ========================================== */
 .roulette-focus { background: #a36114 !important; color: #ffffff !important; transform: scale(1.08) !important; box-shadow: 0 0 20px #a36114; z-index: 10; }
 
-/* KORJAUS: Täydellinen ääriviiva ilman sisäisiä sotkuja (Impact-fontilla + text-shadow) */
+/* KORJAUS 3: UUSI VÄRIKÄS JA SELKEÄ XP EFEKTI (3D Bevel, Lasimainen) */
 .xp-popup {
     position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    font-family: Impact, 'Arial Black', sans-serif !important; /* Peli-henkinen, paksu fontti */
-    font-style: italic;
     font-weight: 900; font-size: 6.5rem; z-index: 5000; pointer-events: none; display: none;
     text-align: center; letter-spacing: 2px;
+    font-family: Impact, 'Arial Black', sans-serif !important; /* Peli-henkinen, paksu fontti */
+    font-style: italic;
     background: transparent !important; border: none !important; box-shadow: none !important; padding: 0;
-    /* Poistetaan suttuinen text-stroke, käytetään drop-shadowta alla */
     -webkit-text-stroke: 0 !important; 
 }
 
+/* VIHERIÄ PISTEMÄÄRÄ (+ XP) - 3D LASIMAINEN */
 .xp-popup.success {
-    /* Vihreä jalokivi-gradientti tekstille */
-    background: linear-gradient(180deg, #86efac 0%, #22c55e 40%, #14532d 100%) !important;
+    /* UUSI KIMALTELEVA GRADIENTTI JA 3D VIISTE */
+    background: linear-gradient(180deg, 
+        rgba(255,255,255,1) 0%, /* Kirkas yläreuna (Highlight) */
+        rgba(34, 197, 94, 1) 30%, /* Pääväri (Emerald Green) */
+        rgba(10, 50, 10, 1) 100% /* Tumma alareuna (Varjo) */
+    ) !important;
     -webkit-background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
-    /* 4x solid black drop shadow luo täydellisen puhtaan ulkoreunan! Lisäksi pehmeä hohto. */
-    filter: drop-shadow(2px 2px 0px #000)
-            drop-shadow(-2px -2px 0px #000)
-            drop-shadow(2px -2px 0px #000)
-            drop-shadow(-2px 2px 0px #000)
-            drop-shadow(0px 8px 20px rgba(34, 197, 94, 0.9));
+    
+    /* SYVÄ LUKUITSA VARJO JA HEHKU */
+    filter: drop-shadow(2px 2px 0px rgba(0,0,0,1))
+            drop-shadow(-2px -2px 0px rgba(255,255,255,0.6)) /* Kova bevel reuna */
+            drop-shadow(0px 10px 30px rgba(34, 197, 94, 1)) /* Voimakas hohto */
+            drop-shadow(0px 0px 50px rgba(255,255,255,0.4)); /* Kimaltava hohto */
+
+    animation: xp-float-awesome 2.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards, glimmer 4s infinite linear;
 }
 
+/* PUNAINEN PISTEMÄÄRÄ (- XP) - 3D LASIMAINEN */
 .xp-popup.danger {
-    /* Punainen jalokivi-gradientti tekstille */
-    background: linear-gradient(180deg, #fca5a5 0%, #ef4444 40%, #7f1d1d 100%) !important;
+    /* UUSI KIMALTELEVA GRADIENTTI JA 3D VIISTE */
+    background: linear-gradient(180deg, 
+        rgba(255,255,255,1) 0%, /* Kirkas yläreuna (Highlight) */
+        rgba(239, 68, 68, 1) 30%, /* Pääväri (Crimson Red) */
+        rgba(50, 10, 10, 1) 100% /* Tumma alareuna (Varjo) */
+    ) !important;
     -webkit-background-clip: text !important;
     -webkit-text-fill-color: transparent !important;
-    /* 4x solid black drop shadow luo täydellisen puhtaan ulkoreunan! Lisäksi pehmeä hohto. */
-    filter: drop-shadow(2px 2px 0px #000)
-            drop-shadow(-2px -2px 0px #000)
-            drop-shadow(2px -2px 0px #000)
-            drop-shadow(-2px 2px 0px #000)
-            drop-shadow(0px 8px 20px rgba(239, 68, 68, 0.9));
+    
+    /* SYVÄ LUKUITSA VARJO JA HEHKU */
+    filter: drop-shadow(2px 2px 0px rgba(0,0,0,1))
+            drop-shadow(-2px -2px 0px rgba(255,255,255,0.6)) /* Kova bevel reuna */
+            drop-shadow(0px 10px 30px rgba(239, 68, 68, 1)) /* Voimakas hohto */
+            drop-shadow(0px 0px 50px rgba(255,255,255,0.4)); /* Kimaltava hohto */
+            
+    animation: xp-float-awesome 2.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards, glimmer 4s infinite linear;
 }
 
 .xp-animate { animation: xp-float-awesome 2.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
@@ -297,6 +310,12 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
     100% { opacity: 0; transform: translate(-50%, -60px) scale(0.8); }
 }
 
+/* UUSI: KIMALTELEVA GRADIENTIN ANIMAATIO */
+@keyframes glimmer {
+    0% { background-position: -500px center; }
+    100% { background-position: 500px center; }
+}
+
 .winner-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
@@ -307,7 +326,9 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
 .winner-content h1 { color: var(--success); font-size: 3rem; margin-bottom: 10px; text-shadow: 0 0 20px var(--success); }
 .winner-content p { font-size: 1.4rem; color: var(--text); font-weight: 700; margin-bottom: 20px; }
 
-#winnerTaskNames { display: flex; flex-direction: column; gap: 12px; width: 100%; margin-bottom: 20px; }
+#winnerTaskNames { 
+    display: flex; flex-direction: column; gap: 12px; width: 100%; margin-bottom: 20px;
+}
 .winner-task-box {
     background: rgba(37, 138, 163, 0.15); border: 1px solid var(--accent); padding: 15px; border-radius: 12px;
     font-size: 1.3rem; color: #ffffff; text-transform: uppercase; font-weight: 900;
@@ -348,11 +369,10 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
    8. COMPACT MODE (SUPER TIIVIS CSS GRIDILLÄ)
    ========================================== */
 .compact-view-card { 
-    /* KORJAUS 1: Tiiviimpi kortti (paddingia viilattu ja marginaali minimissä) */
-    padding: 8px 12px !important; 
+    padding: 12px 14px !important; 
     border-radius: 12px !important;
     background: rgba(10, 10, 10, 0.95) !important;
-    margin-bottom: 4px !important; 
+    margin-bottom: 8px !important; 
 }
 
 .compact-view-card .smooth-collapse { 
