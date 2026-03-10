@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="icon.png">
 
-    <link rel="stylesheet" href="style.css?v=21">
+    <link rel="stylesheet" href="style.css?v=22">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
 
@@ -104,6 +104,10 @@
                         <label for="excludeUsedTasks">Poista käytetyt pakasta</label>
                     </div>
                     <div class="checkbox-group" style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed rgba(255,255,255,0.1);">
+                        <input type="checkbox" id="alwaysMinusOne" onchange="updateConfig('alwaysMinusOne', this.checked)"> 
+                        <label for="alwaysMinusOne" style="color:var(--danger)">Aina -1 XP rangaistus epäonnistumisesta</label>
+                    </div>
+                    <div class="checkbox-group">
                         <input type="checkbox" id="disableHeroBonus" onchange="updateConfig('disableHeroBonus', this.checked)"> 
                         <label for="disableHeroBonus" style="color:var(--gm-accent)">Poista sankaribonukset kokonaan</label>
                     </div>
