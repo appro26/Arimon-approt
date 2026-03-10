@@ -190,15 +190,23 @@ function logEvent(msg) {
     db.ref('gameState/eventLog').push({ time, msg });
 }
 
+// KORJAUS 1 & 3: JS-pohjainen luokan vaihto pitää animaation sulavana
 window.toggleIndividualTask = function(taskId) {
-    if (window.localTaskCompactState[taskId] === undefined) {
-        window.localTaskCompactState[taskId] = !isGMCompactMode;
+    const card = document.querySelector(`[data-task-id="${taskId}"]`);
+    if (!card) return;
+    const isCompact = card.classList.contains('compact-view-card');
+    
+    window.localTaskCompactState[taskId] = !isCompact;
+    
+    if (isCompact) {
+        card.classList.remove('compact-view-card');
+        const tBtn = card.querySelector('.btn-toggle-compact');
+        if(tBtn) tBtn.innerText = '➖ SUPISTA';
     } else {
-        window.localTaskCompactState[taskId] = !window.localTaskCompactState[taskId];
+        card.classList.add('compact-view-card');
+        const tBtn = card.querySelector('.btn-toggle-compact');
+        if(tBtn) tBtn.innerText = '⬜ LAAJENNA';
     }
-    db.ref('gameState').once('value', snap => {
-        renderActiveTasks(snap.val().activeTasks || {}, snap.val().config || {});
-    });
 };
 
 window.toggleGMCompactMode = function() {
@@ -206,8 +214,16 @@ window.toggleGMCompactMode = function() {
     window.localTaskCompactState = {}; 
     const btn = document.getElementById('gmCompactToggleBtn');
     if (btn) btn.innerText = isGMCompactMode ? 'LAAJENNA NÄKYMÄ KAIKISTA' : 'SUPISTA NÄKYMÄ KAIKISTA';
-    db.ref('gameState').once('value', snap => {
-        renderActiveTasks(snap.val().activeTasks || {}, snap.val().config || {});
+    
+    document.querySelectorAll('.active-task-item').forEach(card => {
+        const tBtn = card.querySelector('.btn-toggle-compact');
+        if (isGMCompactMode) {
+            card.classList.add('compact-view-card');
+            if(tBtn) tBtn.innerText = '⬜ LAAJENNA';
+        } else {
+            card.classList.remove('compact-view-card');
+            if(tBtn) tBtn.innerText = '➖ SUPISTA';
+        }
     });
 };
 
@@ -382,7 +398,7 @@ function showXPAnimation(points) {
         setTimeout(() => { 
             pop.style.display = 'none'; 
             pop.className = 'xp-popup'; 
-        }, 2500);
+        }, 2000);
     }, 400);
 }
 
@@ -436,29 +452,31 @@ function renderActiveTasks(tasksObj, config) {
         if (!card) {
             card = document.createElement('div');
             card.setAttribute('data-task-id', taskId);
+            // HUOM: CSS-luokat on heitetty JS-logiikan päälle, jotta grid 0fr toimii
             card.innerHTML = `
                 <div class="t-status"></div>
                 <div class="t-header"></div>
                 <div class="compact-participants-text"></div>
                 <div class="smooth-collapse">
-                    <div>
-                        <div class="blur-reveal-area ${isSpying ? 'blur-removed' : ''}" ontouchstart="">
+                    <div class="collapse-inner">
+                        <div class="blur-reveal-area" ontouchstart="">
                             <div class="t-desc"></div>
                         </div>
                         <div class="t-action"></div>
+                        <div class="t-gm gm-only"></div>
                     </div>
                 </div>
-                <div class="t-gm gm-only"></div>
             `;
             container.appendChild(card);
-        } else {
-            const blurArea = card.querySelector('.blur-reveal-area');
-            if (blurArea) {
-                if (isSpying) blurArea.classList.add('blur-removed');
-                else blurArea.classList.remove('blur-removed');
-            }
         }
 
+        const blurArea = card.querySelector('.blur-reveal-area');
+        if (blurArea) {
+            if (isSpying) blurArea.classList.add('blur-removed');
+            else blurArea.classList.remove('blur-removed');
+        }
+
+        // TÄRKEÄÄ: CSS-luokan asetus kortille lennosta
         card.className = `card task-box active-task-item ${taskIsCompact ? 'compact-view-card' : ''} ${isGM && isLocked && !isSpying ? 'is-scoring' : ''}`;
         card.classList.toggle('hero-task-gold', isHeroTask);
         card.classList.toggle('participating', !isGM && !isHeroTask && isLocked && isMePart);
@@ -493,7 +511,7 @@ function renderActiveTasks(tasksObj, config) {
             
             const toggleIcon = taskIsCompact ? '⬜ LAAJENNA' : '➖ SUPISTA';
             statusHtml += `<div style="display:flex; gap:6px;">`;
-            statusHtml += `<button class="btn btn-secondary" style="width:auto; margin:0; padding:6px 10px; font-size:0.55rem;" onclick="toggleIndividualTask('${taskId}')">${toggleIcon}</button>`;
+            statusHtml += `<button class="btn btn-secondary btn-toggle-compact" style="width:auto; margin:0; padding:6px 10px; font-size:0.55rem;" onclick="toggleIndividualTask('${taskId}')">${toggleIcon}</button>`;
             statusHtml += `<button class="btn btn-danger" style="width:auto; margin:0; padding:6px 10px; font-size:0.55rem;" onclick="deleteActiveTask('${taskId}')">X POISTA</button>`;
             statusHtml += `</div></div>`;
         } else {
@@ -511,7 +529,7 @@ function renderActiveTasks(tasksObj, config) {
         if (!isHeroTask && (showFull || vis.drawCount)) { tagsHtml += `<div class="xp-badge" style="margin-bottom:10px; margin-right:5px;">👥 MAX ${taskData.r || 1} SUORITTAJAA</div>`; }
         if ((showFull || vis.minus) && taskData.m) { tagsHtml += `<div class="xp-badge" style="margin-bottom:10px; background:rgba(185,50,50,0.15); color:var(--danger); border-color:var(--danger); margin-right:5px;">⚠️ MIINUS-UHKA</div>`; }
         if ((showFull || vis.bday) && taskData.b) { tagsHtml += `<div class="xp-badge" style="margin-bottom:10px; background:rgba(194,120,33,0.15); color:var(--gm-accent); border-color:var(--gm-accent);">🎂 SANKARIBONUS</div>`; }
-        headerHtml += `<div>${tagsHtml}</div>`;
+        headerHtml += `<div style="margin-top:10px;">${tagsHtml}</div>`;
 
         let compactNamesHtml = "";
         if (isGM && !isHeroTask) {
@@ -652,6 +670,7 @@ function drawAllTasks() {
         logEvent(`Admin (${adminName}) / Massatoiminto: Arvonta käynnistetty ${drawsTriggered} tehtävään!`);
         db.ref('gameState/activeTasks').update(updatesStart);
 
+        // KORJAUS 1: Puolet nopeampi mylly (1000ms)
         setTimeout(() => {
             let updatesFinish = {};
             Object.keys(tasks).forEach(taskId => {
@@ -670,7 +689,7 @@ function drawAllTasks() {
                 }
             });
             db.ref('gameState/activeTasks').update(updatesFinish);
-        }, 2000);
+        }, 1000);
     });
 }
 
@@ -727,6 +746,7 @@ function drawRandom(taskId, isMassAction = false) {
 
         db.ref(`gameState/activeTasks/${taskId}`).update({ isLotteryRunning: true });
         
+        // KORJAUS 1: Puolet nopeampi mylly (1000ms)
         setTimeout(() => {
             let shuffled = [...list].sort(() => 0.5 - Math.random());
             let winners = shuffled.slice(0, count).map(p => ({ ...p, win: true, reviewed: false })); 
@@ -737,7 +757,7 @@ function drawRandom(taskId, isMassAction = false) {
                 const adminName = myName || 'Tuntematon';
                 logEvent(`Admin (${adminName}): Arvottu ${count} suorittajaa tehtävään: ${taskData.n}`);
             }
-        }, 2000); 
+        }, 1000); 
     });
 }
 
@@ -775,7 +795,7 @@ function renderGMGrid(taskId, results, isLocked, isShuffling, showCD, taskData) 
                     const randomBtn = validBtns[Math.floor(Math.random() * validBtns.length)];
                     randomBtn.classList.add('roulette-focus');
                 }
-            }, 120); 
+            }, 80); 
         }
     } else {
         if (window.rouletteTimers && window.rouletteTimers[taskId]) {
@@ -1321,15 +1341,15 @@ function renderLeaderboard(showCD, heroId) {
         const div = document.createElement('div');
         div.className = `player-row ${p.name === myName ? 'me' : ''} ${isHero ? 'is-hero' : ''}`;
         
-        const cdText = (showCD && p.cooldown > 0) ? ' <small style="color:var(--danger)">[JÄÄHY]</small>' : '';
+        const cdText = (showCD && p.cooldown > 0) ? ' <small style="color:var(--danger); margin-left:5px;">[JÄÄHY]</small>' : '';
         
         let dirIcon = '';
         if (leaderboardDirections[p.name] === 'up') dirIcon = ' <span style="color:var(--success); font-size:0.8rem; font-weight:900;">▲</span>';
         else if (leaderboardDirections[p.name] === 'down') dirIcon = ' <span style="color:var(--danger); font-size:0.8rem; font-weight:900;">▼</span>';
 
-        const rankStr = `<span style="color:var(--muted); font-size:0.8rem; margin-right:8px; font-weight:900;">${leaderboardPrevRanks[p.name]}.</span>`;
+        const rankStr = `<span style="color:var(--muted); font-size:0.8rem; margin-right:12px; font-weight:900;">${leaderboardPrevRanks[p.name]}.</span>`;
 
-        div.innerHTML = `<span>${rankStr}${isHero?'🎂 ':''}${p.name}${cdText}${dirIcon}</span><span class="xp-badge">${p.score} XP</span>`;
+        div.innerHTML = `<div style="display:flex; align-items:center;">${rankStr}<span>${isHero?'🎂 ':''}${p.name}${cdText}${dirIcon}</span></div><span class="xp-badge">${p.score} XP</span>`;
         list.appendChild(div);
     });
 }
