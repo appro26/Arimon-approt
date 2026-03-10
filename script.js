@@ -53,7 +53,9 @@ window.dismissInstallPrompt = function() {
     if (installCard) installCard.style.display = 'none';
 };
 
-document.addEventListener('DOMContentLoaded', checkInstallStatus);
+document.addEventListener('DOMContentLoaded', () => {
+    checkInstallStatus();
+});
 
 // --- GLOBAALIT MUUTTUJAT ---
 let myName = localStorage.getItem('appro_name') || null;
@@ -69,7 +71,7 @@ let wasInGame = false;
 
 let isPlayerCompactMode = false;
 let isGMCompactMode = false;
-window.localTaskCompactState = {}; // KORJAUS 5: Yksittäisen kortin oma tila
+window.localTaskCompactState = {}; 
 
 let pendingWinnerTasks = [];
 let winnerTimeout = null;
@@ -192,7 +194,6 @@ function logEvent(msg) {
     db.ref('gameState/eventLog').push({ time, msg });
 }
 
-// UUSI: Yksittäisen kortin supistuksen vaihto (vain GM)
 window.toggleIndividualTask = function(taskId) {
     if (window.localTaskCompactState[taskId] === undefined) {
         window.localTaskCompactState[taskId] = !isGMCompactMode;
@@ -206,7 +207,7 @@ window.toggleIndividualTask = function(taskId) {
 
 window.toggleGMCompactMode = function() {
     isGMCompactMode = !isGMCompactMode;
-    window.localTaskCompactState = {}; // KORJAUS 5: Ylikirjoittaa yksittäiset avaukset
+    window.localTaskCompactState = {}; // Nollaa yksittäiset avaukset
     const btn = document.getElementById('gmCompactToggleBtn');
     if (btn) btn.innerText = isGMCompactMode ? 'LAAJENNA NÄKYMÄ' : 'SUPISTA NÄKYMÄ';
     db.ref('gameState').once('value', snap => {
@@ -216,7 +217,7 @@ window.toggleGMCompactMode = function() {
 
 window.togglePlayerCompactMode = function() {
     isPlayerCompactMode = !isPlayerCompactMode;
-    window.localTaskCompactState = {}; // KORJAUS 5: Ylikirjoittaa yksittäiset avaukset
+    window.localTaskCompactState = {}; 
     const btn = document.getElementById('playerCompactToggleBtn');
     if (btn) btn.innerText = isPlayerCompactMode ? 'LAAJENNA NÄKYMÄ' : 'SUPISTA NÄKYMÄ';
     db.ref('gameState').once('value', snap => {
@@ -228,7 +229,7 @@ window.resetGame = function() {
     if (confirm("VAROITUS: Tämä poistaa kaikki tiedot. Jatketaanko?")) {
         const newResetId = Date.now().toString();
         db.ref('gameState').set({
-            players: [], tasks: defaultTasks, usedTaskIds: [], activeTasks: {}, history: {}, eventLog: {}, resetId: newResetId,
+            players: [], tasks: defaultTasks, usedTaskIds: [], activeTasks: {}, history: [], eventLog: {}, resetId: newResetId,
             config: { 
                 useCooldowns: true, strictVolunteer: false, excludeUsedTasks: true, bdayHero: null,
                 visibility: { title: true, points: true, drawCount: false, desc: false, minus: true, bday: true },
@@ -286,19 +287,16 @@ db.ref('gameState').on('value', (snap) => {
     updateManualTaskSelect();
     renderHistory();
     
-    // KORJAUS 6: Asetetaan checkboxit heti riippumatta siitä onko paneeli auki
     if (document.getElementById('useCooldowns')) {
         document.getElementById('useCooldowns').checked = !!config.useCooldowns;
         document.getElementById('strictVolunteer').checked = !!config.strictVolunteer;
         document.getElementById('excludeUsedTasks').checked = !!config.excludeUsedTasks;
-        
         document.getElementById('visTitle').checked = !!vis.title;
         document.getElementById('visPoints').checked = !!vis.points;
         document.getElementById('visDrawCount').checked = !!vis.drawCount;
         document.getElementById('visDesc').checked = !!vis.desc;
         document.getElementById('visMinus').checked = !!vis.minus;
         document.getElementById('visBday').checked = !!vis.bday;
-        
         document.getElementById('incHero').checked = !!heroDrawConfig.include;
         document.getElementById('weightHero').checked = !!heroDrawConfig.weighted;
         document.getElementById('heroInterval').value = heroDrawConfig.interval || 4;
@@ -321,21 +319,26 @@ db.ref('gameState').on('value', (snap) => {
 function checkForNewWinnerPopups(newTasks) {
     if (!myName) return;
     let addedNew = false;
+    let seenPopups = JSON.parse(localStorage.getItem('appro_seen_popups') || '[]');
     
     Object.keys(newTasks).forEach(taskId => {
         const newTask = newTasks[taskId];
         const oldTask = lastKnownTasks[taskId];
         const wasJustLocked = newTask.locked && (!oldTask || !oldTask.locked);
+        
         if (wasJustLocked && !newTask.isHero) {
             const isMeSelected = (newTask.participants || []).some(r => r.name === myName);
-            if (isMeSelected && !pendingWinnerTasks.includes(newTask.n)) {
+            // Tarkista onko pelaajalle jo näytetty TÄMÄ nimenomainen tehtävä aiemmin
+            if (isMeSelected && !seenPopups.includes(taskId)) {
                 pendingWinnerTasks.push(newTask.n);
+                seenPopups.push(taskId); // Merkitään näkdyksi
                 addedNew = true;
             }
         }
     });
     
     if (addedNew) {
+        localStorage.setItem('appro_seen_popups', JSON.stringify(seenPopups)); // Tallennetaan muistiin
         if (winnerTimeout) clearTimeout(winnerTimeout);
         winnerTimeout = setTimeout(() => {
             const html = pendingWinnerTasks.length > 1 
@@ -424,7 +427,6 @@ function renderActiveTasks(tasksObj, config) {
         const isSpying = (isGM && localSpyState[taskId]);
         const showFull = isLocked || isHeroTask || isSpying;
         
-        // YKSITTÄINEN SUPISTUSTILA
         let taskIsCompact = isGM ? isGMCompactMode : isPlayerCompactMode;
         if (isGM && window.localTaskCompactState && window.localTaskCompactState[taskId] !== undefined) {
             taskIsCompact = window.localTaskCompactState[taskId];
@@ -435,25 +437,23 @@ function renderActiveTasks(tasksObj, config) {
         if (!card) {
             card = document.createElement('div');
             card.setAttribute('data-task-id', taskId);
-            // KORJAUS 3: ontouchstart mahdollistaa :active pseudoluokan mobiilissa!
-            card.setAttribute('ontouchstart', ''); 
             card.innerHTML = `
                 <div class="t-status"></div>
-                <div class="t-header"></div>
-                <div class="t-desc"></div>
-                <div class="t-action"></div>
+                <div class="blur-reveal-area" ontouchstart="">
+                    <div class="t-header"></div>
+                    <div class="t-desc compact-transition"></div>
+                </div>
+                <div class="t-action compact-transition"></div>
                 <div class="t-gm gm-only"></div>
             `;
             container.appendChild(card);
         }
 
-        // TÄRKEÄÄ: Määritellään kortin CSS-luokat tässä aina uusiksi
         card.className = `card task-box active-task-item ${taskIsCompact ? 'compact-view-card' : ''} ${isGM && isLocked ? 'is-scoring' : ''}`;
         card.classList.toggle('hero-task-gold', isHeroTask);
         card.classList.toggle('participating', !isGM && !isHeroTask && isLocked && isMePart);
         card.classList.toggle('not-participating', !isGM && !isHeroTask && isLocked && !isMePart);
 
-        // KORJAUS: Sankaritehtävät pakotetaan AINA ylimmäksi jos pelaaja on itse sankari
         let flexOrder = 10;
         if (!isGM && myName) {
             if (isHeroTask && amIHero) flexOrder = 0; 
@@ -465,10 +465,9 @@ function renderActiveTasks(tasksObj, config) {
         }
         card.style.order = flexOrder;
 
-        // --- 1. STATUS ---
+        // --- STATUS ---
         let statusHtml = '';
         if (isGM) {
-            // UUSI GM VAIHE-LOGIIKKA (1-2-3)
             let stageText = ''; let stageBg = ''; let textColor = '#ffffff'; let pulseClass = '';
             
             if (isHeroTask) {
@@ -489,13 +488,9 @@ function renderActiveTasks(tasksObj, config) {
             statusHtml += `<button class="btn btn-danger" style="width:auto; margin:0; padding:6px 10px; font-size:0.55rem;" onclick="deleteActiveTask('${taskId}')">X POISTA</button>`;
             statusHtml += `</div></div>`;
         } else {
-            if (isHeroTask) {
-                statusHtml += `<div class="task-status-tag" style="background: var(--hero-gold); color: black; font-weight: 900;">✨ SANKARITEHTÄVÄ ✨</div>`;
-            } else if (isLocked) {
-                statusHtml += `<div class="task-status-tag ${isMePart ? '' : 'muted'}">${isMePart ? '🎉 SINUN TEHTÄVÄSI' : '👀 SEURAA MUIDEN SUORITUSTA'}</div>`;
-            } else {
-                statusHtml += `<h2>VAIHE: ILMOITTAUTUMINEN</h2>`;
-            }
+            if (isHeroTask) { statusHtml += `<div class="task-status-tag" style="background: var(--hero-gold); color: black; font-weight: 900;">✨ SANKARITEHTÄVÄ ✨</div>`; } 
+            else if (isLocked) { statusHtml += `<div class="task-status-tag ${isMePart ? '' : 'muted'}">${isMePart ? '🎉 SINUN TEHTÄVÄSI' : '👀 SEURAA MUIDEN SUORITUSTA'}</div>`; } 
+            else { statusHtml += `<h2>VAIHE: ILMOITTAUTUMINEN</h2>`; }
         }
 
         let headerHtml = '';
@@ -504,7 +499,7 @@ function renderActiveTasks(tasksObj, config) {
 
         let tagsHtml = '';
         if (showFull || vis.points) { tagsHtml += `<div class="xp-badge" style="margin-bottom:10px; margin-right:5px;">${taskData.p} XP</div>`; }
-        if (!isHeroTask && (showFull || vis.drawCount)) { tagsHtml += `<div class="xp-badge" style="margin-bottom:10px; background:rgba(255,255,255,0.05); color:var(--text); border-color:rgba(255,255,255,0.2); margin-right:5px;">👥 MAX ${taskData.r || 1} SUORITTAJAA</div>`; }
+        if (!isHeroTask && (showFull || vis.drawCount)) { tagsHtml += `<div class="xp-badge" style="margin-bottom:10px; margin-right:5px;">👥 MAX ${taskData.r || 1} SUORITTAJAA</div>`; }
         if ((showFull || vis.minus) && taskData.m) { tagsHtml += `<div class="xp-badge" style="margin-bottom:10px; background:rgba(185,50,50,0.15); color:var(--danger); border-color:var(--danger); margin-right:5px;">⚠️ MIINUS-UHKA</div>`; }
         if ((showFull || vis.bday) && taskData.b) { tagsHtml += `<div class="xp-badge" style="margin-bottom:10px; background:rgba(194,120,33,0.15); color:var(--gm-accent); border-color:var(--gm-accent);">🎂 SANKARIBONUS</div>`; }
         headerHtml += `<div>${tagsHtml}</div>`;
@@ -517,7 +512,6 @@ function renderActiveTasks(tasksObj, config) {
                             <div class="instruction-label">TEHTÄVÄN KUVAUS</div>
                             <p class="instruction-text">${displayDesc}</p>
                          </div>`;
-            
             if (isLocked && !isHeroTask) {
                 const drawnPlayers = results.map(r => r.name);
                 if (drawnPlayers.length > 0) {
@@ -546,39 +540,32 @@ function renderActiveTasks(tasksObj, config) {
 
         let gmHtml = '';
         if (isGM) {
-            gmHtml += `<div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:12px;">`;
-            
-            if (!isHeroTask) {
-                if (!isLocked) {
-                    // KORJAUS 2: Napit näkyvät vain oikeissa vaiheissa
-                    const hasParticipants = results.length > 0;
-                    const isDrawn = taskData.drawn;
-                    
-                    const drawOpacity = isDrawn ? '0.4' : '1';
-                    const lockOpacity = (hasParticipants && isDrawn) ? '1' : '0.4';
-                    const lockPulse = (hasParticipants && isDrawn) ? 'box-shadow: 0 0 15px var(--success); transform: scale(1.02);' : '';
+            if (!isHeroTask && !isLocked) {
+                const hasParticipants = results.length > 0;
+                const isDrawn = taskData.drawn;
+                const drawOpacity = isDrawn ? '0.4' : '1';
+                const lockOpacity = (hasParticipants && isDrawn) ? '1' : '0.4';
+                const lockPulse = (hasParticipants && isDrawn) ? 'box-shadow: 0 0 15px var(--success); transform: scale(1.02);' : '';
 
-                    gmHtml += `
-                        <div class="volunteer-selector-grid" id="grid-${taskId}"></div>
-                        <div class="admin-row-stack">
-                            <div style="display:flex; gap:8px; flex:1; opacity:${drawOpacity}; transition:all 0.3s;">
-                                <select id="drawCount-${taskId}" style="flex:1; margin:0;" onchange="updateTaskDrawCount('${taskId}', this.value)"></select>
-                                <button class="btn btn-gm" style="flex:2; margin:0;" onclick="drawRandom('${taskId}')">ARVO PELAAJAT</button>
-                            </div>
-                            <button class="btn btn-success" style="margin:0; font-size:0.75rem; padding:12px; opacity:${lockOpacity}; ${lockPulse} transition:all 0.3s;" onclick="lockParticipants('${taskId}')">LUKITSE VALINNAT</button>
+                gmHtml += `<div class="compact-transition" style="border-top:1px solid rgba(255,255,255,0.1); padding-top:12px; margin-top:15px;">`;
+                gmHtml += `
+                    <div class="volunteer-selector-grid" id="grid-${taskId}"></div>
+                    <div class="admin-row-stack">
+                        <div style="display:flex; gap:8px; flex:1; opacity:${drawOpacity}; transition:all 0.3s;">
+                            <select id="drawCount-${taskId}" style="flex:1; margin:0;" onchange="updateTaskDrawCount('${taskId}', this.value)"></select>
+                            <button class="btn btn-gm" style="flex:2; margin:0;" onclick="drawRandom('${taskId}')">ARVO PELAAJAT</button>
                         </div>
-                    `;
-                }
-                // Jos on lukittu, arvontaruudukkoa EI ENÄÄ PIIRRETÄ ollenkaan (Säästää massiivisesti tilaa!)
+                        <button class="btn btn-success" style="margin:0; font-size:0.75rem; padding:12px; opacity:${lockOpacity}; ${lockPulse} transition:all 0.3s;" onclick="lockParticipants('${taskId}')">LUKITSE VALINNAT</button>
+                    </div>
+                `;
+                gmHtml += `</div>`;
             }
             
-            gmHtml += `<div id="scoring-${taskId}"></div>`;
-            gmHtml += `
-                <div style="display:flex; gap:10px; margin-top:8px;">
-                    <button class="btn btn-success" id="finish-${taskId}" style="display:${(isLocked || isHeroTask) ? 'block' : 'none'}; flex:2; margin:0;" onclick="showScoring('${taskId}')">MERKITSE VALMIIKSI</button>
-                    <button class="btn btn-secondary" style="flex:1; font-size:0.6rem; padding:8px; margin:0;" onclick="toggleGMSpy('${taskId}')">SPEKSIT</button>
-                </div>
-            </div>`;
+            gmHtml += `<div id="scoring-${taskId}" style="display:${isLocked || isHeroTask ? 'block' : 'none'};"></div>`;
+            gmHtml += `<div class="compact-transition" style="display:flex; gap:10px; margin-top:8px;">
+                            <button class="btn btn-success" id="finish-${taskId}" style="display:${(isLocked || isHeroTask) ? 'block' : 'none'}; flex:2; margin:0;" onclick="showScoring('${taskId}')">MERKITSE VALMIIKSI</button>
+                            <button class="btn btn-secondary" style="flex:1; font-size:0.6rem; padding:8px; margin:0;" onclick="toggleGMSpy('${taskId}')">SPEKSIT</button>
+                       </div>`;
         }
 
         const updateNode = (selector, newHtml) => {
@@ -593,7 +580,6 @@ function renderActiveTasks(tasksObj, config) {
         updateNode('.t-gm', gmHtml);
 
         if (isGM) {
-            // Renderöidään valintaruudukko vain jos sitä ei ole lukittu
             if (!isHeroTask && !isLocked) {
                 renderGMGrid(taskId, results, isLocked, taskData.isLotteryRunning, config.useCooldowns, taskData);
                 updateDrawCountSelect(taskId, taskData);
@@ -609,15 +595,40 @@ function drawAllTasks() {
     db.ref('gameState/activeTasks').once('value', snap => {
         const tasks = snap.val() || {};
         let drawsTriggered = 0;
+        let updatesStart = {};
+
         Object.keys(tasks).forEach(taskId => {
             const taskData = tasks[taskId];
             if (!taskData.locked && !taskData.isHero && (taskData.participants || []).length > 0 && !taskData.drawn) {
-                drawRandom(taskId, true);
+                updatesStart[`${taskId}/isLotteryRunning`] = true;
                 drawsTriggered++;
             }
         });
-        if (drawsTriggered > 0) logEvent(`Massatoiminto: Arvottu pelaajat ${drawsTriggered} tehtävään.`);
-        else alert("Ei arvottavia tehtäviä.");
+
+        if (drawsTriggered === 0) { alert("Ei arvottavia tehtäviä."); return; }
+
+        logEvent(`Massatoiminto: Arvonta käynnistetty ${drawsTriggered} tehtävään.`);
+        db.ref('gameState/activeTasks').update(updatesStart);
+
+        // Odotetaan 2 sekuntia rulettianimaation pyörimistä kaikkialla ruudulla
+        setTimeout(() => {
+            let updatesFinish = {};
+            Object.keys(tasks).forEach(taskId => {
+                if (updatesStart[`${taskId}/isLotteryRunning`]) {
+                    const taskData = tasks[taskId];
+                    const sel = document.getElementById(`drawCount-${taskId}`);
+                    const count = sel ? (parseInt(sel.value) || 1) : 1;
+                    let list = taskData.participants || [];
+                    let shuffled = [...list].sort(() => 0.5 - Math.random());
+                    let winners = shuffled.slice(0, count).map(p => ({ ...p, win: true }));
+
+                    updatesFinish[`${taskId}/participants`] = winners;
+                    updatesFinish[`${taskId}/isLotteryRunning`] = false;
+                    updatesFinish[`${taskId}/drawn`] = true;
+                }
+            });
+            db.ref('gameState/activeTasks').update(updatesFinish);
+        }, 2000);
     });
 }
 
@@ -729,8 +740,7 @@ function renderGMGrid(taskId, results, isLocked, isShuffling, showCD, taskData) 
 function toggleGMSpy(taskId) {
     localSpyState[taskId] = !localSpyState[taskId];
     db.ref('gameState').once('value', snap => {
-        const d = snap.val();
-        renderActiveTasks(d.activeTasks || {}, d.config || {});
+        renderActiveTasks(snap.val().activeTasks || {}, snap.val().config || {});
     });
 }
 
@@ -739,8 +749,7 @@ function setRole(r) {
     document.getElementById('btnPlayer').classList.toggle('active', r === 'player');
     document.getElementById('btnGM').classList.toggle('active', r === 'gm');
     db.ref('gameState').once('value', snap => {
-        const d = snap.val();
-        renderActiveTasks(d.activeTasks || {}, d.config || {});
+        renderActiveTasks(snap.val().activeTasks || {}, snap.val().config || {});
     });
 }
 
@@ -845,7 +854,7 @@ function lockParticipants(taskId, isMassAction = false) {
         
         if (d.config?.useCooldowns) {
             const updatedPlayers = allPlayers.map(p => {
-                if (drawnNames.includes(p.name)) p.cooldown = 1; 
+                if (drawnNames.includes(p.name)) p.cooldown = true; 
                 return p;
             });
             db.ref('gameState/players').set(updatedPlayers);
