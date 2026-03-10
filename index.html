@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="icon.png">
 
-    <link rel="stylesheet" href="style.css?v=13">
+    <link rel="stylesheet" href="style.css?v=14">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
 
@@ -61,7 +61,7 @@
         <div class="gm-only" id="gmGlobalControls" style="display:none; margin-bottom: 15px;">
             <div class="admin-grid-layout" style="flex-wrap: wrap;">
                 <button class="btn btn-gm" onclick="drawAllTasks()" style="font-size: 0.65rem; padding: 12px; flex: 1; background: #a36114;">1. ARVO PELAAJAT</button>
-                <button class="btn btn-primary" onclick="lockAllTasks()" style="font-size: 0.65rem; padding: 12px; flex: 1;">2. LUKITSE KAIKKI</button>
+                <button class="btn btn-primary" onclick="lockAllTasks()" style="font-size: 0.65rem; padding: 12px; flex: 1;">2. LUKITSE TEHTÄVÄT</button>
                 <button class="btn btn-success" onclick="finishAllTasks()" style="font-size: 0.65rem; padding: 12px; flex-basis: 100%; margin-top: -5px;">3. MERKITSE VALMIIT KERRALLA</button>
                 <button class="btn btn-secondary" id="gmCompactToggleBtn" onclick="toggleGMCompactMode()" style="font-size: 0.65rem; padding: 12px; flex-basis: 100%; margin-top: -5px;">SUPISTA NÄKYMÄ KAIKISTA</button>
             </div>
@@ -69,18 +69,13 @@
 
         <div id="activeTasksContainer"></div>
 
-        <div class="card">
-            <h2>Leaderboard</h2>
-            <div id="playerList"></div>
-        </div>
-
         <div class="gm-only">
-            <div class="admin-grid-layout">
+            <div class="admin-grid-layout" style="margin-bottom: 20px;">
                 <button class="btn btn-gm" onclick="confirmRandomize()">ARVO UUSI TEHTÄVÄ</button>
                 <button class="btn btn-secondary" onclick="toggleAdminPanel()">ADMIN-PANEELI</button>
             </div>
             
-            <div id="adminPanel" class="card" style="display:none; margin-top:15px;">
+            <div id="adminPanel" class="card" style="display:none; margin-bottom:20px;">
                 
                 <h2 style="color: var(--accent);">Pelaajien hallinta</h2>
                 <p style="font-size:0.6rem; color:var(--gm-accent); margin-bottom:10px; font-weight:700;">
@@ -202,12 +197,18 @@
                 <hr style="border: 0; border-top: 1px solid #333; margin: 30px 0;">
                 <button class="btn btn-danger" style="width:100%;" onclick="window.resetGame()">NOLLAA KOKO PELI (DATABASE RESET)</button>
             </div>
-
-            <div class="card" id="historyCard" style="margin-top: 20px;">
-                <h2>Aiemmat tehtävät</h2>
-                <div id="taskHistoryList" style="font-size: 0.8rem; color: var(--muted);"></div>
-            </div>
         </div>
+
+        <div class="card">
+            <h2>Leaderboard</h2>
+            <div id="playerList"></div>
+        </div>
+
+        <div class="card" id="historyCard" style="margin-top: 20px;">
+            <h2>Aiemmat tehtävät</h2>
+            <div id="taskHistoryList" style="font-size: 0.8rem; color: var(--muted);"></div>
+        </div>
+
     </div>
 
     <div id="xpPopUp" class="xp-popup"></div>
