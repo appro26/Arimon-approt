@@ -69,7 +69,6 @@ let winnerTimeout = null;
 let pendingXP = 0;
 let xpTimeout = null;
 
-// Leaderboard Nuolilogiikan muuttujat
 let leaderboardScoresStr = "";
 let leaderboardPrevRanks = {};
 let leaderboardDirections = {};
@@ -190,6 +189,7 @@ function logEvent(msg) {
     db.ref('gameState/eventLog').push({ time, msg });
 }
 
+// KORJAUS 3: Silkinpehmeät laajennus/supistus animaatiot suoraan CSS-luokilla!
 window.toggleIndividualTask = function(taskId) {
     const card = document.querySelector(`[data-task-id="${taskId}"]`);
     if (!card) return;
@@ -231,8 +231,13 @@ window.togglePlayerCompactMode = function() {
     window.localTaskCompactState = {}; 
     const btn = document.getElementById('playerCompactToggleBtn');
     if (btn) btn.innerText = isPlayerCompactMode ? 'LAAJENNA NÄKYMÄ' : 'SUPISTA NÄKYMÄ';
-    db.ref('gameState').once('value', snap => {
-        renderActiveTasks(snap.val().activeTasks || {}, snap.val().config || {});
+    
+    document.querySelectorAll('.active-task-item').forEach(card => {
+        if (isPlayerCompactMode) {
+            card.classList.add('compact-view-card');
+        } else {
+            card.classList.remove('compact-view-card');
+        }
     });
 };
 
@@ -351,7 +356,6 @@ function checkForNewWinnerPopups(newTasks) {
         localStorage.setItem('appro_seen_popups', JSON.stringify(seenPopups)); 
         if (winnerTimeout) clearTimeout(winnerTimeout);
         winnerTimeout = setTimeout(() => {
-            // KORJAUS 2: Pelaajan voittolaatikoiden erottelu usean tehtävän kohdalla
             const html = pendingWinnerTasks.map(n => `<div class="winner-task-box">${n}</div>`).join('');
             triggerWinnerOverlay(html);
             pendingWinnerTasks = []; 
@@ -452,13 +456,14 @@ function renderActiveTasks(tasksObj, config) {
         if (!card) {
             card = document.createElement('div');
             card.setAttribute('data-task-id', taskId);
+            // KORJAUS 1 & 3: HTML-rakenne, joka tukee sulavaa liukua (kaikki napit on collapse-innerissä)
             card.innerHTML = `
                 <div class="t-status"></div>
                 <div class="t-header"></div>
                 <div class="compact-participants-text"></div>
                 <div class="smooth-collapse">
-                    <div>
-                        <div class="blur-reveal-area ${isSpying ? 'blur-removed' : ''}" ontouchstart="">
+                    <div class="collapse-inner">
+                        <div class="blur-reveal-area" ontouchstart="">
                             <div class="t-desc"></div>
                         </div>
                         <div class="t-action"></div>
@@ -467,12 +472,12 @@ function renderActiveTasks(tasksObj, config) {
                 </div>
             `;
             container.appendChild(card);
-        } else {
-            const blurArea = card.querySelector('.blur-reveal-area');
-            if (blurArea) {
-                if (isSpying) blurArea.classList.add('blur-removed');
-                else blurArea.classList.remove('blur-removed');
-            }
+        }
+
+        const blurArea = card.querySelector('.blur-reveal-area');
+        if (blurArea) {
+            if (isSpying) blurArea.classList.add('blur-removed');
+            else blurArea.classList.remove('blur-removed');
         }
 
         card.className = `card task-box active-task-item ${taskIsCompact ? 'compact-view-card' : ''} ${isGM && isLocked && !isSpying ? 'is-scoring' : ''}`;
@@ -537,25 +542,25 @@ function renderActiveTasks(tasksObj, config) {
                         let st = r.win ? '<span style="color:var(--success)">WIN</span>' : '<span style="color:var(--danger)">FAIL</span>';
                         return `${r.name}: ${st}`;
                     }).join(' | ');
-                    compactNamesHtml = `<div style="font-size:0.65rem; background:rgba(0,0,0,0.5); padding:6px 10px; border-radius:6px; margin-bottom:4px; line-height: 1.4;"><b>SUORITUKSET:</b> ${details}</div>`;
+                    compactNamesHtml = `<div class="compact-inner-text" style="background:rgba(0,0,0,0.5); padding:6px 10px; border-radius:6px;"><b>SUORITUKSET:</b> ${details}</div>`;
                 } else {
-                    compactNamesHtml = `<span style="color:var(--muted); font-size:0.65rem;">Ei suorittajia.</span>`;
+                    compactNamesHtml = `<div class="compact-inner-text" style="color:var(--muted);">Ei suorittajia.</div>`;
                 }
             } else {
                 if (results.length > 0) {
                     let names = results.map(r => r.name).join(', ');
                     let label = taskData.drawn ? "ARVOTTU:" : "ILMOITTAUTUNEET:";
                     let color = taskData.drawn ? "var(--success)" : "var(--accent)";
-                    compactNamesHtml = `<div style="font-size:0.65rem; margin-bottom:4px;"><span style="color:${color}; font-weight:bold;">${label}</span> <span style="color:#fff;">${names}</span></div>`;
+                    compactNamesHtml = `<div class="compact-inner-text"><span style="color:${color}; font-weight:bold;">${label}</span> <span style="color:#fff;">${names}</span></div>`;
                 } else {
-                    compactNamesHtml = `<div style="font-size:0.65rem; color:var(--muted); margin-bottom:4px;">Ei ilmoittautuneita vielä.</div>`;
+                    compactNamesHtml = `<div class="compact-inner-text" style="color:var(--muted);">Ei ilmoittautuneita vielä.</div>`;
                 }
             }
         } else if (isGM && isHeroTask) {
             if (isLocked) {
                 let hw = (taskData.heroWin !== false);
                 let st = hw ? '<span style="color:var(--success)">WIN</span>' : '<span style="color:var(--danger)">FAIL</span>';
-                compactNamesHtml = `<div style="font-size:0.65rem; background:rgba(0,0,0,0.5); padding:6px 10px; border-radius:6px; margin-bottom:4px;"><b>SANKARI:</b> ${st}</div>`;
+                compactNamesHtml = `<div class="compact-inner-text" style="background:rgba(0,0,0,0.5); padding:6px 10px; border-radius:6px;"><b>SANKARI:</b> ${st}</div>`;
             }
         }
 
@@ -668,6 +673,7 @@ function drawAllTasks() {
         logEvent(`Admin (${adminName}) / Massatoiminto: Arvonta käynnistetty ${drawsTriggered} tehtävään!`);
         db.ref('gameState/activeTasks').update(updatesStart);
 
+        // KORJAUS 1: Puolet nopeampi mylly (1000ms)
         setTimeout(() => {
             let updatesFinish = {};
             Object.keys(tasks).forEach(taskId => {
@@ -743,6 +749,7 @@ function drawRandom(taskId, isMassAction = false) {
 
         db.ref(`gameState/activeTasks/${taskId}`).update({ isLotteryRunning: true });
         
+        // KORJAUS 1: Puolet nopeampi mylly (1000ms)
         setTimeout(() => {
             let shuffled = [...list].sort(() => 0.5 - Math.random());
             let winners = shuffled.slice(0, count).map(p => ({ ...p, win: true, reviewed: false })); 
