@@ -542,9 +542,10 @@ function renderActiveTasks(tasksObj, config) {
                 actionHtml += `<p style="color:var(--danger); font-weight:800; text-align:center;">OLET PELIKIELLOSSA!</p>`;
             } else if (isBannedFromThis && !amIIn) {
                 actionHtml += `<p style="color:var(--danger); font-weight:800; text-align:center;">OLET JÄÄHYLLÄ TÄSTÄ TEHTÄVÄSTÄ!</p>`;
+            } else if (taskData.drawn && !amIIn) {
+                actionHtml += `<p style="color:var(--muted); font-weight:800; text-align:center; font-size: 0.8rem;">ARVONTA ON PÄÄTTYNYT</p>`;
             } else {
                 let btnText = amIIn ? 'ILMOITTAUDUTTU ✓' : 'HALUAN ILMOITTAUTUA';
-                if (!amIIn && taskData.drawn) btnText = 'HAE POIKKEUSLUPAA';
                 actionHtml += `<button class="btn ${amIIn ? 'btn-success' : 'btn-primary'}" onclick="volunteer('${taskId}')">${btnText}</button>`;
             }
             actionHtml += `</div>`;
@@ -899,9 +900,8 @@ function volunteer(taskId) {
             if (inParts > -1) {
                 t.participants.splice(inParts, 1); 
             } else {
-                let lIdx = t.lateVolunteers.indexOf(myName);
-                if (lIdx > -1) t.lateVolunteers.splice(lIdx, 1); 
-                else t.lateVolunteers.push(myName); 
+                // Arvonnan jälkeen pelaaja ei voi enää ilmoittautua, perutaan muutos
+                return; 
             }
         } else {
             let pIdx = t.participants.findIndex(r => r.name === myName);
@@ -910,7 +910,7 @@ function volunteer(taskId) {
         }
         return t;
     }).then((res) => {
-        if(res.committed) {
+        if(res && res.committed) {
             logEvent(`${myName} muutti osallistumistaan: ${taskName}`);
         }
     });
