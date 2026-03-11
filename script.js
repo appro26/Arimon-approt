@@ -564,14 +564,15 @@ function renderActiveTasks(tasksObj, config) {
                 const lockOpacity = (results.length > 0 && isDrawn) ? '1' : '0.4';
                 const lockPulse = (results.length > 0 && isDrawn) ? 'box-shadow: 0 0 15px var(--accent); transform: scale(1.02);' : '';
 
+                // KORJAUS Z-INDEX LOKAALISTI: Pakotetaan ruudukko z-index tasolle 50 ERIKSEEN ja napit tasolle 5
                 gmHtml += `
-                    <div class="volunteer-selector-grid" id="grid-${taskId}"></div>
-                    <div class="admin-row-stack">
-                        <div style="display:flex; gap:8px; flex:1; opacity:${drawOpacity}; transition:all 0.3s;">
+                    <div class="volunteer-selector-grid" id="grid-${taskId}" style="position:relative; z-index:50;"></div>
+                    <div class="admin-row-stack" style="position:relative; z-index:5;">
+                        <div style="display:flex; gap:8px; flex:1; opacity:${drawOpacity}; transition:all 0.3s; position:relative; z-index:1;">
                             <select id="drawCount-${taskId}" style="flex:1; margin:0;" onchange="updateTaskDrawCount('${taskId}', this.value)"></select>
                             <button class="btn btn-arvo" style="flex:2; margin:0;" onclick="drawRandom('${taskId}')">${isDrawn ? 'ARVO UUDELLEEN' : 'ARVO PELAAJAT'}</button>
                         </div>
-                        <button class="btn btn-primary" style="margin:0; font-size:0.75rem; padding:12px; opacity:${lockOpacity}; ${lockPulse} transition:all 0.3s;" onclick="lockParticipants('${taskId}')">LUKITSE VALINNAT</button>
+                        <button class="btn btn-primary" style="margin:0; font-size:0.75rem; padding:12px; opacity:${lockOpacity}; ${lockPulse} transition:all 0.3s; position:relative; z-index:1;" onclick="lockParticipants('${taskId}')">LUKITSE VALINNAT</button>
                     </div>
                 `;
             }
@@ -579,7 +580,7 @@ function renderActiveTasks(tasksObj, config) {
             gmHtml += `<div id="scoring-${taskId}" style="display:${isLocked || isHeroTask ? 'block' : 'none'};"></div>`;
             
             gmHtml += `
-                <div class="admin-row-stack" style="background:rgba(255,255,255,0.05); padding:8px 12px; border-radius:8px; margin-top:10px; justify-content:space-between;">
+                <div class="admin-row-stack" style="background:rgba(255,255,255,0.05); padding:8px 12px; border-radius:8px; margin-top:10px; justify-content:space-between; position:relative; z-index:1;">
                     <span style="font-size:0.65rem; color:var(--muted); font-weight:bold;">TEHTÄVÄN XP-ARVO:</span>
                     <div style="display:flex; align-items:center; gap:10px;">
                         <button class="btn btn-secondary" style="width:28px; height:28px; padding:0; margin:0; min-height:0;" onclick="changeTaskXP('${taskId}', -1)">-</button>
@@ -900,7 +901,6 @@ function volunteer(taskId) {
             if (inParts > -1) {
                 t.participants.splice(inParts, 1); 
             } else {
-                // Arvonnan jälkeen pelaaja ei voi enää ilmoittautua, perutaan muutos
                 return; 
             }
         } else {
