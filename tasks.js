@@ -118,4 +118,11 @@ const defaultTasks = [
     { id: 100, n: "Air Drop Defense (Sankari)", d: "Sankarin on suojeltava omaa juomaansa niin, ettei kukaan saa koskea siihen 5 minuuttiin.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'juoma' },
     { id: 101, n: "Mando-kierto (Sankari)", d: "Sankarin on noustava ylös ja kierrettävä koko seurue ympäri tehden samalla frisbeegolf-lähipeliä matkivia liikkeitä.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'liikunta' },
     { id: 102, n: "System Overload (Sankari)", d: "Sankarin on lueteltava 10 IT-termiä, 10 frisbeegolf-termiä tai 10 PUBG-termiä 30 sekunnissa.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'pokka' }
+    { id: 132, n: "Ajoneuvo-spawn", d: "Siirry seuraavaan kohteeseen muulla tavalla kuin omin jaloin (esim. jonkun reppuselässä tai kottikärryissä).", p: 3, m: true, b: false, r: 2, k: 'liikunta' },
+    { id: 133, n: "Access Denied", d: "Etsi ulkoa STOP-merkki ja ilmoita jollekin satunnaiselle ohikulkijalle vakavalla naamalla, että heidän tulee pysähtyä merkin kohdalla.", p: 3, m: true, b: false, r: 1, k: 'pokka' },
+    { id: 134, n: "Äänikortin ajurivirhe", d: "Tilaa seuraava juomasi tiskiltä teeskentelemällä vakavaa ässä- ja ärrävikaa. Pokka ei saa pettää!", p: 3, m: true, b: false, r: 1, k: 'pokka' },
+    { id: 135, n: "Touch Grass -protokolla", d: "Etsi ulkoa oikeaa nurmikkoa, kosketa ruohoa ja tee maassa kunnon ruohoenkeli.", p: 3, m: true, b: false, r: 2, k: 'liikunta' },
+    { id: 136, n: "Phishing-hyökkäys", d: "Tilaa jollekin seurueen jäsenelle shotti vettä limelohkolla. Pyydä baarimikkoa viemään se ja kertomaan saajalle, että se oli sinulta.", p: 3, m: true, b: false, r: 1, k: 'juoma' },
+    { id: 137, n: "Speedrun-tekniikka", d: "Nouse pöydästä ja Naruto-juokse (kädet suorana selän takana, yläkroppa etunojassa) baarin vessaan asti.", p: 3, m: true, b: false, r: 2, k: 'liikunta' },
+    { id: 138, n: "Näytönsäästäjä-tila", d: "Vältä kaikkea katsekontaktia kenenkään ihmisen kanssa seuraavan 5 minuutin ajan. Jos katsot jotakuta vahingossakin silmiin, epäonnistut.", p: 2, m: true, b: false, r: 2, k: 'pokka' }
 ];
