@@ -84,7 +84,6 @@ function logEvent(msg) {
     db.ref('gameState/eventLog').push({ time, msg });
 }
 
-// UUSI: Pisteloki
 function logScoreChange(playerName, oldScore, delta, newScore, reason) {
     const time = new Date().toLocaleTimeString('fi-FI');
     db.ref('gameState/scoreLog').push({ time, playerName, oldScore, delta, newScore, reason });
@@ -173,7 +172,6 @@ db.ref('gameState').on('value', (snap) => {
     allPlayers = data.players || [];
     const config = data.config || {};
     
-    // KORJAUS 3: Säilytetään heroId globaalina
     currentHeroId = config.bdayHero !== undefined ? config.bdayHero : null;
     
     const me = allPlayers.find(p => p.name === myName);
@@ -210,7 +208,7 @@ db.ref('gameState').on('value', (snap) => {
     const totalCompleted = (data.usedTaskIds || []).length;
 
     updateIdentityUI();
-    renderLeaderboard(config.useCooldowns, currentHeroId);
+    renderLeaderboard(config.useCooldowns, currentHeroId, data.activeTasks || {});
     updateManualTaskSelect();
     
     const historyTitle = document.getElementById('historyTitle');
@@ -242,7 +240,7 @@ db.ref('gameState').on('value', (snap) => {
     if(document.getElementById('adminPanel').style.display === 'block') {
         const activeTag = document.activeElement ? document.activeElement.tagName : '';
         if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA' && activeTag !== 'SELECT') {
-            renderAdminPlayerList();
+            renderAdminPlayerList(data.activeTasks || {});
             renderTaskLibrary();
         }
         renderEventLog(data.eventLog);
@@ -546,7 +544,7 @@ function renderActiveTasks(tasksObj, config) {
                 actionHtml += `<p style="color:var(--danger); font-weight:800; text-align:center;">OLET JÄÄHYLLÄ TÄSTÄ TEHTÄVÄSTÄ!</p>`;
             } else {
                 let btnText = amIIn ? 'ILMOITTAUDUTTU ✓' : 'HALUAN ILMOITTAUTUA';
-                if (!amIIn && taskData.drawn) btnText = 'ILMOITTAUDU (MYÖHÄSSÄ)';
+                if (!amIIn && taskData.drawn) btnText = 'HAE POIKKEUSLUPAA';
                 actionHtml += `<button class="btn ${amIIn ? 'btn-success' : 'btn-primary'}" onclick="volunteer('${taskId}')">${btnText}</button>`;
             }
             actionHtml += `</div>`;
@@ -679,14 +677,15 @@ function lockAllTasks() {
         let count = 0;
         Object.keys(tasks).forEach(taskId => {
             const taskData = tasks[taskId];
-            if (!taskData.onHold && !taskData.locked && !taskData.isHero && (taskData.participants || []).length > 0) {
+            // KORJAUS 2: Vain arvotut (drawn === true) lukitaan massana
+            if (!taskData.onHold && !taskData.locked && !taskData.isHero && taskData.drawn && (taskData.participants || []).length > 0) {
                 lockParticipants(taskId, true);
                 count++;
             }
         });
         const adminName = myName || 'Tuntematon';
         if (count > 0) logEvent(`Admin (${adminName}) / Massatoiminto: Lukitsi ${count} tehtävää.`);
-        else alert("Ei lukittavia tehtäviä.");
+        else alert("Ei lukittavia tehtäviä. Varmista, että olet arponut suorittajat ensin (Vaihe 1).");
     });
 }
 
@@ -1253,7 +1252,6 @@ function renderEventLog(logData) {
     });
 }
 
-// UUSI: Pistelokin renderöinti
 function renderScoreLog(logData) {
     const container = document.getElementById('adminScoreLog');
     if(!container) return;
@@ -1335,19 +1333,25 @@ function setBdayHero(idx) {
     }); 
 }
 
-// UUSI: Vapauttaa myös kaikista aktiivisista jäähyistä
 window.adminToggleCooldown = function(idx) { 
     db.ref('gameState').once('value', snap => {
         let d = snap.val();
         if(!d || !d.players || !d.players[idx]) return;
         
         let p = d.players[idx];
-        let newState = p.cooldown > 0 ? 0 : 1;
+        
+        let isCurrentlyBanned = p.cooldown > 0;
+        if (d.activeTasks) {
+            Object.values(d.activeTasks).forEach(t => {
+                if (t.bannedPlayers && t.bannedPlayers.includes(p.name)) isCurrentlyBanned = true;
+            });
+        }
+        
+        let newState = isCurrentlyBanned ? 0 : 1;
         
         let updates = {};
         updates[`gameState/players/${idx}/cooldown`] = newState;
         
-        // Kun vapautetaan, poistetaan pelaaja KAIKKIEN aktiivisten tehtävien bannedPlayers listoista
         if (newState === 0 && d.activeTasks) {
             Object.keys(d.activeTasks).forEach(taskId => {
                 let t = d.activeTasks[taskId];
@@ -1362,7 +1366,6 @@ window.adminToggleCooldown = function(idx) {
     });
 }
 
-// UUSI: Manuaalinen, globaali pelikielto
 window.adminToggleBan = function(idx) {
     const newState = !allPlayers[idx].isBanned;
     db.ref(`gameState/players/${idx}/isBanned`).set(newState);
@@ -1403,7 +1406,7 @@ function adminCreateTask() {
     logEvent(`Admin (${adminName}) loi uuden tehtävän kirjastoon: ${n}`);
 }
 
-function renderLeaderboard(showCD, heroId) {
+function renderLeaderboard(showCD, heroId, activeTasksObj = {}) {
     const list = document.getElementById('playerList');
     if(!list) return;
     
@@ -1411,7 +1414,6 @@ function renderLeaderboard(showCD, heroId) {
     const newScoresStr = sortedPlayers.map(p => p.name + p.score).join('|');
     
     if (newScoresStr !== leaderboardScoresStr) {
-        
         let currentRanks = {};
         let currentRank = 1;
         let prevScore = -1;
@@ -1442,10 +1444,13 @@ function renderLeaderboard(showCD, heroId) {
     sortedPlayers.forEach((p) => {
         const pIdx = allPlayers.findIndex(x => x.name === p.name);
         const isHero = heroId !== null && pIdx === heroId;
-        const div = document.createElement('div');
-        div.className = `player-row ${p.name === myName ? 'me' : ''} ${isHero ? 'is-hero' : ''}`;
         
-        const cdText = (showCD && p.cooldown > 0) ? ' <small style="color:var(--danger); margin-left:5px;">[JÄÄHY]</small>' : '';
+        let isBanned = p.cooldown > 0;
+        Object.values(activeTasksObj).forEach(t => {
+            if (t.bannedPlayers && t.bannedPlayers.includes(p.name)) isBanned = true;
+        });
+        
+        const cdText = (showCD && isBanned) ? ' <small style="color:var(--danger); margin-left:5px;">[JÄÄHY]</small>' : '';
         const banText = p.isBanned ? ' <small style="color:var(--danger); margin-left:5px;">[⛔]</small>' : '';
         
         let dirIcon = '';
@@ -1453,13 +1458,14 @@ function renderLeaderboard(showCD, heroId) {
         else if (leaderboardDirections[p.name] === 'down') dirIcon = ' <span style="color:var(--danger); font-size:0.8rem; font-weight:900;">▼</span>';
 
         const rankStr = `<span style="color:var(--muted); font-size:0.8rem; margin-right:12px; font-weight:900;">${leaderboardPrevRanks[p.name]}.</span>`;
-
+        const div = document.createElement('div');
+        div.className = `player-row ${p.name === myName ? 'me' : ''} ${isHero ? 'is-hero' : ''}`;
         div.innerHTML = `<div style="display:flex; align-items:center;">${rankStr}<span>${isHero?'🎂 ':''}${p.name}${cdText}${banText}${dirIcon}</span></div><span class="xp-badge">${p.score} XP</span>`;
         list.appendChild(div);
     });
 }
 
-function renderAdminPlayerList() {
+function renderAdminPlayerList(activeTasksObj = {}) {
     const list = document.getElementById('adminPlayerList');
     if(!list) return; list.innerHTML = "";
     allPlayers.forEach((p, i) => {
@@ -1471,6 +1477,11 @@ function renderAdminPlayerList() {
         const heroColor = isHero ? '#000' : 'inherit';
         const heroBorder = isHero ? 'var(--hero-gold)' : 'rgba(255,255,255,0.2)';
         const banStyle = p.isBanned ? 'background:var(--danger); color:#fff; border-color:var(--danger);' : '';
+        
+        let isCurrentlyBanned = p.cooldown > 0;
+        Object.values(activeTasksObj).forEach(t => {
+            if (t.bannedPlayers && t.bannedPlayers.includes(p.name)) isCurrentlyBanned = true;
+        });
 
         div.innerHTML = `
             <div style="width:100%">
@@ -1479,7 +1490,7 @@ function renderAdminPlayerList() {
                     <div style="display:flex; gap:4px;">
                         <button class="btn" style="width:32px; padding:5px; margin:0; background:${heroBg}; color:${heroColor}; border:1px solid ${heroBorder};" onclick="setBdayHero(${i})" title="Synttärisankari">🎂</button>
                         <button class="btn ${p.isBanned ? 'btn-danger' : 'btn-secondary'}" style="width:auto; font-size:0.5rem; padding:5px; margin:0; ${banStyle}" onclick="adminToggleBan(${i})" title="Pelikielto">⛔</button>
-                        <button class="btn ${p.cooldown > 0 ? 'btn-success' : 'btn-secondary'}" style="width:auto; font-size:0.5rem; padding:5px; margin:0;" onclick="adminToggleCooldown(${i})" title="Jäähy">${p.cooldown > 0 ? 'VAP' : 'J'}</button>
+                        <button class="btn ${isCurrentlyBanned ? 'btn-success' : 'btn-secondary'}" style="width:auto; font-size:0.5rem; padding:5px; margin:0;" onclick="adminToggleCooldown(${i})" title="Jäähy">${isCurrentlyBanned ? 'VAP' : 'J'}</button>
                         <button class="btn btn-secondary" style="width:28px; padding:5px; margin:0;" onclick="adjustScore(${i}, 1)">+</button>
                         <button class="btn btn-secondary" style="width:28px; padding:5px; margin:0;" onclick="adjustScore(${i}, -1)">-</button>
                         <button class="btn btn-danger" style="width:28px; padding:5px; margin:0;" onclick="removePlayer(${i})">X</button>
@@ -1540,5 +1551,5 @@ function updateIdentityUI() { document.getElementById('identityCard').style.disp
 
 function toggleAdminPanel() { 
     const p = document.getElementById('adminPanel'); const isOpening = p.style.display === 'none'; p.style.display = isOpening ? 'block' : 'none'; 
-    if(isOpening) { renderAdminPlayerList(); renderTaskLibrary(); }
+    if(isOpening) { renderAdminPlayerList(lastKnownTasks); renderTaskLibrary(); }
 }
