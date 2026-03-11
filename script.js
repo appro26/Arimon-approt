@@ -3,11 +3,6 @@ const firebaseConfig = { databaseURL: "https://approplaybook-default-rtdb.europe
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// --- GLOBAALI VIRHEIDENHALLINTA ---
-window.addEventListener('error', function(e) {
-    console.error("Kriittinen JS virhe estetty:", e.message);
-});
-
 // --- PWA ASENNUSLOGIIKKA ---
 let deferredPrompt;
 window.addEventListener('beforeinstallprompt', (e) => {
@@ -65,7 +60,9 @@ let lastKnownTasks = {};
 let taskHistory = [];
 let wasInGame = false; 
 
+// KORJAUS 3: Pidetään sankarin ID muistissa
 let currentHeroId = null;
+
 let isPlayerCompactMode = false;
 let isGMCompactMode = false;
 window.localTaskCompactState = {}; 
@@ -83,72 +80,72 @@ const APP_NAME = "Arimon Approt";
 document.title = APP_NAME;
 
 const defaultTasks = [
-    { id: 1, n: "Mise en place", d: "Varmista, että kaikilla pöytäseurueen jäsenillä on lasissa juotavaa (myös vettä). Jos jollain on tyhjää, täytä lasia omalla juomallasi tai vedellä.", p: 2, m: true, b: false, r: 2, k: 'juoma' },
-    { id: 2, n: "Uudelleenkäynnistys (Reboot)", d: "Kaikkien suorittajien on juotava lasi vettä yhdeltä istumalta 'järjestelmän vakauttamiseksi'.", p: 1, m: true, b: false, r: 3, k: 'juoma' },
-    { id: 3, n: "Holari-yritys", d: "Heitä lasinalunen tyhjään tuoppiin tai lasiin 2 metrin etäisyydeltä. Kolme yritystä.", p: 2, m: true, b: false, r: 2, k: 'liikunta' },
-    { id: 4, n: "Air Drop saapuu", d: "Tilaa valitsemallesi pelaajalle juoma (mieto tai alkoholiton käy).", p: 3, m: true, b: false, r: 1, k: 'juoma' }, 
-    { id: 5, n: "Gordon Ramsay -palautekierros", d: "Kehu nykyisen baarin miljöötä tai juomavalikoimaa yhdelle tuntemattomalle asiakkaalle 'ammattilaisen otteella'.", p: 2, m: true, b: false, r: 1, k: 'pokka' },
-    { id: 6, n: "Tikettijärjestelmän ruuhka", d: "Kuuntele valitsemasi pelaajan yksi valitsema muisto tai ongelma menneisyydestä keskeyttämättä. Lopuksi analysoi 'ratkaisu'.", p: 1, m: true, b: false, r: 2, k: 'pokka' }, 
-    { id: 7, n: "Spotterin rooli", d: "Seuraa oikealla puolellasi istuvan pelaajan lasia 5 minuutin ajan. Jos hän aikoo laskea sen pöydälle ilman alusta, estä se tai aseta alunen alle.", p: 2, m: true, b: false, r: 1, k: 'pokka' },
-    { id: 8, n: "Level 3 -kypärä", d: "Pidä mukanasi jotain outoa esinettä (esim. tyhjä tölkki tai pilli) seuraavaan baariin asti hukkaamatta sitä.", p: 2, m: true, b: false, r: 2, k: 'liikunta' },
-    { id: 9, n: "Uunilohi palaa pohjaan", d: "Suorittajien on poistuttava välittömästi ulos 'tuulettumaan' 2 minuutiksi ilman puhelimia.", p: 1, m: true, b: false, r: 4, k: 'liikunta' },
-    { id: 10, n: "BIOS-päivitys", d: "Kerro vasemmalla puolellasi istuvalle pelaajalle yksi asia, jota hän ei vielä tiennyt sinusta (IT-salaisuus).", p: 1, m: true, b: false, r: 1, k: 'pokka' },
-    { id: 11, n: "Caddy-palvelu", d: "Kanna valitsemasi pelaajan takkia tai laukkua seuraavaan siirtymään (tai baarin sisällä siirtyessä).", p: 2, m: true, b: false, r: 1, k: 'liikunta' }, 
-    { id: 12, n: "Pochinki Loot", d: "Hae koko seurueelle nippu ilmaisia servettejä tai pillejä tiskiltä ja jaa ne. Esineen saajan on kannettava sitä mukana seuraavaan baariin saakka tai tulee -1 xp.", p: 1, m: true, b: false, r: 1, k: 'liikunta' },
-    { id: 14, n: "Palomuuri (Firewall)", d: "Seiso valitsemasi toisen pelaajan ja muiden asiakkaiden välissä 'suojana' 3 minuutin ajan.", p: 2, m: true, b: false, r: 2, k: 'pokka' },
-    { id: 15, n: "OB-linja (Out of Bounds)", d: "Käy koskettamassa baarin kaukaisinta seinää ja palaa takaisin sanomatta sanaakaan matkalla.", p: 1, m: true, b: false, r: 3, k: 'liikunta' },
-    { id: 16, n: "Red Zone", d: "Kukaan suorittajista ei saa käyttää sanaa 'joo' tai 'ei' seuraavan 5 minuutin aikana.", p: 2, m: true, b: false, r: 5, k: 'pokka' },
-    { id: 18, n: "Ping-testi", d: "Heitä yläfemma kaikkien muiden seurueen jäsenten kanssa mahdollisimman nopeasti (alle 10 sekuntia).", p: 1, m: true, b: false, r: 1, k: 'liikunta' },
-    { id: 19, n: "Mandatory-kierto", d: "Nouse ylös! Ennen kuin istut alas, sinun on kierrettävä valittu pöytä tai tuoli myötäpäivään ympäri.", p: 1, m: true, b: false, r: 4, k: 'liikunta' },
-    { id: 22, n: "Etätuki-istunto", d: "Selitä toiselle pelaajalle mahdollisimman monimutkaisesti, miten jokin arkipäiväinen esine (esim. kynä) toimii.", p: 1, m: true, b: false, r: 1, k: 'pokka' },
-    { id: 23, n: "Putterin tarkkuus", d: "Liu'uta lasi pöytää pitkin mahdollisimman lähelle reunaa tippumatta. Kolme yritystä.", p: 2, m: true, b: false, r: 2, k: 'liikunta' },
-    { id: 24, n: "Med Kit -huolto", d: "Hae synttärisankarille lasi vettä.", p: 3, m: true, b: true, r: 1, k: 'juoma' }, 
-    { id: 26, n: "Käyttäjävirhe (User Error)", d: "Sano 'Olen pahoillani, kyseessä oli käyttäjävirhe' aina kun joku seurueesta tekee jotain kömpelöä seuraavan 10 min aikana.", p: 2, m: true, b: false, r: 1, k: 'pokka' },
-    { id: 27, n: "Fore!", d: "Huuda 'FORE!' (kohtuullisella volyymilla) aina kun joku seurueesta nousee seisomaan. Kesto 5 minuuttia.", p: 1, m: true, b: false, r: 2, k: 'pokka' },
-    { id: 28, n: "Blue Zone -siirtymä", d: "Seuraavaan baariin siirryttäessä suorittajien on kuljettava viimeisenä ja varmistettava, ettei ketään jää jälkeen.", p: 1, m: true, b: false, r: 2, k: 'liikunta' },
-    { id: 29, n: "Raaka-aineanalyysi", d: "Tunnista sokkona (silmät kiinni) mitä juomaa oikealla istuvan pelaajan lasissa on hajun perusteella.", p: 2, m: true, b: false, r: 1, k: 'juoma' },
-    { id: 32, n: "Winner Winner Chicken Dinner", d: "Nouse ylös, tuuleta näyttävästi ja esitä syöväsi voiton kunniaksi kuvitteellista kana-ateriaa. Huuda lopuksi 'Winner Winner Chicken Dinner!'", p: 3, m: true, b: false, r: 1, k: 'pokka' }, 
-    { id: 35, n: "Red Zone Survival", d: "Kyykisty pöydän alle suojaan 30 sekunniksi välittömästi, kun joku huutaa 'POMMI!'.", p: 1, m: true, b: false, r: 3, k: 'liikunta' },
-    { id: 36, n: "Pro-tason draiveri", d: "Heitä roskasi (esim. karkkipaperi tai kuitti) roskikseen vähintään 3 metrin päästä. Onnistuttava!", p: 2, m: true, b: false, r: 1, k: 'liikunta' },
-    { id: 37, n: "Tukipyyntö (Support Ticket)", d: "Käy kysymässä baarimikolta: 'Voitteko auttaa, minulla on yhteysongelma?'", p: 3, m: true, b: false, r: 1, k: 'pokka' },
-    { id: 38, n: "Salasanan vaihto", d: "Keksi vasemmalla istuvalle pelaajalle uusi lempinimi, jota kaikkien on käytettävä seuraavat 10 minuuttia.", p: 2, m: true, b: false, r: 1, k: 'pokka' }, 
-    { id: 39, n: "UAV aktivoitu", d: "Käy tarkistamassa onko baarin toisessa huoneessa tai tiskillä tilaa ja raportoi takaisin.", p: 1, m: false, b: false, r: 1, k: 'liikunta' },
-    { id: 40, n: "Kiekon etsintä", d: "Etsi baarin lattialta tai pöytien alta jokin pudonnut esine ja palauta se omistajalle.", p: 1, m: true, b: false, r: 2, k: 'liikunta' },
-    { id: 41, n: "Sous-viden lämpö", d: "Hiero valitsemasi pelaajan hartioita 1 minuutin ajan 'lämmittääksesi' hänet seuraavaan baariin.", p: 1, m: false, b: false, r: 1, k: 'pokka' }, 
-    { id: 43, n: "Bridge Camping", d: "Seiso baarin oviaukon tai kapean kohdan lähellä 2 minuuttia 'vartioimassa' kulkua.", p: 2, m: true, b: false, r: 2, k: 'pokka' },
-    { id: 44, n: "Levyaseman virhe", d: "Vaihda kenkiäsi päittäin (vasen oikeaan ja oikea vasempaan) 5 minuutin ajaksi.", p: 2, m: true, b: false, r: 1, k: 'liikunta' },
-    { id: 45, n: "Ping-mittaus", d: "Tökkää sormella viereisiä pelaajia olkapäähän ja sano 'Ping' aina kun he ottavat kulauksen juomastaan.", p: 1, m: false, b: false, r: 1, k: 'pokka' }, 
-    { id: 46, n: "Ethernet-kaapeli", d: "Muodosta 'yhteys' pitämällä kädestä kiinni naapuria 3 minuutin ajan keskeytyksettä.", p: 1, m: true, b: false, r: 3, k: 'liikunta' },
-    { id: 48, n: "Flippaava kiekko", d: "Pyörähdä 360 astetta paikallasi kerran aina kun joku seurueesta katsoo puhelintaan.", p: 2, m: true, b: false, r: 1, k: 'liikunta' },
-    { id: 49, n: "Salty Player", d: "Kerro jokin asia, joka sinua ärsyttää (IT-ongelma tai huono grippi) erittäin intohimoisesti.", p: 1, m: false, b: false, r: 1, k: 'pokka' },
-    { id: 50, n: "Zonen reunalla", d: "Siirrä tuolisi niin kauas pöydästä kuin mahdollista ja yritä silti pysyä keskustelussa.", p: 2, m: true, b: false, r: 2, k: 'liikunta' },
-    { id: 52, n: "Komentorivi (CLI)", d: "Puhu seuraavat 3 minuuttia käyttäen vain yhden sanan lauseita. Esim. 'Jano. Juon. Nyt.'", p: 2, m: true, b: false, r: 1, k: 'pokka' },
-    { id: 53, n: "Ace-tuuletus", d: "Juokse baarin ympäri (tai lyhyt lenkki) kädet levällään kuin olisit tehnyt hole-in-onen.", p: 3, m: true, b: false, r: 1, k: 'liikunta' },
-    { id: 55, n: "Lagipiikki", d: "Nouse ylös! Liiku nykien lagisesti kun tulet takaisin istumaan.", p: 2, m: true, b: false, r: 2, k: 'liikunta' },
-    { id: 56, n: "Fore!-varoitus", d: "Aina kun joku laskee lasin pöytään, huuda 'FORE!' seuraavan 5 minuutin ajan.", p: 1, m: true, b: false, r: 1, k: 'pokka' },
-    { id: 57, n: "Lootbox-yllätys", d: "Käy ostamasta valitsemallesi pelaajalle jokin yllätys tiskiltä (pähkinöitä, tikkarit, tms).", p: 3, m: false, b: false, r: 1, k: 'juoma' }, 
-    { id: 58, n: "Stack Overflow", d: "Pinoa 3 tyhjää lasia päällekkäin ja pidä ne pystyssä 1 minuutti.", p: 1, m: true, b: false, r: 1, k: 'liikunta' },
-    { id: 59, n: "Putti-putki", d: "Heitä kolikko tai korkki lasiin metrin päästä. Onnistuttava kerran kolmesta.", p: 2, m: true, b: false, r: 2, k: 'liikunta' },
-    { id: 60, n: "Uunilohi-muisto", d: "Kerro nolo tai hauska muisto ammattikoulun ajoilta. Jos et muista, juo lasi vettä.", p: 1, m: false, b: false, r: 1, k: 'pokka' },
-    { id: 61, n: "Hardware Reset", d: "Kosketa varpaitasi polvia koukistamatta 15 sekuntia putkeen.", p: 1, m: true, b: false, r: 2, k: 'liikunta' },
-    { id: 62, n: "Ghillie-shotti", d: "Ota huikka juomastasi niin, että yrität olla mahdollisimman näkymätön (esim. takin alla).", p: 1, m: true, b: false, r: 2, k: 'juoma' },
-    { id: 63, n: "Ob-raja (Out of Bounds)", d: "Seuraavan siirtymän aikana et saa astua katuvalojen varjoihin (tai tiettyihin laattoihin).", p: 2, m: true, b: false, r: 3, k: 'liikunta' },
-    { id: 64, n: "Etätuki-puhelu", d: "Soita (tai teeskentele soittavasi) kaverille ja selitä miten baarijakkara 'asennetaan'.", p: 2, m: true, b: false, r: 1, k: 'pokka' },
-    { id: 65, n: "Drop-alueen vartija", d: "Pidä kättäsi toisen pelaajan tuolin selkänojalla 5 minuuttia 'suojellen häntä'.", p: 1, m: true, b: false, r: 1, k: 'pokka' }, 
-    { id: 66, n: "Caddy-vinkki", d: "Suosittele toiselle pelaajalle seuraavaa liikettä tai juomaa 'ammattilaisen varmuudella'.", p: 1, m: false, b: false, r: 1, k: 'pokka' }, 
-    { id: 67, n: "System Restore", d: "Istu täysin hiljaa ja silmät kiinni 30 sekuntia, kunnes 'boottaus' on valmis.", p: 1, m: true, b: false, r: 2, k: 'pokka' },
-    { id: 68, n: "Pan-haaste", d: "Pitele juomaasi kaksin käsin kuin se olisi painava paistinpannu seuraavat 5 minuuttia.", p: 1, m: true, b: false, r: 1, k: 'liikunta' },
-    { id: 69, n: "Ankkurilinkki", d: "Pidä jalkaasi toisen pelaajan jalan päällä seuraavan 3 minuutin ajan.", p: 1, m: true, b: false, r: 2, k: 'liikunta' },
-    { id: 71, n: "Scramble-peli", d: "Kaikki suorittajat vaihtavat paikkoja keskenään mahdollisimman nopeasti (juosten).", p: 1, m: true, b: false, r: 4, k: 'liikunta' },
-    { id: 72, n: "Bugiraportti", d: "Luettele 5 asiaa, jotka ovat 'vialla' nykyisessä sijainnissasi (vitsillä).", p: 1, m: false, b: false, r: 1, k: 'pokka' },
-    { id: 73, n: "Air Drop -paketti", d: "Nosta valitsemasi pelaajan juoma ilmaan ja huuda: 'Paketti toimitettu!' aina kun hän aikoo juoda.", p: 2, m: true, b: false, r: 1, k: 'pokka' }, 
-    { id: 74, n: "Spotterin silmät", d: "Kuvaile muille pelaajille, mitä tapahtuu oikealla istuvan pelaajan selän takana ilman että hän kääntyy.", p: 1, m: false, b: false, r: 1, k: 'pokka' }, 
-    { id: 76, n: "Frisbee-ketjut", d: "Kilistä lasiasi jonkun toisen pelaajan lasin reunaan ja huuda 'Ketjuihin!' aina kun hän ottaa ensimmäisen huikan uudesta juomasta.", p: 1, m: true, b: false, r: 1, k: 'juoma' },
-    { id: 78, n: "Keittiömestarin tarkastus", d: "Maista (luvan kanssa) pienen pieni pala jonkun ruuasta tai tilkkanen juomasta ja anna arvosana.", p: 1, m: false, b: false, r: 2, k: 'juoma' },
-    { id: 79, n: "Full Auto -sarja", d: "Juo 5 pientä hörppyä juomaasi peräkkäin 'sarjatulella'.", p: 1, m: false, b: false, r: 2, k: 'juoma' },
-    { id: 80, n: "Kiekon palautus", d: "Käy viemässä tyhjä lasi tiskille (itse valitsemasi) mahdollisimman tyylikkäästi.", p: 1, m: false, b: false, r: 1, k: 'liikunta' },
-    { id: 81, n: "Admin-komento", d: "Valitsemasi pelaaja joutuu kertomaan vitsin tai juomaan lasin vettä.", p: 2, m: false, b: false, r: 2, k: 'pokka' }, 
-    { id: 82, n: "Victory Dance", d: "Tee lyhyt ja energinen voittotanssi baarin lattialla (PUBG tyyliin).", p: 3, m: true, b: false, r: 1, k: 'pokka' },
+    { id: 1, n: "Mise en place", d: "Varmista, että kaikilla pöytäseurueen jäsenillä on lasissa juotavaa (myös vettä). Jos jollain on tyhjää, täytä lasia omalla juomallasi tai vedellä.", p: 2, m: 2, b: false, r: 2, k: 'juoma' },
+    { id: 2, n: "Uudelleenkäynnistys (Reboot)", d: "Kaikkien suorittajien on juotava lasi vettä yhdeltä istumalta 'järjestelmän vakauttamiseksi'.", p: 1, m: 3, b: false, r: 3, k: 'juoma' },
+    { id: 3, n: "Holari-yritys", d: "Heitä lasinalunen tyhjään tuoppiin tai lasiin 2 metrin etäisyydeltä. Kolme yritystä.", p: 2, m: 2, b: false, r: 2, k: 'liikunta' },
+    { id: 4, n: "Air Drop saapuu", d: "Tilaa valitsemallesi pelaajalle juoma (mieto tai alkoholiton käy).", p: 3, m: 1, b: false, r: 1, k: 'juoma' }, 
+    { id: 5, n: "Gordon Ramsay -palautekierros", d: "Kehu nykyisen baarin miljöötä tai juomavalikoimaa yhdelle tuntemattomalle asiakkaalle 'ammattilaisen otteella'.", p: 2, m: 1, b: false, r: 1, k: 'pokka' },
+    { id: 6, n: "Tikettijärjestelmän ruuhka", d: "Kuuntele valitsemasi pelaajan yksi valitsema muisto tai ongelma menneisyydestä keskeyttämättä. Lopuksi analysoi 'ratkaisu'.", p: 1, m: 2, b: false, r: 2, k: 'pokka' }, 
+    { id: 7, n: "Spotterin rooli", d: "Seuraa oikealla puolellasi istuvan pelaajan lasia 5 minuutin ajan. Jos hän aikoo laskea sen pöydälle ilman alusta, estä se tai aseta alunen alle.", p: 2, m: 1, b: false, r: 1, k: 'pokka' },
+    { id: 8, n: "Level 3 -kypärä", d: "Pidä mukanasi jotain outoa esinettä (esim. tyhjä tölkki tai pilli) seuraavaan baariin asti hukkaamatta sitä.", p: 2, m: 2, b: false, r: 2, k: 'liikunta' },
+    { id: 9, n: "Uunilohi palaa pohjaan", d: "Suorittajien on poistuttava välittömästi ulos 'tuulettumaan' 2 minuutiksi ilman puhelimia.", p: 1, m: 4, b: false, r: 4, k: 'liikunta' },
+    { id: 10, n: "BIOS-päivitys", d: "Kerro vasemmalla puolellasi istuvalle pelaajalle yksi asia, jota hän ei vielä tiennyt sinusta (IT-salaisuus).", p: 1, m: 1, b: false, r: 1, k: 'pokka' },
+    { id: 11, n: "Caddy-palvelu", d: "Kanna valitsemasi pelaajan takkia tai laukkua seuraavaan siirtymään (tai baarin sisällä siirtyessä).", p: 2, m: 1, b: false, r: 1, k: 'liikunta' }, 
+    { id: 12, n: "Pochinki Loot", d: "Hae koko seurueelle nippu ilmaisia servettejä tai pillejä tiskiltä ja jaa ne. Esineen saajan on kannettava sitä mukana seuraavaan baariin saakka tai tulee -1 xp.", p: 1, m: 1, b: false, r: 1, k: 'liikunta' },
+    { id: 14, n: "Palomuuri (Firewall)", d: "Seiso valitsemasi toisen pelaajan ja muiden asiakkaiden välissä 'suojana' 3 minuutin ajan.", p: 2, m: 2, b: false, r: 2, k: 'pokka' },
+    { id: 15, n: "OB-linja (Out of Bounds)", d: "Käy koskettamassa baarin kaukaisinta seinää ja palaa takaisin sanomatta sanaakaan matkalla.", p: 1, m: 3, b: false, r: 3, k: 'liikunta' },
+    { id: 16, n: "Red Zone", d: "Kukaan suorittajista ei saa käyttää sanaa 'joo' tai 'ei' seuraavan 5 minuutin aikana.", p: 2, m: 5, b: false, r: 5, k: 'pokka' },
+    { id: 18, n: "Ping-testi", d: "Heitä yläfemma kaikkien muiden seurueen jäsenten kanssa mahdollisimman nopeasti (alle 10 sekuntia).", p: 1, m: 1, b: false, r: 1, k: 'liikunta' },
+    { id: 19, n: "Mandatory-kierto", d: "Nouse ylös! Ennen kuin istut alas, sinun on kierrettävä valittu pöytä tai tuoli myötäpäivään ympäri.", p: 1, m: 4, b: false, r: 4, k: 'liikunta' },
+    { id: 22, n: "Etätuki-istunto", d: "Selitä toiselle pelaajalle mahdollisimman monimutkaisesti, miten jokin arkipäiväinen esine (esim. kynä) toimii.", p: 1, m: 1, b: false, r: 1, k: 'pokka' },
+    { id: 23, n: "Putterin tarkkuus", d: "Liu'uta lasi pöytää pitkin mahdollisimman lähelle reunaa tippumatta. Kolme yritystä.", p: 2, m: 2, b: false, r: 2, k: 'liikunta' },
+    { id: 24, n: "Med Kit -huolto", d: "Hae synttärisankarille lasi vettä.", p: 3, m: 1, b: true, r: 1, k: 'juoma' }, 
+    { id: 26, n: "Käyttäjävirhe (User Error)", d: "Sano 'Olen pahoillani, kyseessä oli käyttäjävirhe' aina kun joku seurueesta tekee jotain kömpelöä seuraavan 10 min aikana.", p: 2, m: 1, b: false, r: 1, k: 'pokka' },
+    { id: 27, n: "Fore!", d: "Huuda 'FORE!' (kohtuullisella volyymilla) aina kun joku seurueesta nousee seisomaan. Kesto 5 minuuttia.", p: 1, m: 2, b: false, r: 2, k: 'pokka' },
+    { id: 28, n: "Blue Zone -siirtymä", d: "Seuraavaan baariin siirryttäessä suorittajien on kuljettava viimeisenä ja varmistettava, ettei ketään jää jälkeen.", p: 1, m: 2, b: false, r: 2, k: 'liikunta' },
+    { id: 29, n: "Raaka-aineanalyysi", d: "Tunnista sokkona (silmät kiinni) mitä juomaa oikealla istuvan pelaajan lasissa on hajun perusteella.", p: 2, m: 1, b: false, r: 1, k: 'juoma' },
+    { id: 32, n: "Winner Winner Chicken Dinner", d: "Nouse ylös, tuuleta näyttävästi ja esitä syöväsi voiton kunniaksi kuvitteellista kana-ateriaa. Huuda lopuksi 'Winner Winner Chicken Dinner!'", p: 3, m: 1, b: false, r: 1, k: 'pokka' }, 
+    { id: 35, n: "Red Zone Survival", d: "Kyykisty pöydän alle suojaan 30 sekunniksi välittömästi, kun joku huutaa 'POMMI!'.", p: 1, m: 1, b: false, r: 3, k: 'liikunta' },
+    { id: 36, n: "Pro-tason draiveri", d: "Heitä roskasi (esim. karkkipaperi tai kuitti) roskikseen vähintään 3 metrin päästä. Onnistuttava!", p: 2, m: 1, b: false, r: 1, k: 'liikunta' },
+    { id: 37, n: "Tukipyyntö (Support Ticket)", d: "Käy kysymässä baarimikolta: 'Voitteko auttaa, minulla on yhteysongelma?'", p: 3, m: 1, b: false, r: 1, k: 'pokka' },
+    { id: 38, n: "Salasanan vaihto", d: "Keksi vasemmalla istuvalle pelaajalle uusi lempinimi, jota kaikkien on käytettävä seuraavat 10 minuuttia.", p: 2, m: 1, b: false, r: 1, k: 'pokka' }, 
+    { id: 39, n: "UAV aktivoitu", d: "Käy tarkistamassa onko baarin toisessa huoneessa tai tiskillä tilaa ja raportoi takaisin.", p: 1, m: 0, b: false, r: 1, k: 'liikunta' },
+    { id: 40, n: "Kiekon etsintä", d: "Etsi baarin lattialta tai pöytien alta jokin pudonnut esine ja palauta se omistajalle.", p: 1, m: 1, b: false, r: 2, k: 'liikunta' },
+    { id: 41, n: "Sous-viden lämpö", d: "Hiero valitsemasi pelaajan hartioita 1 minuutin ajan 'lämmittääksesi' hänet seuraavaan baariin.", p: 1, m: 0, b: false, r: 1, k: 'pokka' }, 
+    { id: 43, n: "Bridge Camping", d: "Seiso baarin oviaukon tai kapean kohdan lähellä 2 minuuttia 'vartioimassa' kulkua.", p: 2, m: 1, b: false, r: 2, k: 'pokka' },
+    { id: 44, n: "Levyaseman virhe", d: "Vaihda kenkiäsi päittäin (vasen oikeaan ja oikea vasempaan) 5 minuutin ajaksi.", p: 2, m: 1, b: false, r: 1, k: 'liikunta' },
+    { id: 45, n: "Ping-mittaus", d: "Tökkää sormella viereisiä pelaajia olkapäähän ja sano 'Ping' aina kun he ottavat kulauksen juomastaan.", p: 1, m: 0, b: false, r: 1, k: 'pokka' }, 
+    { id: 46, n: "Ethernet-kaapeli", d: "Muodosta 'yhteys' pitämällä kädestä kiinni naapuria 3 minuutin ajan keskeytyksettä.", p: 1, m: 1, b: false, r: 3, k: 'liikunta' },
+    { id: 48, n: "Flippaava kiekko", d: "Pyörähdä 360 astetta paikallasi kerran aina kun joku seurueesta katsoo puhelintaan.", p: 2, m: 1, b: false, r: 1, k: 'liikunta' },
+    { id: 49, n: "Salty Player", d: "Kerro jokin asia, joka sinua ärsyttää (IT-ongelma tai huono grippi) erittäin intohimoisesti.", p: 1, m: 0, b: false, r: 1, k: 'pokka' },
+    { id: 50, n: "Zonen reunalla", d: "Siirrä tuolisi niin kauas pöydästä kuin mahdollista ja yritä silti pysyä keskustelussa.", p: 2, m: 1, b: false, r: 2, k: 'liikunta' },
+    { id: 52, n: "Komentorivi (CLI)", d: "Puhu seuraavat 3 minuuttia käyttäen vain yhden sanan lauseita. Esim. 'Jano. Juon. Nyt.'", p: 2, m: 1, b: false, r: 1, k: 'pokka' },
+    { id: 53, n: "Ace-tuuletus", d: "Juokse baarin ympäri (tai lyhyt lenkki) kädet levällään kuin olisit tehnyt hole-in-onen.", p: 3, m: 1, b: false, r: 1, k: 'liikunta' },
+    { id: 55, n: "Lagipiikki", d: "Nouse ylös! Liiku nykien lagisesti kun tulet takaisin istumaan.", p: 2, m: 1, b: false, r: 2, k: 'liikunta' },
+    { id: 56, n: "Fore!-varoitus", d: "Aina kun joku laskee lasin pöytään, huuda 'FORE!' seuraavan 5 minuutin ajan.", p: 1, m: 1, b: false, r: 1, k: 'pokka' },
+    { id: 57, n: "Lootbox-yllätys", d: "Käy ostamasta valitsemallesi pelaajalle jokin yllätys tiskiltä (pähkinöitä, tikkarit, tms).", p: 3, m: 0, b: false, r: 1, k: 'juoma' }, 
+    { id: 58, n: "Stack Overflow", d: "Pinoa 3 tyhjää lasia päällekkäin ja pidä ne pystyssä 1 minuutti.", p: 1, m: 1, b: false, r: 1, k: 'liikunta' },
+    { id: 59, n: "Putti-putki", d: "Heitä kolikko tai korkki lasiin metrin päästä. Onnistuttava kerran kolmesta.", p: 2, m: 1, b: false, r: 2, k: 'liikunta' },
+    { id: 60, n: "Uunilohi-muisto", d: "Kerro nolo tai hauska muisto ammattikoulun ajoilta. Jos et muista, juo lasi vettä.", p: 1, m: 0, b: false, r: 1, k: 'pokka' },
+    { id: 61, n: "Hardware Reset", d: "Kosketa varpaitasi polvia koukistamatta 15 sekuntia putkeen.", p: 1, m: 1, b: false, r: 2, k: 'liikunta' },
+    { id: 62, n: "Ghillie-shotti", d: "Ota huikka juomastasi niin, että yrität olla mahdollisimman näkymätön (esim. takin alla).", p: 1, m: 1, b: false, r: 2, k: 'juoma' },
+    { id: 63, n: "Ob-raja (Out of Bounds)", d: "Seuraavan siirtymän aikana et saa astua katuvalojen varjoihin (tai tiettyihin laattoihin).", p: 2, m: 1, b: false, r: 3, k: 'liikunta' },
+    { id: 64, n: "Etätuki-puhelu", d: "Soita (tai teeskentele soittavasi) kaverille ja selitä miten baarijakkara 'asennetaan'.", p: 2, m: 1, b: false, r: 1, k: 'pokka' },
+    { id: 65, n: "Drop-alueen vartija", d: "Pidä kättäsi toisen pelaajan tuolin selkänojalla 5 minuuttia 'suojellen häntä'.", p: 1, m: 1, b: false, r: 1, k: 'pokka' }, 
+    { id: 66, n: "Caddy-vinkki", d: "Suosittele toiselle pelaajalle seuraavaa liikettä tai juomaa 'ammattilaisen varmuudella'.", p: 1, m: 0, b: false, r: 1, k: 'pokka' }, 
+    { id: 67, n: "System Restore", d: "Istu täysin hiljaa ja silmät kiinni 30 sekuntia, kunnes 'boottaus' on valmis.", p: 1, m: 1, b: false, r: 2, k: 'pokka' },
+    { id: 68, n: "Pan-haaste", d: "Pitele juomaasi kaksin käsin kuin se olisi painava paistinpannu seuraavat 5 minuuttia.", p: 1, m: 1, b: false, r: 1, k: 'liikunta' },
+    { id: 69, n: "Ankkurilinkki", d: "Pidä jalkaasi toisen pelaajan jalan päällä seuraavan 3 minuutin ajan.", p: 1, m: 1, b: false, r: 2, k: 'liikunta' },
+    { id: 71, n: "Scramble-peli", d: "Kaikki suorittajat vaihtavat paikkoja keskenään mahdollisimman nopeasti (juosten).", p: 1, m: 1, b: false, r: 4, k: 'liikunta' },
+    { id: 72, n: "Bugiraportti", d: "Luettele 5 asiaa, jotka ovat 'vialla' nykyisessä sijainnissasi (vitsillä).", p: 1, m: 0, b: false, r: 1, k: 'pokka' },
+    { id: 73, n: "Air Drop -paketti", d: "Nosta valitsemasi pelaajan juoma ilmaan ja huuda: 'Paketti toimitettu!' aina kun hän aikoo juoda.", p: 2, m: 1, b: false, r: 1, k: 'pokka' }, 
+    { id: 74, n: "Spotterin silmät", d: "Kuvaile muille pelaajille, mitä tapahtuu oikealla istuvan pelaajan selän takana ilman että hän kääntyy.", p: 1, m: 0, b: false, r: 1, k: 'pokka' }, 
+    { id: 76, n: "Frisbee-ketjut", d: "Kilistä lasiasi jonkun toisen pelaajan lasin reunaan ja huuda 'Ketjuihin!' aina kun hän ottaa ensimmäisen huikan uudesta juomasta.", p: 1, m: 1, b: false, r: 1, k: 'juoma' },
+    { id: 78, n: "Keittiömestarin tarkastus", d: "Maista (luvan kanssa) pienen pieni pala jonkun ruuasta tai tilkkanen juomasta ja anna arvosana.", p: 1, m: 0, b: false, r: 2, k: 'juoma' },
+    { id: 79, n: "Full Auto -sarja", d: "Juo 5 pientä hörppyä juomaasi peräkkäin 'sarjatulella'.", p: 1, m: 0, b: false, r: 2, k: 'juoma' },
+    { id: 80, n: "Kiekon palautus", d: "Käy viemässä tyhjä lasi tiskille (itse valitsemasi) mahdollisimman tyylikkäästi.", p: 1, m: 0, b: false, r: 1, k: 'liikunta' },
+    { id: 81, n: "Admin-komento", d: "Valitsemasi pelaaja joutuu kertomaan vitsin tai juomaan lasin vettä.", p: 2, m: 0, b: false, r: 2, k: 'pokka' }, 
+    { id: 82, n: "Victory Dance", d: "Tee lyhyt ja energinen voittotanssi baarin lattialla (PUBG tyyliin).", p: 3, m: 1, b: false, r: 1, k: 'pokka' },
     
     { id: 103, n: "Palvelimen hätätuuletus", d: "Jos näet sytytetyn kynttilän, sammuta se heiluttamalla paperia tai servettiä, jota pidät huulien välissä.", p: 3, m: true, b: false, r: 1, k: 'liikunta' },
     { id: 104, n: "Valkokastikkeen pohja", d: "Tilaa lasi maitoa tai kermaa (kermasta GM antaa extra pisteen). Jos juot lasin tyhjäksi saat 1 extra pisteen.", p: 1, m: true, b: false, r: 1, k: 'juoma' },
@@ -181,33 +178,31 @@ const defaultTasks = [
     { id: 130, n: "Ping-viive", d: "Laskentakisa. Kilpailijoiden pitää vuorotellen laskea taaksepäin sadasta alaspäin miinus seitsemän (100, 93, 86...). Ensimmäinen, joka sekoaa laskuissa tai miettii yli 3 sekuntia, häviää.", p: 3, m: true, b: false, r: 2, k: 'kilpailu' },
     { id: 131, n: "Tarkka-ampujan vakaus", d: "Kumpikin ottaa oman juomalasinsa ja nostaa sen suoralla kädellä eteensä ilmaan. Se, kenen käsi alkaa täristä liikaa, laskee alas tai koukistuu ensin, häviää.", p: 3, m: true, b: false, r: 2, k: 'kilpailu' },
 
-    { id: 83, n: "Admin-huolto (Sankari)", d: "Sankarin on kerättävä seurueen kaikki tyhjät tölkit/lasit ja vietävä ne tiskille yksin.", p: 1, m: true, b: true, r: 1, isHero: true, k: 'liikunta' },
-    { id: 84, n: "Kiekon etsintä (Sankari)", d: "Sankari joutuu nousemaan ylös ja kävelemään baarin ympäri etsimässä 'kadonnutta kiekkoa'.", p: 1, m: true, b: true, r: 1, isHero: true, k: 'liikunta' },
-    { id: 85, n: "PUBG Emote (Sankari)", d: "Sankarin on esitettävä jokin PUBG-pelin tuuletus tai liike baarin keskellä mahdollisimman näyttävästi.", p: 1, m: true, b: true, r: 1, isHero: true, k: 'pokka' },
-    { id: 86, n: "Koodin katselmointi (Sankari)", d: "Sankarin on keksittävä jokaisesta pelaajasta yksi positiivinen 'kommentti' (kuten koodin katselmoinnissa).", p: 1, m: false, b: true, r: 1, isHero: true, k: 'pokka' },
-    { id: 87, n: "Mise en place -tarkastus (Sankari)", d: "Sankarin on maistettava kolmen eri pelaajan juomaa ja arvattava niiden ainesosat.", p: 1, m: true, b: true, r: 1, isHero: true, k: 'juoma' },
-    { id: 88, n: "Ping-testi (Sankari)", d: "Sankarin on vastattava 'PONG' sekunnin sisällä aina kun joku huutaa 'PING' seuraavan 10 minuutin ajan.", p: 1, m: true, b: true, r: 1, isHero: true, k: 'pokka' },
-    { id: 89, n: "Putti-haaste (Sankari)", d: "Sankarin on heitettävä lasinalunen pystyasennossa olevaan tyhjään tuoppiin. Kolme yritystä.", p: 1, m: true, b: true, r: 1, isHero: true, k: 'liikunta' },
-    { id: 90, n: "Blue Zone -juoksu (Sankari)", d: "Sankarin on käytävä koskettamassa baarin ulko-ovea ja palattava 15 sekunnissa takaisin.", p: 1, m: true, b: true, r: 1, isHero: true, k: 'liikunta' },
-    { id: 91, n: "Hardware Troubleshooting (Sankari)", d: "Sankarin on selitettävä jollekin pelaajalle tai tuntemattomalle asiakkaalle, miten frisbeegolfin pituusdraivi tai IT-tuki toimii.", p: 1, m: true, b: true, r: 1, isHero: true, k: 'pokka' },
-    { id: 92, n: "Chef's Special (Sankari)", d: "Sankarin on loihdittava 'annos' eli koottava pöydän snacks-kulhosta näyttävä taideteos ja syötävä se.", p: 1, m: false, b: true, r: 1, isHero: true, k: 'juoma' },
-    { id: 93, n: "Palvelinhuoneen hämärä (Sankari)", d: "Sankarin on suoritettava seuraava tilauksensa tai keskustelunsa kuiskaamalla, kuin hän olisi salaisessa palvelinruumissa.", p: 1, m: true, b: true, r: 1, isHero: true, k: 'pokka' },
-    { id: 94, n: "Range-treeni (Sankari)", d: "Sankarin on 'heitettävä' viisi erilaista frisbeegolf-kiekkoa ja selitettävä niiden lentoradat seurueelle.", p: 1, m: false, b: true, r: 1, isHero: true, k: 'pokka' },
-    { id: 95, n: "Loot-varkaus (Sankari)", d: "Sankarin on onnistuttava ottamaan yksi hörppy jonkun muun lasista niin, ettei kukaan huomaa (stealth mode).", p: 1, m: true, b: true, r: 1, isHero: true, k: 'juoma' },
-    { id: 96, n: "Käyttöjärjestelmän vaihto (Sankari)", d: "Sankarin on vaihdettava kieltä ja puhuttava seuraavat 5 minuuttia pelkkää englantia.", p: 1, m: true, b: true, r: 1, isHero: true, k: 'pokka' },
-    { id: 97, n: "Spotterin virhe (Sankari)", d: "Sankarin on osoitettava baarista kolme mahdollista 'vaaran paikkaa' ja annettava niille IT-tukihenkinen korjaussuunnitelma.", p: 1, m: false, b: true, r: 1, isHero: true, k: 'pokka' },
-    { id: 98, n: "C1-tason grippi (Sankari)", d: "Sankarin on pidettävä lasistaan kiinni erittäin oudolla otteella seuraavat 5 minuuttia.", p: 1, m: true, b: true, r: 1, isHero: true, k: 'juoma' },
-    { id: 99, n: "Bug Bounty (Sankari)", d: "Sankarin on etsittävä muiden pelaajien vaatetuksesta yksi 'bugi' ja kerrottava, miten se korjataan (esim. vino kaulus).", p: 1, m: false, b: true, r: 1, isHero: true, k: 'pokka' },
-    { id: 100, n: "Air Drop Defense (Sankari)", d: "Sankarin on suojeltava omaa juomaansa niin, ettei kukaan saa koskea siihen 5 minuuttiin.", p: 1, m: true, b: true, r: 1, isHero: true, k: 'juoma' },
-    { id: 101, n: "Mando-kierto (Sankari)", d: "Sankarin on noustava ylös ja kierrettävä koko seurue ympäri tehden samalla frisbeegolf-lähipeliä matkivia liikkeitä.", p: 1, m: true, b: true, r: 1, isHero: true, k: 'liikunta' },
-    { id: 102, n: "System Overload (Sankari)", d: "Sankarin on lueteltava 10 IT-termiä, 10 frisbeegolf-termiä tai 10 PUBG-termiä 30 sekunnissa.", p: 1, m: true, b: true, r: 1, isHero: true, k: 'pokka' }
+    { id: 83, n: "Admin-huolto (Sankari)", d: "Sankarin on kerättävä seurueen kaikki tyhjät tölkit/lasit ja vietävä ne tiskille yksin.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'liikunta' },
+    { id: 84, n: "Kiekon etsintä (Sankari)", d: "Sankari joutuu nousemaan ylös ja kävelemään baarin ympäri etsimässä 'kadonnutta kiekkoa'.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'liikunta' },
+    { id: 85, n: "PUBG Emote (Sankari)", d: "Sankarin on esitettävä jokin PUBG-pelin tuuletus tai liike baarin keskellä mahdollisimman näyttävästi.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'pokka' },
+    { id: 86, n: "Koodin katselmointi (Sankari)", d: "Sankarin on keksittävä jokaisesta pelaajasta yksi positiivinen 'kommentti' (kuten koodin katselmoinnissa).", p: 1, m: 0, b: true, r: 1, isHero: true, k: 'pokka' },
+    { id: 87, n: "Mise en place -tarkastus (Sankari)", d: "Sankarin on maistettava kolmen eri pelaajan juomaa ja arvattava niiden ainesosat.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'juoma' },
+    { id: 88, n: "Ping-testi (Sankari)", d: "Sankarin on vastattava 'PONG' sekunnin sisällä aina kun joku huutaa 'PING' seuraavan 10 minuutin ajan.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'pokka' },
+    { id: 89, n: "Putti-haaste (Sankari)", d: "Sankarin on heitettävä lasinalunen pystyasennossa olevaan tyhjään tuoppiin. Kolme yritystä.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'liikunta' },
+    { id: 90, n: "Blue Zone -juoksu (Sankari)", d: "Sankarin on käytävä koskettamassa baarin ulko-ovea ja palattava 15 sekunnissa takaisin.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'liikunta' },
+    { id: 91, n: "Hardware Troubleshooting (Sankari)", d: "Sankarin on selitettävä jollekin pelaajalle tai tuntemattomalle asiakkaalle, miten frisbeegolfin pituusdraivi tai IT-tuki toimii.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'pokka' },
+    { id: 92, n: "Chef's Special (Sankari)", d: "Sankarin on loihdittava 'annos' eli koottava pöydän snacks-kulhosta näyttävä taideteos ja syötävä se.", p: 1, m: 0, b: true, r: 1, isHero: true, k: 'juoma' },
+    { id: 93, n: "Palvelinhuoneen hämärä (Sankari)", d: "Sankarin on suoritettava seuraava tilauksensa tai keskustelunsa kuiskaamalla, kuin hän olisi salaisessa palvelinruumissa.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'pokka' },
+    { id: 94, n: "Range-treeni (Sankari)", d: "Sankarin on 'heitettävä' viisi erilaista frisbeegolf-kiekkoa ja selitettävä niiden lentoradat seurueelle.", p: 1, m: 0, b: true, r: 1, isHero: true, k: 'pokka' },
+    { id: 95, n: "Loot-varkaus (Sankari)", d: "Sankarin on onnistuttava ottamaan yksi hörppy jonkun muun lasista niin, ettei kukaan huomaa (stealth mode).", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'juoma' },
+    { id: 96, n: "Käyttöjärjestelmän vaihto (Sankari)", d: "Sankarin on vaihdettava kieltä ja puhuttava seuraavat 5 minuuttia pelkkää englantia.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'pokka' },
+    { id: 97, n: "Spotterin virhe (Sankari)", d: "Sankarin on osoitettava baarista kolme mahdollista 'vaaran paikkaa' ja annettava niille IT-tukihenkinen korjaussuunnitelma.", p: 1, m: 0, b: true, r: 1, isHero: true, k: 'pokka' },
+    { id: 98, n: "C1-tason grippi (Sankari)", d: "Sankarin on pidettävä lasistaan kiinni erittäin oudolla otteella seuraavat 5 minuuttia.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'juoma' },
+    { id: 99, n: "Bug Bounty (Sankari)", d: "Sankarin on etsittävä muiden pelaajien vaatetuksesta yksi 'bugi' ja kerrottava, miten se korjataan (esim. vino kaulus).", p: 1, m: 0, b: true, r: 1, isHero: true, k: 'pokka' },
+    { id: 100, n: "Air Drop Defense (Sankari)", d: "Sankarin on suojeltava omaa juomaansa niin, ettei kukaan saa koskea siihen 5 minuuttiin.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'juoma' },
+    { id: 101, n: "Mando-kierto (Sankari)", d: "Sankarin on noustava ylös ja kierrettävä koko seurue ympäri tehden samalla frisbeegolf-lähipeliä matkivia liikkeitä.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'liikunta' },
+    { id: 102, n: "System Overload (Sankari)", d: "Sankarin on lueteltava 10 IT-termiä, 10 frisbeegolf-termiä tai 10 PUBG-termiä 30 sekunnissa.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'pokka' }
 ];
 
 function logEvent(msg) {
-    try {
-        const time = new Date().toLocaleTimeString('fi-FI');
-        db.ref('gameState/eventLog').push({ time, msg });
-    } catch(e) { console.error(e); }
+    const time = new Date().toLocaleTimeString('fi-FI');
+    db.ref('gameState/eventLog').push({ time, msg });
 }
 
 window.toggleTaskHold = function(taskId) {
@@ -284,100 +279,93 @@ window.resetGame = function() {
 };
 
 db.ref('gameState').on('value', (snap) => {
-    try {
-        const data = snap.val();
-        if(!data) {
-            updateIdentityUI();
-            return; 
-        }
+    const data = snap.val();
+    if(!data) return;
 
-        if (currentResetId && data.resetId !== currentResetId) { localStorage.clear(); location.reload(); return; }
-        if (!currentResetId) { currentResetId = data.resetId; localStorage.setItem('appro_reset_id', data.resetId); }
+    if (currentResetId && data.resetId !== currentResetId) { localStorage.clear(); location.reload(); return; }
+    if (!currentResetId) { currentResetId = data.resetId; localStorage.setItem('appro_reset_id', data.resetId); }
 
-        allPlayers = (data.players || []).filter(p => p !== null);
-        const config = data.config || {};
-        
-        currentHeroId = config.bdayHero !== undefined ? config.bdayHero : null;
-        
-        const me = allPlayers.find(p => p && p.name === myName);
-        if (myName) {
-            if (me) {
-                wasInGame = true;
-                if (lastMyScore !== null && me.score !== lastMyScore) { 
-                    showXPAnimation(me.score - lastMyScore); 
-                }
-                lastMyScore = me.score;
+    allPlayers = data.players || [];
+    const config = data.config || {};
+    
+    // KORJAUS 3: Säilytetään heroId globaalina
+    currentHeroId = config.bdayHero !== undefined ? config.bdayHero : null;
+    
+    const me = allPlayers.find(p => p.name === myName);
+    if (myName) {
+        if (me) {
+            wasInGame = true;
+            if (lastMyScore !== null && me.score !== lastMyScore) { 
+                showXPAnimation(me.score - lastMyScore); 
+            }
+            lastMyScore = me.score;
+        } else {
+            if (wasInGame) {
+                myName = null;
+                localStorage.removeItem('appro_name');
+                wasInGame = false;
+                lastMyScore = null;
+                alert("Game Master on poistanut sinut pelistä. Voit kirjautua sisään uudelleen.");
             } else {
-                if (wasInGame) {
-                    myName = null;
-                    localStorage.removeItem('appro_name');
-                    wasInGame = false;
-                    lastMyScore = null;
-                    alert("Game Master on poistanut sinut pelistä. Voit kirjautua sisään uudelleen.");
-                } else {
-                    myName = null;
-                    localStorage.removeItem('appro_name');
-                }
-                updateIdentityUI();
+                myName = null;
+                localStorage.removeItem('appro_name');
             }
+            updateIdentityUI();
         }
-        
-        taskLibrary = (data.tasks || []).filter(t => t !== null).map(t => {
-            if (t && t.id >= 83 && t.id <= 102) return { ...t, isHero: true, p: 1 }; 
-            return t;
-        });
-
-        taskHistory = Object.values(data.history || {}).reverse().slice(0, 10);
-        const vis = config.visibility || { title: true, points: true, category: true, drawCount: false, desc: false, minus: true, bday: true };
-        const heroDrawConfig = config.heroDraw || { include: true, weighted: false, interval: 4, drawCount: 0 };
-        const totalCompleted = (data.usedTaskIds || []).length;
-
-        updateIdentityUI();
-        renderLeaderboard(config.useCooldowns, currentHeroId);
-        updateManualTaskSelect();
-        
-        const historyTitle = document.getElementById('historyTitle');
-        if (historyTitle) historyTitle.innerText = `Aiemmat tehtävät (Suoritettu: ${totalCompleted})`;
-        renderHistory();
-        
-        if (document.getElementById('useCooldowns')) {
-            document.getElementById('useCooldowns').checked = !!config.useCooldowns;
-            document.getElementById('strictVolunteer').checked = !!config.strictVolunteer;
-            document.getElementById('excludeUsedTasks').checked = !!config.excludeUsedTasks;
-            
-            document.getElementById('visTitle').checked = !!vis.title;
-            document.getElementById('visPoints').checked = !!vis.points;
-            document.getElementById('visCategory').checked = !!vis.category; 
-            document.getElementById('visDrawCount').checked = !!vis.drawCount;
-            document.getElementById('visDesc').checked = !!vis.desc;
-            document.getElementById('visMinus').checked = !!vis.minus;
-            document.getElementById('visBday').checked = !!vis.bday;
-            
-            document.getElementById('incHero').checked = !!heroDrawConfig.include;
-            document.getElementById('weightHero').checked = !!heroDrawConfig.weighted;
-            document.getElementById('heroInterval').value = heroDrawConfig.interval || 4;
-
-            if(document.getElementById('disableHeroBonus')) document.getElementById('disableHeroBonus').checked = !!config.disableHeroBonus;
-            if(document.getElementById('forceSinglePlayer')) document.getElementById('forceSinglePlayer').checked = !!config.forceSinglePlayer;
-            if(document.getElementById('alwaysMinusOne')) document.getElementById('alwaysMinusOne').checked = config.alwaysMinusOne !== false;
-        }
-
-        if(document.getElementById('adminPanel').style.display === 'block') {
-            const activeTag = document.activeElement ? document.activeElement.tagName : '';
-            if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA' && activeTag !== 'SELECT') {
-                renderAdminPlayerList(config);
-                renderTaskLibrary();
-            }
-            renderEventLog(data.eventLog);
-        }
-
-        checkForNewWinnerPopups(data.activeTasks || {});
-        renderActiveTasks(data.activeTasks || {}, config);
-        lastKnownTasks = JSON.parse(JSON.stringify(data.activeTasks || {}));
-        
-    } catch (error) {
-        console.error("Virhe tietokannan renderöinnissä:", error);
     }
+    
+    taskLibrary = (data.tasks || []).map(t => {
+        if (t.id >= 83 && t.id <= 102) return { ...t, isHero: true, p: 1 }; 
+        return t;
+    });
+
+    taskHistory = Object.values(data.history || {}).reverse().slice(0, 10);
+    const vis = config.visibility || { title: true, points: true, category: true, drawCount: false, desc: false, minus: true, bday: true };
+    const heroDrawConfig = config.heroDraw || { include: true, weighted: false, interval: 4, drawCount: 0 };
+    const totalCompleted = (data.usedTaskIds || []).length;
+
+    updateIdentityUI();
+    renderLeaderboard(config.useCooldowns, currentHeroId);
+    updateManualTaskSelect();
+    
+    const historyTitle = document.getElementById('historyTitle');
+    if (historyTitle) historyTitle.innerText = `Aiemmat tehtävät (Suoritettu: ${totalCompleted})`;
+    renderHistory();
+    
+    if (document.getElementById('useCooldowns')) {
+        document.getElementById('useCooldowns').checked = !!config.useCooldowns;
+        document.getElementById('strictVolunteer').checked = !!config.strictVolunteer;
+        document.getElementById('excludeUsedTasks').checked = !!config.excludeUsedTasks;
+        
+        document.getElementById('visTitle').checked = !!vis.title;
+        document.getElementById('visPoints').checked = !!vis.points;
+        document.getElementById('visCategory').checked = !!vis.category; 
+        document.getElementById('visDrawCount').checked = !!vis.drawCount;
+        document.getElementById('visDesc').checked = !!vis.desc;
+        document.getElementById('visMinus').checked = !!vis.minus;
+        document.getElementById('visBday').checked = !!vis.bday;
+        
+        document.getElementById('incHero').checked = !!heroDrawConfig.include;
+        document.getElementById('weightHero').checked = !!heroDrawConfig.weighted;
+        document.getElementById('heroInterval').value = heroDrawConfig.interval || 4;
+
+        if(document.getElementById('disableHeroBonus')) document.getElementById('disableHeroBonus').checked = !!config.disableHeroBonus;
+        if(document.getElementById('forceSinglePlayer')) document.getElementById('forceSinglePlayer').checked = !!config.forceSinglePlayer;
+        if(document.getElementById('alwaysMinusOne')) document.getElementById('alwaysMinusOne').checked = config.alwaysMinusOne !== false;
+    }
+
+    if(document.getElementById('adminPanel').style.display === 'block') {
+        const activeTag = document.activeElement ? document.activeElement.tagName : '';
+        if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA' && activeTag !== 'SELECT') {
+            renderAdminPlayerList();
+            renderTaskLibrary();
+        }
+        renderEventLog(data.eventLog);
+    }
+
+    checkForNewWinnerPopups(data.activeTasks || {});
+    renderActiveTasks(data.activeTasks || {}, config);
+    lastKnownTasks = JSON.parse(JSON.stringify(data.activeTasks || {}));
 });
 
 function checkForNewWinnerPopups(newTasks) {
@@ -387,12 +375,11 @@ function checkForNewWinnerPopups(newTasks) {
     
     Object.keys(newTasks).forEach(taskId => {
         const newTask = newTasks[taskId];
-        if(!newTask) return;
         const oldTask = lastKnownTasks[taskId];
         const wasJustLocked = newTask.locked && (!oldTask || !oldTask.locked);
         
         if (wasJustLocked && !newTask.isHero) {
-            const isMeSelected = (newTask.participants || []).some(r => r && r.name === myName);
+            const isMeSelected = (newTask.participants || []).some(r => r.name === myName);
             if (isMeSelected && !seenPopups.includes(taskId)) {
                 pendingWinnerTasks.push(newTask.n);
                 seenPopups.push(taskId); 
@@ -470,8 +457,6 @@ function renderActiveTasks(tasksObj, config) {
     const container = document.getElementById('activeTasksContainer');
     const isGM = document.body.className.includes('gm');
     const vis = config.visibility || { title: true, points: true, category: true, drawCount: false, desc: false, minus: true, bday: true };
-    const meFull = allPlayers.find(p => p && p.name === myName);
-    const amISuspended = !!(meFull && meFull.suspended);
     
     container.style.display = 'flex';
     container.style.flexDirection = 'column';
@@ -491,15 +476,14 @@ function renderActiveTasks(tasksObj, config) {
         }
     });
 
-    const heroName = (currentHeroId !== null && allPlayers[currentHeroId]) ? allPlayers[currentHeroId].name : null;
+    const heroName = (config.bdayHero !== null && allPlayers[config.bdayHero]) ? allPlayers[config.bdayHero].name : null;
     const amIHero = (myName && heroName === myName);
 
     currentIds.forEach((taskId) => {
         const taskData = tasksObj[taskId];
-        if(!taskData) return;
         const isLocked = !!taskData.locked;
         const results = taskData.participants || [];
-        const isMePart = results.some(r => r && r.name === myName);
+        const isMePart = results.some(r => r.name === myName);
         const isHeroTask = !!taskData.isHero; 
         const isOnHold = !!taskData.onHold;
         
@@ -555,6 +539,7 @@ function renderActiveTasks(tasksObj, config) {
         }
         card.style.order = flexOrder;
 
+        // --- STATUS ---
         let statusHtml = '';
         if (isGM) {
             let stageText = ''; let stageBg = ''; let textColor = '#ffffff'; let pulseClass = '';
@@ -583,7 +568,7 @@ function renderActiveTasks(tasksObj, config) {
         } else {
             if (isHeroTask) { statusHtml += `<div class="task-status-tag" style="background: var(--hero-gold); color: black; font-weight: 900;">✨ SANKARITEHTÄVÄ ✨</div>`; } 
             else if (isLocked) { statusHtml += `<div class="task-status-tag ${isMePart ? '' : 'muted'}">${isMePart ? '🎉 SINUN TEHTÄVÄSI' : '👀 SEURAA MUIDEN SUORITUSTA'}</div>`; } 
-            else if (taskData.drawn) { statusHtml += `<div class="task-status-tag" style="background: var(--gm-accent); color: #fff;">⌛ ARVONTA SUORITETTU</div>`; } 
+            else if (taskData.drawn) { statusHtml += `<div class="task-status-tag" style="background: var(--gm-accent); color: #fff;">⌛ ARVONTA SUORITETTU</div>`; } // KORJAUS 2
             else { statusHtml += `<h2>VAIHE: ILMOITTAUTUMINEN</h2>`; }
         }
 
@@ -663,17 +648,16 @@ function renderActiveTasks(tasksObj, config) {
         let actionHtml = '';
         if (!isGM && !isLocked && !isHeroTask) {
             const isBannedFromThis = config.useCooldowns && taskData.bannedPlayers && taskData.bannedPlayers.includes(myName);
-            const amIIn = results.some(r => r && r.name === myName) || (taskData.lateVolunteers || []).includes(myName);
+            
+            // KORJAUS 2: Late volunteers katsotaan täältä
+            const amIIn = results.some(r => r.name === myName) || (taskData.lateVolunteers || []).includes(myName);
 
             actionHtml += `<div class="join-action-area" style="margin-top:15px;">`;
-            
-            if (amISuspended) {
-                actionHtml += `<p style="color:var(--danger); font-weight:800; text-align:center;">OLET PELIKIELLOSSA!</p>`;
-            } else if (isBannedFromThis && !amIIn) {
+            if (isBannedFromThis && !amIIn) {
                 actionHtml += `<p style="color:var(--danger); font-weight:800; text-align:center;">OLET JÄÄHYLLÄ TÄSTÄ TEHTÄVÄSTÄ!</p>`;
             } else {
-                let btnText = amIIn ? 'ILMOITTAUDUTTU ✓' : 'HALUAN ILMOITTAUTUA';
-                if (!amIIn && taskData.drawn) btnText = 'ILMOITTAUDU (MYÖHÄSSÄ)';
+                let btnText = amIIn ? 'OSALLISTUT! ✓' : 'HALUAN OSALLISTUA';
+                if (!amIIn && taskData.drawn) btnText = 'OSALLISTU (MYÖHÄSSÄ)';
                 actionHtml += `<button class="btn ${amIIn ? 'btn-success' : 'btn-primary'}" onclick="volunteer('${taskId}')">${btnText}</button>`;
             }
             actionHtml += `</div>`;
@@ -750,104 +734,91 @@ function renderActiveTasks(tasksObj, config) {
 
 function drawAllTasks() {
     db.ref('gameState/activeTasks').once('value', snap => {
-        try {
-            const tasks = snap.val() || {};
-            let drawsTriggered = 0;
-            let updatesStart = {};
+        const tasks = snap.val() || {};
+        let drawsTriggered = 0;
+        let updatesStart = {};
 
+        Object.keys(tasks).forEach(taskId => {
+            const taskData = tasks[taskId];
+            if (!taskData.onHold && !taskData.locked && !taskData.isHero && ((taskData.participants || []).length > 0 || (taskData.lateVolunteers || []).length > 0) && !taskData.drawn) {
+                updatesStart[`${taskId}/isLotteryRunning`] = true;
+                drawsTriggered++;
+            }
+        });
+
+        if (drawsTriggered === 0) { alert("Ei arvottavia tehtäviä."); return; }
+
+        const adminName = myName || 'Tuntematon';
+        logEvent(`Admin (${adminName}) / Massatoiminto: Arvonta käynnistetty ${drawsTriggered} tehtävään!`);
+        db.ref('gameState/activeTasks').update(updatesStart);
+
+        setTimeout(() => {
+            let updatesFinish = {};
             Object.keys(tasks).forEach(taskId => {
-                const taskData = tasks[taskId];
-                if(!taskData) return;
-                
-                let pool = (taskData.participants || []).map(p => p.name).concat(taskData.lateVolunteers || []);
-                pool = [...new Set(pool)];
-                
-                if (taskData.k === 'kilpailu' && pool.length < 2) return; 
+                if (updatesStart[`${taskId}/isLotteryRunning`]) {
+                    const taskData = tasks[taskId];
+                    const sel = document.getElementById(`drawCount-${taskId}`);
+                    const count = sel ? (parseInt(sel.value) || 1) : 1;
+                    
+                    let pool = (taskData.participants || []).map(p => p.name).concat(taskData.lateVolunteers || []);
+                    pool = [...new Set(pool)];
 
-                if (!taskData.onHold && !taskData.locked && !taskData.isHero && pool.length > 0 && !taskData.drawn) {
-                    updatesStart[`${taskId}/isLotteryRunning`] = true;
-                    drawsTriggered++;
+                    let shuffled = [...pool].sort(() => 0.5 - Math.random());
+                    let winners = shuffled.slice(0, count).map(name => ({ name, win: true, reviewed: false }));
+
+                    updatesFinish[`${taskId}/participants`] = winners;
+                    updatesFinish[`${taskId}/lateVolunteers`] = [];
+                    updatesFinish[`${taskId}/isLotteryRunning`] = false;
+                    updatesFinish[`${taskId}/drawn`] = true;
                 }
             });
-
-            if (drawsTriggered === 0) { alert("Ei arvottavia tehtäviä. (Kilpailuihin vaaditaan vähintään 2 ilmoittautunutta)"); return; }
-
-            const adminName = myName || 'Tuntematon';
-            logEvent(`Admin (${adminName}) / Massatoiminto: Arvonta käynnistetty ${drawsTriggered} tehtävään!`);
-            db.ref('gameState/activeTasks').update(updatesStart);
-
-            setTimeout(() => {
-                let updatesFinish = {};
-                Object.keys(tasks).forEach(taskId => {
-                    if (updatesStart[`${taskId}/isLotteryRunning`]) {
-                        const taskData = tasks[taskId];
-                        const sel = document.getElementById(`drawCount-${taskId}`);
-                        const count = sel ? (parseInt(sel.value) || 1) : 1;
-                        
-                        let pool = (taskData.participants || []).map(p => p.name).concat(taskData.lateVolunteers || []);
-                        pool = [...new Set(pool)];
-
-                        let shuffled = [...pool].sort(() => 0.5 - Math.random());
-                        let winners = shuffled.slice(0, count).map(name => ({ name, win: true, reviewed: false }));
-
-                        updatesFinish[`${taskId}/participants`] = winners;
-                        updatesFinish[`${taskId}/lateVolunteers`] = [];
-                        updatesFinish[`${taskId}/isLotteryRunning`] = false;
-                        updatesFinish[`${taskId}/drawn`] = true;
-                    }
-                });
-                db.ref('gameState/activeTasks').update(updatesFinish);
-            }, 1000);
-        } catch(e) { console.error(e); }
+            db.ref('gameState/activeTasks').update(updatesFinish);
+        }, 1000);
     });
 }
 
 function lockAllTasks() {
     db.ref('gameState/activeTasks').once('value', snap => {
-        try {
-            const tasks = snap.val() || {};
-            let count = 0;
-            Object.keys(tasks).forEach(taskId => {
-                const taskData = tasks[taskId];
-                if (taskData && !taskData.onHold && !taskData.locked && !taskData.isHero && (taskData.participants || []).length > 0) {
-                    lockParticipants(taskId, true);
-                    count++;
-                }
-            });
-            const adminName = myName || 'Tuntematon';
-            if (count > 0) logEvent(`Admin (${adminName}) / Massatoiminto: Lukitsi ${count} tehtävää.`);
-            else alert("Ei lukittavia tehtäviä.");
-        } catch(e) { console.error(e); }
+        const tasks = snap.val() || {};
+        let count = 0;
+        Object.keys(tasks).forEach(taskId => {
+            const taskData = tasks[taskId];
+            if (!taskData.onHold && !taskData.locked && !taskData.isHero && (taskData.participants || []).length > 0) {
+                lockParticipants(taskId, true);
+                count++;
+            }
+        });
+        const adminName = myName || 'Tuntematon';
+        if (count > 0) logEvent(`Admin (${adminName}) / Massatoiminto: Lukitsi ${count} tehtävää.`);
+        else alert("Ei lukittavia tehtäviä.");
     });
 }
 
 function finishAllTasks() {
     db.ref('gameState').once('value', snap => {
-        try {
-            const d = snap.val();
-            if(!d) return;
-            const tasks = d.activeTasks || {};
-            const config = d.config || {};
-            let finishTriggered = 0;
-            
-            Object.keys(tasks).forEach(taskId => {
-                const taskData = tasks[taskId];
-                if (taskData && !taskData.onHold && (taskData.locked || taskData.isHero)) {
-                    let canScore = true;
-                    if (taskData.k === 'kilpailu') {
-                        const winnersCount = (taskData.participants || []).filter(r => r && r.win).length;
-                        if (winnersCount > 1) canScore = false;
-                    }
-                    if (canScore) {
-                        showScoring(taskId, true, config); 
-                        finishTriggered++;
-                    }
+        const d = snap.val();
+        const tasks = d.activeTasks || {};
+        const config = d.config || {};
+        let finishTriggered = 0;
+        
+        Object.keys(tasks).forEach(taskId => {
+            const taskData = tasks[taskId];
+            if (!taskData.onHold && (taskData.locked || taskData.isHero)) {
+                // Skannataan kilpailut massatoiminnossa. Jos on virhe (useampi voittaja), jätetään lukitsematta.
+                let canScore = true;
+                if (taskData.k === 'kilpailu') {
+                    const winnersCount = (taskData.participants || []).filter(r => r.win).length;
+                    if (winnersCount > 1) canScore = false;
                 }
-            });
-            const adminName = myName || 'Tuntematon';
-            if (finishTriggered > 0) logEvent(`Admin (${adminName}) / Massatoiminto: Merkitsi ${finishTriggered} tehtävää valmiiksi.`);
-            else alert("Ei valmiita tehtäviä odottamassa pisteytystä (Tai kilpailuissa oli tuplavoittajia).");
-        } catch(e) { console.error(e); }
+                if (canScore) {
+                    showScoring(taskId, true, config); 
+                    finishTriggered++;
+                }
+            }
+        });
+        const adminName = myName || 'Tuntematon';
+        if (finishTriggered > 0) logEvent(`Admin (${adminName}) / Massatoiminto: Merkitsi ${finishTriggered} tehtävää valmiiksi.`);
+        else alert("Ei valmiita tehtäviä odottamassa pisteytystä (Tai kilpailuissa oli tuplavoittajia).");
     });
 }
 
@@ -864,39 +835,29 @@ function drawRandom(taskId, isMassAction = false) {
     const count = sel ? (parseInt(sel.value) || 1) : 1;
     
     db.ref(`gameState/activeTasks/${taskId}`).once('value', s => {
-        try {
-            const taskData = s.val();
-            if(!taskData) return;
-            
-            let pool = (taskData.participants || []).map(p => p.name).concat(taskData.lateVolunteers || []);
-            pool = [...new Set(pool)];
-            
-            if (taskData.k === 'kilpailu' && pool.length < 2) {
-                if (!isMassAction) alert("Kilpailuun vaaditaan vähintään 2 ilmoittautunutta!");
-                return;
-            }
-            
-            if(pool.length === 0) return;
+        const taskData = s.val();
+        let pool = (taskData.participants || []).map(p => p.name).concat(taskData.lateVolunteers || []);
+        pool = [...new Set(pool)]; // Varmistetaan uniikit
+        if(pool.length === 0) return;
 
-            db.ref(`gameState/activeTasks/${taskId}`).update({ isLotteryRunning: true });
+        db.ref(`gameState/activeTasks/${taskId}`).update({ isLotteryRunning: true });
+        
+        setTimeout(() => {
+            let shuffled = [...pool].sort(() => 0.5 - Math.random());
+            let winners = shuffled.slice(0, count).map(name => ({ name, win: true, reviewed: false })); 
             
-            setTimeout(() => {
-                let shuffled = [...pool].sort(() => 0.5 - Math.random());
-                let winners = shuffled.slice(0, count).map(name => ({ name, win: true, reviewed: false })); 
-                
-                db.ref(`gameState/activeTasks/${taskId}`).update({ 
-                    participants: winners, 
-                    lateVolunteers: [], 
-                    isLotteryRunning: false, 
-                    drawn: true 
-                });
-                
-                if (!isMassAction) {
-                    const adminName = myName || 'Tuntematon';
-                    logEvent(`Admin (${adminName}): Arvottu ${count} suorittajaa tehtävään: ${taskData.n}`);
-                }
-            }, 1000); 
-        } catch(e) { console.error(e); }
+            db.ref(`gameState/activeTasks/${taskId}`).update({ 
+                participants: winners, 
+                lateVolunteers: [], 
+                isLotteryRunning: false, 
+                drawn: true 
+            });
+            
+            if (!isMassAction) {
+                const adminName = myName || 'Tuntematon';
+                logEvent(`Admin (${adminName}): Arvottu ${count} suorittajaa tehtävään: ${taskData.n}`);
+            }
+        }, 1000); 
     });
 }
 
@@ -914,13 +875,13 @@ function renderGMGrid(taskId, results, isLocked, isShuffling, showCD, taskData) 
 
     allPlayers.forEach((p, index) => {
         const btn = grid.children[index];
-        const isInc = results.some(r => r && r.name === p.name);
+        const isInc = results.some(r => r.name === p.name);
         const isLate = (taskData.lateVolunteers || []).includes(p.name);
         const isBannedFromThis = showCD && taskData.bannedPlayers && taskData.bannedPlayers.includes(p.name);
         
         let btnClass = 'btn-secondary';
         if (isInc) btnClass = 'btn-primary selected-participant';
-        else if (isLate) btnClass = 'btn-secondary late-volunteer'; 
+        else if (isLate) btnClass = 'btn-secondary late-volunteer'; // KORJAUS 2
         
         btn.className = `btn ${btnClass} ${isBannedFromThis ? 'on-cooldown' : ''}`;
         btn.disabled = isLocked || isShuffling; 
@@ -933,6 +894,7 @@ function renderGMGrid(taskId, results, isLocked, isShuffling, showCD, taskData) 
         if (!window.rouletteTimers[taskId]) {
             window.rouletteTimers[taskId] = setInterval(() => {
                 Array.from(grid.children).forEach(b => b.classList.remove('roulette-focus'));
+                // Pyöritetään visuaalista rulettia kaikista mahdollisista pelaajista (sekä isInc että isLate)
                 const validBtns = Array.from(grid.children).filter(b => b.className.includes('selected-participant') || b.className.includes('late-volunteer'));
                 if(validBtns.length > 0) {
                     const randomBtn = validBtns[Math.floor(Math.random() * validBtns.length)];
@@ -952,9 +914,7 @@ function renderGMGrid(taskId, results, isLocked, isShuffling, showCD, taskData) 
 function toggleGMSpy(taskId) {
     localSpyState[taskId] = !localSpyState[taskId];
     db.ref('gameState').once('value', snap => {
-        try {
-            renderActiveTasks(snap.val().activeTasks || {}, snap.val().config || {});
-        } catch(e) { console.error(e); }
+        renderActiveTasks(snap.val().activeTasks || {}, snap.val().config || {});
     });
 }
 
@@ -963,9 +923,7 @@ function setRole(r) {
     document.getElementById('btnPlayer').classList.toggle('active', r === 'player');
     document.getElementById('btnGM').classList.toggle('active', r === 'gm');
     db.ref('gameState').once('value', snap => {
-        try {
-            renderActiveTasks(snap.val().activeTasks || {}, snap.val().config || {});
-        } catch(e) { console.error(e); }
+        renderActiveTasks(snap.val().activeTasks || {}, snap.val().config || {});
     });
 }
 
@@ -981,90 +939,76 @@ if(gmBtn) {
 }
 
 function claimIdentity() {
-    const input = document.getElementById('playerNameInput');
-    if(!input) return;
-    const n = input.value.trim();
+    const n = document.getElementById('playerNameInput').value.trim();
     if(!n) return; 
-    
     myName = n; 
     localStorage.setItem('appro_name', n);
     updateIdentityUI(); 
 
     db.ref('gameState/players').transaction(p => {
         p = p || []; 
-        p = p.filter(x => x !== null);
-        if(!p.find(x => x && x.name === n)) {
-            p.push({ name: n, score: 0, cooldown: 0, suspended: false }); 
+        if(!p.find(x => x.name === n)) {
+            p.push({ name: n, score: 0, cooldown: false }); 
         }
         return p;
     }).then(() => {
         logEvent(`Pelaaja kirjautui: ${n}`);
-    }).catch(e => console.error("Identity Error:", e));
+    });
 }
 
 function volunteer(taskId) {
     if(!myName) return;
     db.ref('gameState').once('value', snap => {
-        try {
-            const data = snap.val();
-            if(!data) return;
-            
-            const playersList = data.players || [];
-            const meFull = playersList.find(p => p && p.name === myName);
-            if (meFull && meFull.suspended) {
-                alert("Olet pelikiellossa! Et voi ilmoittautua tehtäviin."); return;
-            }
-            
-            const taskObj = data.activeTasks[taskId];
-            if(!taskObj || taskObj.locked) return;
-            
-            if (data.config?.useCooldowns && taskObj.bannedPlayers && taskObj.bannedPlayers.includes(myName)) {
-                alert("Olet jäähyllä tästä tehtävästä!"); return;
-            }
-            
-            if (data.config?.strictVolunteer) {
-                let inOther = Object.keys(data.activeTasks).some(id => {
-                    if (id === taskId) return false;
-                    const t = data.activeTasks[id];
-                    if(!t) return false;
-                    const inPart = !t.locked && (t.participants || []).some(r => r && r.name === myName);
-                    const inLate = !t.locked && (t.lateVolunteers || []).includes(myName);
-                    return inPart || inLate;
-                });
-                if (inOther) {
-                    alert("Jäähy: Olet jo ilmoittautunut toiseen avoimeen tehtävään!"); return;
-                }
-            }
-
-            const taskName = taskObj.n;
-
-            db.ref(`gameState/activeTasks/${taskId}`).transaction(t => {
-                if (!t || t.locked) return t;
-                
-                t.participants = t.participants || [];
-                t.lateVolunteers = t.lateVolunteers || [];
-                
-                if (t.drawn) {
-                    let inParts = t.participants.findIndex(r => r && r.name === myName);
-                    if (inParts > -1) {
-                        t.participants.splice(inParts, 1);
-                    } else {
-                        let lIdx = t.lateVolunteers.indexOf(myName);
-                        if (lIdx > -1) t.lateVolunteers.splice(lIdx, 1); 
-                        else t.lateVolunteers.push(myName); 
-                    }
-                } else {
-                    let pIdx = t.participants.findIndex(r => r && r.name === myName);
-                    if (pIdx > -1) t.participants.splice(pIdx, 1);
-                    else t.participants.push({name: myName, win: true, reviewed: false});
-                }
-                return t;
-            }).then((res) => {
-                if(res.committed) {
-                    logEvent(`${myName} muutti osallistumistaan: ${taskName}`);
-                }
+        const data = snap.val();
+        
+        if (data.config?.useCooldowns && data.activeTasks[taskId].bannedPlayers && data.activeTasks[taskId].bannedPlayers.includes(myName)) {
+            alert("Olet jäähyllä tästä tehtävästä!"); return;
+        }
+        
+        if (data.config?.strictVolunteer) {
+            let inOther = Object.keys(data.activeTasks).some(id => {
+                if (id === taskId) return false;
+                const t = data.activeTasks[id];
+                const inPart = !t.locked && (t.participants || []).some(r => r.name === myName);
+                const inLate = !t.locked && (t.lateVolunteers || []).includes(myName);
+                return inPart || inLate;
             });
-        } catch(e) { console.error(e); }
+            if (inOther) {
+                alert("Jäähy: Olet jo ilmoittautunut toiseen avoimeen tehtävään!"); return;
+            }
+        }
+
+        if(data.activeTasks[taskId].locked) return;
+        
+        const taskName = data.activeTasks[taskId].n;
+
+        // KORJAUS 2: Myöhäiset ilmoittautujat menevät omalle listalleen
+        db.ref(`gameState/activeTasks/${taskId}`).transaction(t => {
+            if (!t || t.locked) return t;
+            
+            t.participants = t.participants || [];
+            t.lateVolunteers = t.lateVolunteers || [];
+            
+            if (t.drawn) {
+                let inParts = t.participants.findIndex(r => r.name === myName);
+                if (inParts > -1) {
+                    t.participants.splice(inParts, 1); // Peru osallistuminen
+                } else {
+                    let lIdx = t.lateVolunteers.indexOf(myName);
+                    if (lIdx > -1) t.lateVolunteers.splice(lIdx, 1); // Peru myöhäinen
+                    else t.lateVolunteers.push(myName); // Lisää myöhäiseksi
+                }
+            } else {
+                let pIdx = t.participants.findIndex(r => r.name === myName);
+                if (pIdx > -1) t.participants.splice(pIdx, 1);
+                else t.participants.push({name: myName, win: true, reviewed: false});
+            }
+            return t;
+        }).then((res) => {
+            if(res.committed) {
+                logEvent(`${myName} muutti osallistumistaan: ${taskName}`);
+            }
+        });
     });
 }
 
@@ -1076,16 +1020,16 @@ function toggleParticipant(taskId, name) {
         t.participants = t.participants || [];
         t.lateVolunteers = t.lateVolunteers || [];
         
-        const pIdx = t.participants.findIndex(r => r && r.name === name);
+        const pIdx = t.participants.findIndex(r => r.name === name);
         const lIdx = t.lateVolunteers.indexOf(name);
         
         if (pIdx > -1) {
-            t.participants.splice(pIdx, 1);
+            t.participants.splice(pIdx, 1); // Poista
         } else if (lIdx > -1) {
-            t.lateVolunteers.splice(lIdx, 1); 
+            t.lateVolunteers.splice(lIdx, 1); // Poista myöhäisistä ja siirrä
             t.participants.push({ name: name, win: true, reviewed: false }); 
         } else {
-            t.participants.push({ name: name, win: true, reviewed: false }); 
+            t.participants.push({ name: name, win: true, reviewed: false }); // Lisää uutena
         }
         return t;
     }).then((res) => {
@@ -1098,119 +1042,103 @@ function toggleParticipant(taskId, name) {
 
 function lockParticipants(taskId, isMassAction = false) { 
     db.ref('gameState').once('value', snap => {
-        try {
-            const d = snap.val();
-            if(!d) return;
-            const taskInstance = d.activeTasks[taskId];
-            if(!taskInstance) return;
-            
-            const res = taskInstance.participants || [];
-            const drawnNames = res.map(r => r.name);
-            
-            if (d.config?.useCooldowns) {
-                const playersClean = (d.players || []).filter(p => p !== null);
-                const updatedPlayers = playersClean.map(p => {
-                    if (drawnNames.includes(p.name)) p.cooldown = true; 
-                    return p;
-                });
-                db.ref('gameState/players').set(updatedPlayers);
-            }
-            db.ref(`gameState/activeTasks/${taskId}/locked`).set(true); 
-            localSpyState[taskId] = false;
-            
-            if (!isMassAction) {
-                const adminName = myName || 'Tuntematon';
-                logEvent(`Admin (${adminName}) lukitsi suorittajat tehtävään ${taskInstance.n}: ${drawnNames.join(', ')}`);
-            }
-        } catch(e) { console.error(e); }
+        const d = snap.val();
+        const taskInstance = d.activeTasks[taskId];
+        const res = taskInstance.participants || [];
+        const drawnNames = res.map(r => r.name);
+        
+        if (d.config?.useCooldowns) {
+            const updatedPlayers = allPlayers.map(p => {
+                if (drawnNames.includes(p.name)) p.cooldown = true; 
+                return p;
+            });
+            db.ref('gameState/players').set(updatedPlayers);
+        }
+        db.ref(`gameState/activeTasks/${taskId}/locked`).set(true); 
+        localSpyState[taskId] = false;
+        
+        if (!isMassAction) {
+            const adminName = myName || 'Tuntematon';
+            logEvent(`Admin (${adminName}) lukitsi suorittajat tehtävään ${taskInstance.n}: ${drawnNames.join(', ')}`);
+        }
     });
 }
 
 function showScoring(taskId, isMassAction = false, extConfig = null) {
     db.ref('gameState').once('value', snap => {
-        try {
-            const d = snap.val();
-            if(!d) return;
-            const config = extConfig || d.config || {}; 
-            const disableBonus = !!config.disableHeroBonus; 
-            const alwaysMinusOne = config.alwaysMinusOne !== false; 
-            
-            const taskInstance = d.activeTasks[taskId];
-            if(!taskInstance) return;
-            
-            if (taskInstance.k === 'kilpailu' && !isMassAction) {
-                const winnersCount = (taskInstance.participants || []).filter(r => r && r.win).length;
-                if (winnersCount > 1) {
-                    if (!confirm("⚠️ HUOM! Kilpailutehtävässä on merkitty useampi voittaja.\nHaluatko varmasti jatkaa ja antaa kaikille plussaa?")) {
-                        return; 
-                    }
+        const d = snap.val();
+        const config = extConfig || d.config || {}; 
+        const disableBonus = !!config.disableHeroBonus; 
+        const alwaysMinusOne = config.alwaysMinusOne !== false; 
+        
+        const taskInstance = d.activeTasks[taskId];
+        if(!taskInstance) return;
+        
+        // KORJAUS 4: KILPAILU VAROITUS (Jos valittu > 1 voittaja)
+        if (taskInstance.k === 'kilpailu' && !isMassAction) {
+            const winnersCount = (taskInstance.participants || []).filter(r => r.win).length;
+            if (winnersCount > 1) {
+                if (!confirm("HUOM! Kilpailutehtävässä on merkitty useampi voittaja.\nHaluatko varmasti jatkaa ja antaa kaikille plussaa?")) {
+                    return; // Pysäyttää toiminnon
                 }
             }
-            
-            const res = taskInstance.participants || [];
-            const heroId = config.bdayHero;
-            let used = d.usedTaskIds || [];
-            used.push(taskInstance.id);
-            
-            let winnersNames = [];
-            let taskCompletedBySomeone = res.some(r => r && r.win);
-            
-            const cleanPlayers = (d.players || []).map((p) => p || {name: "Unknown", score: 0});
-            
-            const updatedPlayers = cleanPlayers.map((p, idx) => {
-                if(p.name === "Unknown") return null;
-                
-                let earned = 0;
-                if (taskInstance.isHero) {
-                    if (idx === heroId) {
-                        const heroWon = taskInstance.heroWin !== false;
-                        if (heroWon) {
-                            earned += taskInstance.p;
-                            winnersNames.push(p.name);
-                        } else if (taskInstance.m) {
-                            earned -= alwaysMinusOne ? 1 : taskInstance.p;
-                        }
+        }
+        
+        const res = taskInstance.participants || [];
+        const heroId = config.bdayHero;
+        let used = d.usedTaskIds || [];
+        used.push(taskInstance.id);
+        
+        let winnersNames = [];
+        let taskCompletedBySomeone = res.some(r => r.win);
+        
+        const updatedPlayers = allPlayers.map((p, idx) => {
+            let earned = 0;
+            if (taskInstance.isHero) {
+                if (idx === heroId) {
+                    const heroWon = taskInstance.heroWin !== false;
+                    if (heroWon) {
+                        earned += taskInstance.p;
+                    } else if (taskInstance.m) {
+                        earned -= alwaysMinusOne ? 1 : taskInstance.p;
                     }
-                } else {
-                    const part = res.find(r => r && r.name === p.name);
-                    if(part) {
-                        if(part.win) { 
-                            earned += taskInstance.p; 
-                            winnersNames.push(p.name); 
-                        } else if(taskInstance.m) {
-                            earned -= alwaysMinusOne ? 1 : taskInstance.p;
-                        }
-                    } else if (idx === heroId && taskInstance.b && !disableBonus) {
-                        if (taskCompletedBySomeone) earned += 1; 
-                    }
+                    winnersNames.push(p.name);
                 }
-                p.score = Math.max(0, (p.score || 0) + earned);
-                return p;
-            });
-
-            db.ref('gameState/history').push({
-                taskName: taskInstance.n,
-                winners: winnersNames.length > 0 ? winnersNames : ["Ei onnistujia"],
-                timestamp: new Date().toLocaleTimeString('fi-FI')
-            });
-
-            const newActiveTasks = { ...d.activeTasks };
-            delete newActiveTasks[taskId];
-            
-            db.ref('gameState').update({ 
-                players: updatedPlayers.filter(p => p !== null), 
-                activeTasks: newActiveTasks, 
-                usedTaskIds: used 
-            });
-            
-            if (!isMassAction) {
-                const adminName = myName || 'Tuntematon';
-                logEvent(`Admin (${adminName}) päätti tehtävän: ${taskInstance.n}. Pisteet jaettu.`);
+            } else {
+                const part = res.find(r => r.name === p.name);
+                if(part) {
+                    if(part.win) { 
+                        earned += taskInstance.p; 
+                        winnersNames.push(p.name); 
+                    } else if(taskInstance.m) {
+                        earned -= alwaysMinusOne ? 1 : taskInstance.p;
+                    }
+                } else if (idx === heroId && taskInstance.b && !disableBonus) {
+                    if (taskCompletedBySomeone) earned += 1; 
+                }
             }
-        } catch(e) { console.error(e); }
+            p.score = Math.max(0, (p.score || 0) + earned);
+            return p;
+        });
+
+        db.ref('gameState/history').push({
+            taskName: taskInstance.n,
+            winners: winnersNames.length > 0 ? winnersNames : ["Ei onnistujia"],
+            timestamp: new Date().toLocaleTimeString('fi-FI')
+        });
+
+        const newActiveTasks = { ...d.activeTasks };
+        delete newActiveTasks[taskId];
+        db.ref('gameState').update({ players: updatedPlayers, activeTasks: newActiveTasks, usedTaskIds: used });
+        
+        if (!isMassAction) {
+            const adminName = myName || 'Tuntematon';
+            logEvent(`Admin (${adminName}) päätti tehtävän: ${taskInstance.n}. Pisteet jaettu.`);
+        }
     });
 }
 
+// KORJAUS 1: Uudet pisteytysnapit - Logiikka
 window.setHeroResult = function(taskId, isWin) {
     db.ref(`gameState/activeTasks/${taskId}`).transaction(t => {
         if(t) {
@@ -1231,34 +1159,6 @@ window.setParticipantResult = function(taskId, i, isWin) {
     });
 };
 
-window.adminReleaseCooldown = function(name, idx) {
-    if (!confirm(`Vapautetaanko ${name} kaikista aktiivisista jäähyistä?`)) return;
-    let updates = {};
-    updates[`gameState/players/${idx}/cooldown`] = 0;
-    
-    Object.keys(lastKnownTasks).forEach(taskId => {
-        let task = lastKnownTasks[taskId];
-        if (task && task.bannedPlayers && task.bannedPlayers.includes(name)) {
-            updates[`gameState/activeTasks/${taskId}/bannedPlayers`] = task.bannedPlayers.filter(n => n !== name);
-        }
-    });
-    
-    db.ref().update(updates).then(() => {
-        const adminName = myName || 'Tuntematon';
-        logEvent(`Admin (${adminName}) vapautti pelaajan ${name} jäähyltä.`);
-    }).catch(e => console.error(e));
-};
-
-window.adminToggleSuspension = function(idx) {
-    const p = allPlayers[idx];
-    if(!p) return;
-    const newState = !p.suspended;
-    db.ref(`gameState/players/${idx}/suspended`).set(newState).then(() => {
-        const adminName = myName || 'Tuntematon';
-        logEvent(`Admin (${adminName}) asetti pelaajan ${p.name} tilaan: ${newState ? 'PELIKIELTO' : 'VAPAUTETTU PELIKIELLOSTA'}`);
-    }).catch(e => console.error(e));
-};
-
 function renderScoringArea(taskId, results, isHeroTask, heroWinState, heroReviewed) {
     const sArea = document.getElementById(`scoring-${taskId}`);
     if(!sArea) return; 
@@ -1268,6 +1168,7 @@ function renderScoringArea(taskId, results, isHeroTask, heroWinState, heroReview
     const box = document.createElement('div');
     box.className = "scoring-box"; 
     
+    // KORJAUS 1: UI Rakennetaan uusilla napeilla
     if (isHeroTask) {
         box.innerHTML = `<p style="font-size:0.75rem; color:var(--hero-gold); margin:0 0 12px 0; text-align:center; font-weight:900; letter-spacing:1px;">⚠️ PISTEYTÄ SANKARIN SUORITUS ⚠️</p>`;
         
@@ -1314,9 +1215,169 @@ function renderScoringArea(taskId, results, isHeroTask, heroWinState, heroReview
     sArea.appendChild(box);
 }
 
-// ---------------------------------------------------------
-// TÄSTÄ ALKAA AIEMMIN KADONNUT OSIO - KAIKKI ON NYT TÄÄLLÄ!
-// ---------------------------------------------------------
+function updateDrawCountSelect(taskId, task, forceSinglePlayer) {
+    const sel = document.getElementById(`drawCount-${taskId}`);
+    if (!sel || sel.options.length > 0) return; 
+    
+    const max = forceSinglePlayer ? 1 : Math.max(allPlayers.length, 1);
+    for (let i = 1; i <= max; i++) {
+        const opt = document.createElement('option');
+        opt.value = i; opt.innerText = i;
+        if(i === (task.r || 1)) opt.selected = true;
+        sel.appendChild(opt);
+    }
+}
+
+function confirmRandomize() {
+    db.ref('gameState').once('value', snap => {
+        const d = snap.val();
+        const config = d.config || {};
+        const heroDraw = config.heroDraw || { include: true, weighted: false, interval: 4, drawCount: 0 };
+        const used = d.usedTaskIds || [];
+
+        let bannedFromThisTask = [];
+        
+        if (config.useCooldowns) {
+            const updatedPlayers = allPlayers.map(p => {
+                let cd = p.cooldown === true ? 1 : (p.cooldown || 0); 
+                if (cd > 0) bannedFromThisTask.push(p.name);
+                if (cd > 0) cd--; 
+                return { ...p, cooldown: cd }; 
+            });
+            db.ref('gameState/players').set(updatedPlayers);
+        }
+
+        let newDrawCount = heroDraw.drawCount || 0;
+        let isForcedHero = false;
+
+        if (heroDraw.weighted) {
+            newDrawCount++;
+            if (newDrawCount >= (heroDraw.interval || 4)) {
+                isForcedHero = true;
+                newDrawCount = 0; 
+            }
+        }
+
+        let pool = [];
+        const normalTasks = taskLibrary.filter(t => !t.isHero && !used.includes(t.id));
+        const heroTasks = taskLibrary.filter(t => t.isHero && !used.includes(t.id));
+        
+        let finalNormal = normalTasks.length > 0 ? normalTasks : taskLibrary.filter(t => !t.isHero);
+        let finalHero = heroTasks.length > 0 ? heroTasks : taskLibrary.filter(t => t.isHero);
+
+        if (isForcedHero && finalHero.length > 0) {
+            pool = finalHero;
+        } else if (heroDraw.include && !heroDraw.weighted) {
+            pool = finalNormal.concat(finalHero); 
+        } else {
+            pool = finalNormal; 
+        }
+
+        if(pool.length === 0) pool = finalHero; 
+
+        const t = { ...pool[Math.floor(Math.random() * pool.length)] };
+        
+        if (config.forceSinglePlayer) t.r = 1;
+
+        const instanceId = "t_" + Date.now();
+        
+        let updates = {};
+        updates[`gameState/activeTasks/${instanceId}`] = { 
+            ...t, 
+            locked: t.isHero ? true : false, 
+            participants: [], 
+            drawn: false,
+            bannedPlayers: bannedFromThisTask 
+        };
+        if (heroDraw.weighted) updates[`gameState/config/heroDraw/drawCount`] = newDrawCount;
+
+        db.ref().update(updates).then(() => {
+            const adminName = myName || 'Tuntematon';
+            logEvent(`Admin (${adminName}) arpoi uuden tehtävän: ${t.n}`);
+        });
+    });
+}
+
+function selectManualTask(idx) {
+    if (idx === "") return;
+    db.ref('gameState').once('value', snap => {
+        const d = snap.val();
+        
+        let bannedFromThisTask = [];
+        if (d.config?.useCooldowns) {
+            const updatedPlayers = allPlayers.map(p => {
+                let cd = p.cooldown === true ? 1 : (p.cooldown || 0); 
+                if (cd > 0) bannedFromThisTask.push(p.name);
+                if (cd > 0) cd--; 
+                return { ...p, cooldown: cd }; 
+            });
+            db.ref('gameState/players').set(updatedPlayers);
+        }
+        
+        const t = { ...taskLibrary[idx] };
+        
+        if (d.config?.forceSinglePlayer) t.r = 1;
+
+        const instanceId = "t_" + Date.now();
+        db.ref(`gameState/activeTasks/${instanceId}`).set({ 
+            ...t, 
+            locked: t.isHero ? true : false, 
+            participants: [], 
+            drawn: false,
+            bannedPlayers: bannedFromThisTask 
+        });
+        const adminName = myName || 'Tuntematon';
+        logEvent(`Admin (${adminName}) valitsi manuaalisen tehtävän: ${t.n}`);
+        document.getElementById('manualTaskSelect').value = ""; 
+    });
+}
+
+function renderEventLog(logData) {
+    const container = document.getElementById('adminEventLog');
+    if(!container) return;
+    container.innerHTML = "";
+    const logs = Object.values(logData || {}).reverse().slice(0, 30);
+    logs.forEach(l => {
+        const div = document.createElement('div');
+        div.className = 'log-entry';
+        div.innerHTML = `<span class="time">[${l.time}]</span> ${l.msg}`;
+        container.appendChild(div);
+    });
+}
+
+function renderHistory() {
+    const container = document.getElementById('taskHistoryList');
+    if(!container) return;
+    container.innerHTML = taskHistory.length === 0 ? '<p style="font-size:0.7rem; color:var(--muted);">Ei vielä historiaa...</p>' : "";
+    taskHistory.forEach(h => {
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        div.innerHTML = `
+            <div>
+                <span class="task-name" style="display:block;">${h.taskName}</span>
+                <span style="font-size:0.65rem; color:var(--success); font-weight:700;">${h.winners.join(', ')}</span>
+            </div>
+            <span class="task-time">${h.timestamp}</span>
+        `;
+        container.appendChild(div);
+    });
+}
+
+function adminAddPlayer() {
+    const input = document.getElementById('adminNewPlayerName');
+    const n = input.value.trim();
+    if(!n) return;
+    db.ref('gameState/players').once('value', snap => {
+        let p = snap.val() || [];
+        if(!p.find(x => x.name === n)) { 
+            p.push({ name: n, score: 0, cooldown: 0 }); 
+            db.ref('gameState/players').set(p); 
+            input.value = ''; 
+            const adminName = myName || 'Tuntematon';
+            logEvent(`Admin (${adminName}) lisäsi pelaajan: ${n}`);
+        } else { alert("Pelaaja on jo listalla!"); }
+    });
+}
 
 function adjustScore(idx, amt) { 
     db.ref('gameState/players/' + idx + '/score').transaction(s => Math.max(0, (s || 0) + amt)); 
@@ -1359,6 +1420,27 @@ window.toggleLibraryVisibility = function() {
     lib.style.display = lib.style.display === 'none' ? 'block' : 'none';
 };
 
+function adminCreateTask() {
+    const n = document.getElementById('newTaskName').value;
+    const d = document.getElementById('newTaskDesc').value;
+    const p = parseInt(document.getElementById('newTaskPoints').value) || 0;
+    const m = document.getElementById('newTaskMinus').checked;
+    const b = document.getElementById('newTaskBday').checked;
+    const hero = document.getElementById('newTaskIsHero').checked; 
+    const r = parseInt(document.getElementById('newTaskRecommendedPlayers').value) || 1;
+    const k = document.getElementById('newTaskCategory').value;
+    
+    if(!n || !d) return;
+    const newTask = { id: Date.now(), n, d, p, m, b, r, isHero: hero, k: k };
+    db.ref('gameState/tasks').transaction(list => { list = list || []; list.push(newTask); return list; });
+    
+    document.getElementById('newTaskName').value = ''; 
+    document.getElementById('newTaskDesc').value = '';
+    document.getElementById('newTaskIsHero').checked = false;
+    const adminName = myName || 'Tuntematon';
+    logEvent(`Admin (${adminName}) loi uuden tehtävän kirjastoon: ${n}`);
+}
+
 function renderLeaderboard(showCD, heroId) {
     const list = document.getElementById('playerList');
     if(!list) return;
@@ -1367,6 +1449,7 @@ function renderLeaderboard(showCD, heroId) {
     const newScoresStr = sortedPlayers.map(p => p.name + p.score).join('|');
     
     if (newScoresStr !== leaderboardScoresStr) {
+        
         let currentRanks = {};
         let currentRank = 1;
         let prevScore = -1;
@@ -1413,14 +1496,11 @@ function renderLeaderboard(showCD, heroId) {
     });
 }
 
-function renderAdminPlayerList(config) {
+// KORJAUS 3: Käytetään tallennettua heroId:tä renderöinnissä
+function renderAdminPlayerList() {
     const list = document.getElementById('adminPlayerList');
     if(!list) return; list.innerHTML = "";
-    
-    const conf = config || {useCooldowns: true};
-    
     allPlayers.forEach((p, i) => {
-        if(!p) return;
         const div = document.createElement('div');
         div.className = 'player-row'; div.style.padding = '8px';
         
@@ -1429,32 +1509,17 @@ function renderAdminPlayerList(config) {
         const heroColor = isHero ? '#000' : 'inherit';
         const heroBorder = isHero ? 'var(--hero-gold)' : 'rgba(255,255,255,0.2)';
 
-        const isSuspended = !!p.suspended;
-        const useCD = !!conf.useCooldowns;
-        const isJäähyllä = useCD && (p.cooldown > 0 || Object.keys(lastKnownTasks).some(id => (lastKnownTasks[id] && lastKnownTasks[id].bannedPlayers || []).includes(p.name)));
-        
-        const vapautaClass = isJäähyllä ? 'btn-gm' : 'btn-secondary';
-        const vapautaText = isJäähyllä ? 'VAPAUTA JÄÄHYSTÄ' : 'EI JÄÄHYÄ';
-        const pelikieltoClass = isSuspended ? 'btn-danger' : 'btn-secondary';
-        const pelikieltoText = isSuspended ? 'POISTA PELIKIELTO' : 'ANNA PELIKIELTO';
-        
-        let pNameStyle = isSuspended ? 'color: var(--danger);' : 'color: inherit;';
-        let pNameIcon = isSuspended ? ' 🛑' : '';
-
         div.innerHTML = `
             <div style="width:100%">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
-                    <span style="font-size:0.85rem; font-weight:bold; ${pNameStyle}">${p.name} (${p.score}) ${pNameIcon}</span>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-size:0.8rem; font-weight:bold;">${p.name} (${p.score})</span>
                     <div style="display:flex; gap:4px;">
                         <button class="btn" style="width:32px; padding:5px; margin:0; background:${heroBg}; color:${heroColor}; border:1px solid ${heroBorder};" onclick="setBdayHero(${i})">🎂</button>
+                        <button class="btn ${p.cooldown > 0 ? 'btn-success' : 'btn-secondary'}" style="width:auto; font-size:0.5rem; padding:5px; margin:0;" onclick="adminToggleCooldown(${i})">${p.cooldown > 0 ? 'VAP' : 'J'}</button>
                         <button class="btn btn-secondary" style="width:28px; padding:5px; margin:0;" onclick="adjustScore(${i}, 1)">+</button>
                         <button class="btn btn-secondary" style="width:28px; padding:5px; margin:0;" onclick="adjustScore(${i}, -1)">-</button>
                         <button class="btn btn-danger" style="width:28px; padding:5px; margin:0;" onclick="removePlayer(${i})">X</button>
                     </div>
-                </div>
-                <div style="display:flex; gap:5px;">
-                    <button class="btn ${vapautaClass}" style="flex:1; font-size:0.55rem; padding:6px; margin:0; ${!isJäähyllä ? 'opacity:0.5;' : ''}" onclick="adminReleaseCooldown('${p.name}', ${i})" ${!isJäähyllä ? 'disabled' : ''}>${vapautaText}</button>
-                    <button class="btn ${pelikieltoClass}" style="flex:1; font-size:0.55rem; padding:6px; margin:0;" onclick="adminToggleSuspension(${i})">${pelikieltoText}</button>
                 </div>
             </div>`;
         list.appendChild(div);
@@ -1465,7 +1530,6 @@ function renderTaskLibrary() {
     const lib = document.getElementById('taskLibraryEditor');
     if(!lib) return; lib.innerHTML = '';
     taskLibrary.forEach((t, i) => {
-        if(!t) return;
         const div = document.createElement('div');
         div.className = 'admin-settings-list'; 
         div.style.marginBottom = "10px";
@@ -1505,165 +1569,12 @@ function renderTaskLibrary() {
 function updateManualTaskSelect() {
     const sel = document.getElementById('manualTaskSelect');
     if (!sel) return; sel.innerHTML = '<option value="">VALITSE TEHTÄVÄ...</option>';
-    taskLibrary.forEach((t, i) => { 
-        if(t) sel.innerHTML += `<option value="${i}">${t.n}</option>`; 
-    });
+    taskLibrary.forEach((t, i) => { sel.innerHTML += `<option value="${i}">${t.n}</option>`; });
 }
 
-function updateIdentityUI() { 
-    const idCard = document.getElementById('identityCard');
-    const idTag = document.getElementById('idTag');
-    if(idCard) idCard.style.display = myName ? 'none' : 'block'; 
-    if(idTag) idTag.innerText = myName ? "PROFIILI: " + myName : "KIRJAUDU SISÄÄN"; 
-}
+function updateIdentityUI() { document.getElementById('identityCard').style.display = myName ? 'none' : 'block'; document.getElementById('idTag').innerText = myName ? "PROFIILI: " + myName : "KIRJAUDU SISÄÄN"; }
 
 function toggleAdminPanel() { 
-    const p = document.getElementById('adminPanel'); 
-    if(!p) return;
-    const isOpening = p.style.display === 'none'; 
-    p.style.display = isOpening ? 'block' : 'none'; 
-    if(isOpening) { 
-        db.ref('gameState/config').once('value', s => {
-            renderAdminPlayerList(s.val() || {}); 
-            renderTaskLibrary();
-        });
-    }
-}
-
-function confirmRandomize() {
-    db.ref('gameState').once('value', snap => {
-        try {
-            const d = snap.val();
-            if(!d) return;
-            const config = d.config || {};
-            const heroDraw = config.heroDraw || { include: true, weighted: false, interval: 4, drawCount: 0 };
-            const used = d.usedTaskIds || [];
-
-            let bannedFromThisTask = [];
-            
-            if (config.useCooldowns) {
-                const playersClean = (d.players || []).filter(p => p !== null);
-                const updatedPlayers = playersClean.map(p => {
-                    let cd = p.cooldown === true ? 1 : (p.cooldown || 0); 
-                    if (cd > 0) bannedFromThisTask.push(p.name);
-                    if (cd > 0) cd--; 
-                    return { ...p, cooldown: cd }; 
-                });
-                db.ref('gameState/players').set(updatedPlayers);
-            }
-
-            let newDrawCount = heroDraw.drawCount || 0;
-            let isForcedHero = false;
-
-            if (heroDraw.weighted) {
-                newDrawCount++;
-                if (newDrawCount >= (heroDraw.interval || 4)) {
-                    isForcedHero = true;
-                    newDrawCount = 0; 
-                }
-            }
-
-            let pool = [];
-            const normalTasks = taskLibrary.filter(t => t && !t.isHero && !used.includes(t.id));
-            const heroTasks = taskLibrary.filter(t => t && t.isHero && !used.includes(t.id));
-            
-            let finalNormal = normalTasks.length > 0 ? normalTasks : taskLibrary.filter(t => t && !t.isHero);
-            let finalHero = heroTasks.length > 0 ? heroTasks : taskLibrary.filter(t => t && t.isHero);
-
-            if (isForcedHero && finalHero.length > 0) {
-                pool = finalHero;
-            } else if (heroDraw.include && !heroDraw.weighted) {
-                pool = finalNormal.concat(finalHero); 
-            } else {
-                pool = finalNormal; 
-            }
-
-            if(!pool || pool.length === 0) {
-                alert("Ei arvottavia tehtäviä jäljellä! Ota 'Poista käytetyt pakasta' pois päältä tai nollaa peli.");
-                return; 
-            }
-
-            const t = { ...pool[Math.floor(Math.random() * pool.length)] };
-            if (config.forceSinglePlayer) t.r = 1;
-
-            const instanceId = "t_" + Date.now();
-            
-            let updates = {};
-            updates[`gameState/activeTasks/${instanceId}`] = { 
-                ...t, 
-                locked: t.isHero ? true : false, 
-                participants: [], 
-                drawn: false,
-                bannedPlayers: bannedFromThisTask 
-            };
-            if (heroDraw.weighted) updates[`gameState/config/heroDraw/drawCount`] = newDrawCount;
-
-            db.ref().update(updates).then(() => {
-                const adminName = myName || 'Tuntematon';
-                logEvent(`Admin (${adminName}) arpoi uuden tehtävän: ${t.n}`);
-            });
-        } catch(e) { console.error(e); }
-    });
-}
-
-function selectManualTask(idx) {
-    if (idx === "") return;
-    db.ref('gameState').once('value', snap => {
-        try {
-            const d = snap.val();
-            if(!d) return;
-            
-            let bannedFromThisTask = [];
-            if (d.config?.useCooldowns) {
-                const playersClean = (d.players || []).filter(p => p !== null);
-                const updatedPlayers = playersClean.map(p => {
-                    let cd = p.cooldown === true ? 1 : (p.cooldown || 0); 
-                    if (cd > 0) bannedFromThisTask.push(p.name);
-                    if (cd > 0) cd--; 
-                    return { ...p, cooldown: cd }; 
-                });
-                db.ref('gameState/players').set(updatedPlayers);
-            }
-            
-            const t = { ...taskLibrary[idx] };
-            if (d.config?.forceSinglePlayer) t.r = 1;
-
-            const instanceId = "t_" + Date.now();
-            db.ref(`gameState/activeTasks/${instanceId}`).set({ 
-                ...t, 
-                locked: t.isHero ? true : false, 
-                participants: [], 
-                drawn: false,
-                bannedPlayers: bannedFromThisTask 
-            });
-            const adminName = myName || 'Tuntematon';
-            logEvent(`Admin (${adminName}) valitsi manuaalisen tehtävän: ${t.n}`);
-            document.getElementById('manualTaskSelect').value = ""; 
-        } catch(e) { console.error(e); }
-    });
-}
-
-function adminCreateTask() {
-    const n = document.getElementById('newTaskName').value;
-    const d = document.getElementById('newTaskDesc').value;
-    const p = parseInt(document.getElementById('newTaskPoints').value) || 0;
-    const m = document.getElementById('newTaskMinus').checked;
-    const b = document.getElementById('newTaskBday').checked;
-    const hero = document.getElementById('newTaskIsHero').checked; 
-    const r = parseInt(document.getElementById('newTaskRecommendedPlayers').value) || 1;
-    const k = document.getElementById('newTaskCategory').value;
-    
-    if(!n || !d) return;
-    const newTask = { id: Date.now(), n, d, p, m, b, r, isHero: hero, k: k };
-    db.ref('gameState/tasks').transaction(list => { 
-        list = list || []; 
-        list.push(newTask); 
-        return list; 
-    }).then(() => {
-        document.getElementById('newTaskName').value = ''; 
-        document.getElementById('newTaskDesc').value = '';
-        document.getElementById('newTaskIsHero').checked = false;
-        const adminName = myName || 'Tuntematon';
-        logEvent(`Admin (${adminName}) loi uuden tehtävän kirjastoon: ${n}`);
-    });
+    const p = document.getElementById('adminPanel'); const isOpening = p.style.display === 'none'; p.style.display = isOpening ? 'block' : 'none'; 
+    if(isOpening) { renderAdminPlayerList(); renderTaskLibrary(); }
 }
