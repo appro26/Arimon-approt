@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="icon.png">
 
-    <link rel="stylesheet" href="style.css?v=22">
+    <link rel="stylesheet" href="style.css?v=23">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
 
@@ -79,7 +79,7 @@
                 
                 <h2 style="color: var(--accent);">Pelaajien hallinta</h2>
                 <p style="font-size:0.6rem; color:var(--gm-accent); margin-bottom:10px; font-weight:700;">
-                    🎂 = SYNTTÄRISANKARI | J = JÄÄHYLLÄ
+                    🎂 = SYNTTÄRISANKARI | J = JÄÄHY | ⛔ = PELIKIELTO
                 </p>
                 <div id="adminPlayerList"></div>
                 <div class="admin-row-stack" style="margin-top:15px; margin-bottom:15px;">
@@ -219,6 +219,9 @@
 
                 <h2 style="margin-top:20px;">Tapahtumaloki</h2>
                 <div id="adminEventLog" style="max-height:200px; overflow-y:auto; font-size:0.6rem; background:#000; padding:10px; border-radius:5px; border:1px solid #222; font-family:monospace;"></div>
+
+                <h2 style="margin-top:20px;">Pisteloki</h2>
+                <div id="adminScoreLog" style="max-height:200px; overflow-y:auto; font-size:0.6rem; background:#000; padding:10px; border-radius:5px; border:1px solid #222; font-family:monospace;"></div>
 
                 <hr style="border: 0; border-top: 1px solid #333; margin: 30px 0;">
                 <button class="btn btn-danger" style="width:100%;" onclick="window.resetGame()">NOLLAA KOKO PELI (DATABASE RESET)</button>
