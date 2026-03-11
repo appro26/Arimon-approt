@@ -201,7 +201,6 @@ body {
     margin-top: 15px; margin-bottom: 20px;
 }
 
-/* KORJAUS 1: Selkeämmät erilliset WIN/FAIL napit */
 .score-btn-default { background: rgba(255, 255, 255, 0.05) !important; border: 1px dashed rgba(255,255,255,0.3) !important; color: #8899ac !important; box-shadow: none !important;}
 .score-btn-win { background: var(--success) !important; border: 2px solid #ffffff !important; color: #ffffff !important; box-shadow: 0 0 15px var(--success) !important;}
 .score-btn-fail { background: var(--danger) !important; border: 2px solid #ffffff !important; color: #ffffff !important; box-shadow: 0 0 15px var(--danger) !important;}
@@ -244,7 +243,6 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
 .btn.on-cooldown { border: 1px solid var(--danger) !important; color: var(--danger) !important; background: rgba(204, 59, 59, 0.1) !important; }
 .btn.selected-participant { background: var(--accent) !important; color: #ffffff !important; border: 1px solid rgba(255,255,255,0.4) !important; }
 
-/* KORJAUS 2: Myöhästynyt ilmoittautuja näkyy GM-ruudussa sinisenä (reunus) */
 .btn.late-volunteer { border: 2px solid var(--accent) !important; color: var(--accent) !important; background: rgba(37, 138, 163, 0.1) !important; }
 
 #adminPlayerList .btn { transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1); }
@@ -253,15 +251,14 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
 /* ==========================================
    6. ANIMAATIOT JA VOITTAJA-ILMOITUS
    ========================================== */
-.roulette-focus { background: #a36114 !important; color: #ffffff !important; transform: scale(1.08) !important; box-shadow: 0 0 20px #a36114; z-index: 10; }
+.roulette-focus { position: relative; background: #a36114 !important; color: #ffffff !important; transform: scale(1.08) !important; box-shadow: 0 0 25px #a36114 !important; z-index: 100; border: 1px solid rgba(255,255,255,0.5) !important; }
 
-/* KORJAUS 5: Estetään XP-tekstin katkeaminen pienillä näytöillä */
 .xp-popup {
     position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
     font-weight: 900; 
-    font-size: clamp(3.5rem, 15vw, 6.5rem) !important; /* Skaalautuu ruudun mukaan */
-    white-space: nowrap !important; /* Pakottaa yhdelle riville */
-    width: 100vw !important; /* Varmistaa oikean keskityksen */
+    font-size: clamp(3.5rem, 15vw, 6.5rem) !important; 
+    white-space: nowrap !important; 
+    width: 100vw !important; 
     z-index: 5000; pointer-events: none; display: none;
     text-align: center; letter-spacing: 2px;
     font-family: Impact, 'Arial Black', sans-serif !important;
@@ -349,7 +346,7 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
 .history-item { background: rgba(255,255,255,0.05); padding: 10px 15px; border-radius: 8px; border-left: 3px solid var(--accent); display: flex; justify-content: space-between; align-items: center; animation: slideIn 0.3s ease-out; }
 .history-item .task-name { font-weight: 700; font-size: 0.9rem; color: var(--text); }
 .history-item .task-time { font-size: 0.65rem; color: var(--muted); }
-#adminEventLog { background: rgba(0,0,0,0.5); border-radius: 8px; padding: 10px; font-family: 'Courier New', monospace; font-size: 0.7rem; max-height: 150px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1); }
+#adminEventLog, #adminScoreLog { background: rgba(0,0,0,0.5); border-radius: 8px; padding: 10px; font-family: 'Courier New', monospace; font-size: 0.7rem; max-height: 150px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1); }
 .log-entry { padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.05); line-height: 1.4; }
 .log-entry .time { color: var(--muted); margin-right: 8px; }
 #historyCard { min-height: auto; }
@@ -379,4 +376,4 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
 .compact-inner-text { margin-top: 4px; margin-bottom: 6px; }
 
 .compact-view-card .volunteer-selector-grid { display: none !important; }
-.compact-view-card .scoring-box { display: none !important; } 
+.compact-view-card .scoring-box { display: none !important; }
