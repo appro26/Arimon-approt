@@ -117,7 +117,7 @@ const defaultTasks = [
     { id: 99, n: "Bug Bounty (Sankari)", d: "Sankarin on etsittävä muiden pelaajien vaatetuksesta yksi 'bugi' ja kerrottava, miten se korjataan (esim. vino kaulus).", p: 1, m: 0, b: true, r: 1, isHero: true, k: 'pokka' },
     { id: 100, n: "Air Drop Defense (Sankari)", d: "Sankarin on suojeltava omaa juomaansa niin, ettei kukaan saa koskea siihen 5 minuuttiin.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'juoma' },
     { id: 101, n: "Mando-kierto (Sankari)", d: "Sankarin on noustava ylös ja kierrettävä koko seurue ympäri tehden samalla frisbeegolf-lähipeliä matkivia liikkeitä.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'liikunta' },
-    { id: 102, n: "System Overload (Sankari)", d: "Sankarin on lueteltava 10 IT-termiä, 10 frisbeegolf-termiä tai 10 PUBG-termiä 30 sekunnissa.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'pokka' }
+    { id: 102, n: "System Overload (Sankari)", d: "Sankarin on lueteltava 10 IT-termiä, 10 frisbeegolf-termiä tai 10 PUBG-termiä 30 sekunnissa.", p: 1, m: 1, b: true, r: 1, isHero: true, k: 'pokka' },
     { id: 132, n: "Ajoneuvo-spawn", d: "Siirry seuraavaan kohteeseen muulla tavalla kuin omin jaloin (esim. jonkun reppuselässä tai kottikärryissä).", p: 3, m: true, b: false, r: 2, k: 'liikunta' },
     { id: 133, n: "Access Denied", d: "Etsi ulkoa STOP-merkki ja ilmoita jollekin satunnaiselle ohikulkijalle vakavalla naamalla, että heidän tulee pysähtyä merkin kohdalla.", p: 3, m: true, b: false, r: 1, k: 'pokka' },
     { id: 134, n: "Äänikortin ajurivirhe", d: "Tilaa seuraava juomasi tiskiltä teeskentelemällä vakavaa ässä- ja ärrävikaa. Pokka ei saa pettää!", p: 3, m: true, b: false, r: 1, k: 'pokka' },
