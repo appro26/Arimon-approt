@@ -839,57 +839,61 @@ function claimIdentity() {
 
 function volunteer(taskId) {
     if(!myName) return;
-    db.ref('gameState').once('value', snap => {
-        const data = snap.val();
-        
-        if (data.config?.useCooldowns && data.activeTasks[taskId].bannedPlayers && data.activeTasks[taskId].bannedPlayers.includes(myName)) {
-            alert("Olet jäähyllä tästä tehtävästä!"); return;
-        }
-        
-        if (data.config?.strictVolunteer) {
-            let inOther = Object.keys(data.activeTasks).some(id => {
-                if (id === taskId) return false;
-                const t = data.activeTasks[id];
-                const inPart = !t.locked && (t.participants || []).some(r => r.name === myName);
-                const inLate = !t.locked && (t.lateVolunteers || []).includes(myName);
-                return inPart || inLate;
-            });
-            if (inOther) {
-                alert("Jäähy: Olet jo ilmoittautunut toiseen avoimeen tehtävään!"); return;
-            }
-        }
+    
+    // 1. Lokaalit tarkistukset ilman hidasta verkkokutsua (.once)
+    // lastKnownTasks on jo reaaliaikaisesti synkassa, joten käytetään sitä
+    const localTask = lastKnownTasks[taskId];
+    if (!localTask || localTask.locked) return;
+    
+    // Luetaan asetukset suoraan DOM:sta (koska nekin on synkassa pelitilan kanssa)
+    const strictVol = document.getElementById('strictVolunteer')?.checked;
+    const useCd = document.getElementById('useCooldowns')?.checked;
 
-        if(data.activeTasks[taskId].locked) return;
-        
-        const taskName = data.activeTasks[taskId].n;
-
-        // KORJAUS 2: Myöhäiset ilmoittautujat menevät omalle listalleen
-        db.ref(`gameState/activeTasks/${taskId}`).transaction(t => {
-            if (!t || t.locked) return t;
-            
-            t.participants = t.participants || [];
-            t.lateVolunteers = t.lateVolunteers || [];
-            
-            if (t.drawn) {
-                let inParts = t.participants.findIndex(r => r.name === myName);
-                if (inParts > -1) {
-                    t.participants.splice(inParts, 1); // Peru osallistuminen
-                } else {
-                    let lIdx = t.lateVolunteers.indexOf(myName);
-                    if (lIdx > -1) t.lateVolunteers.splice(lIdx, 1); // Peru myöhäinen
-                    else t.lateVolunteers.push(myName); // Lisää myöhäiseksi
-                }
-            } else {
-                let pIdx = t.participants.findIndex(r => r.name === myName);
-                if (pIdx > -1) t.participants.splice(pIdx, 1);
-                else t.participants.push({name: myName, win: true, reviewed: false});
-            }
-            return t;
-        }).then((res) => {
-            if(res.committed) {
-                logEvent(`${myName} muutti osallistumistaan: ${taskName}`);
-            }
+    if (useCd && localTask.bannedPlayers && localTask.bannedPlayers.includes(myName)) {
+        alert("Olet jäähyllä tästä tehtävästä!"); return;
+    }
+    
+    if (strictVol) {
+        let inOther = Object.keys(lastKnownTasks).some(id => {
+            if (id === taskId) return false;
+            const t = lastKnownTasks[id];
+            const inPart = !t.locked && (t.participants || []).some(r => r.name === myName);
+            const inLate = !t.locked && (t.lateVolunteers || []).includes(myName);
+            return inPart || inLate;
         });
+        if (inOther) {
+            alert("Jäähy: Olet jo ilmoittautunut toiseen avoimeen tehtävään!"); return;
+        }
+    }
+
+    const taskName = localTask.n;
+
+    // 2. Varsinainen osallistuminen: nopea, atominen transaktio vain tälle yhdelle tehtävälle
+    db.ref(`gameState/activeTasks/${taskId}`).transaction(t => {
+        if (!t || t.locked) return t; // Tuplavarmistus tietokannan puolella
+        
+        t.participants = t.participants || [];
+        t.lateVolunteers = t.lateVolunteers || [];
+        
+        if (t.drawn) {
+            let inParts = t.participants.findIndex(r => r.name === myName);
+            if (inParts > -1) {
+                t.participants.splice(inParts, 1); // Peru osallistuminen
+            } else {
+                let lIdx = t.lateVolunteers.indexOf(myName);
+                if (lIdx > -1) t.lateVolunteers.splice(lIdx, 1); // Peru myöhäinen
+                else t.lateVolunteers.push(myName); // Lisää myöhäiseksi
+            }
+        } else {
+            let pIdx = t.participants.findIndex(r => r.name === myName);
+            if (pIdx > -1) t.participants.splice(pIdx, 1);
+            else t.participants.push({name: myName, win: true, reviewed: false});
+        }
+        return t;
+    }).then((res) => {
+        if(res.committed) {
+            logEvent(`${myName} muutti osallistumistaan: ${taskName}`);
+        }
     });
 }
 
