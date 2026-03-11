@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="icon.png">
 
-    <link rel="stylesheet" href="style.css?v=23">
+    <link rel="stylesheet" href="style.css?v=24">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
 
@@ -233,11 +233,56 @@
             <div id="playerList"></div>
         </div>
 
-        <div class="card" id="historyCard" style="margin-top: 20px; position: relative; z-index: 10;">
+        <div class="player-only" style="margin-top: 15px; margin-bottom: 20px; text-align: center; position: relative; z-index: 10;">
+            <button class="btn btn-secondary" onclick="document.getElementById('instructionModal').style.display='flex'" style="font-size: 0.75rem; padding: 14px; margin: 0 auto; width: auto; min-width: 220px; color: var(--muted); border-style: dashed;">📖 NÄIN PELAAT (OHJEET)</button>
+        </div>
+
+        <div class="card" id="historyCard" style="margin-top: 10px; position: relative; z-index: 10;">
             <h2 id="historyTitle">Aiemmat tehtävät</h2>
             <div id="taskHistoryList" style="font-size: 0.8rem; color: var(--muted);"></div>
         </div>
 
+    </div>
+
+    <div id="instructionModal" class="winner-overlay" style="display:none; z-index: 6000; align-items: center; padding: 15px;">
+        <div class="card" style="max-width: 400px; text-align: left; padding: 25px; margin: auto; position: relative; background: var(--surface-light); border: 2px solid var(--accent); max-height: 90vh; overflow-y: auto;">
+            <button onclick="document.getElementById('instructionModal').style.display='none'" style="position:absolute; top:10px; right:15px; background:none; border:none; color:var(--muted); font-size:1.8rem; cursor:pointer; padding:5px;">&times;</button>
+            <h2 style="color:var(--accent); margin-top:0; font-size:1.4rem; text-align:center; margin-bottom:25px;">🎮 PELIN KULKU</h2>
+            
+            <div style="display:flex; align-items:flex-start; margin-bottom:20px;">
+                <span style="font-size:2rem; margin-right:15px; line-height:1; min-width:35px; text-align:center;">1️⃣</span>
+                <div>
+                    <h3 style="margin:0 0 5px 0; font-size:1rem; color:#fff;">ILMOITTAUDU</h3>
+                    <p style="margin:0; font-size:0.85rem; color:var(--muted); line-height:1.4;">Lue uuden tehtävän kuvaus. Jos haluat mukaan, paina <b>"HALUAN ILMOITTAUTUA"</b> -nappia ennen kuin GM aloittaa arvonnan.</p>
+                </div>
+            </div>
+            
+            <div style="display:flex; align-items:flex-start; margin-bottom:20px;">
+                <span style="font-size:2rem; margin-right:15px; line-height:1; min-width:35px; text-align:center;">2️⃣</span>
+                <div>
+                    <h3 style="margin:0 0 5px 0; font-size:1rem; color:#fff;">ODOTA ARVONTAA</h3>
+                    <p style="margin:0; font-size:0.85rem; color:var(--muted); line-height:1.4;">Game Master arpoo halukkaista suorittajat. Jos ruudulle välähtää iso <b>🎉 SINUT VALITTIIN</b> -ilmoitus, olet mukana!</p>
+                </div>
+            </div>
+
+            <div style="display:flex; align-items:flex-start; margin-bottom:20px;">
+                <span style="font-size:2rem; margin-right:15px; line-height:1; min-width:35px; text-align:center;">3️⃣</span>
+                <div>
+                    <h3 style="margin:0 0 5px 0; font-size:1rem; color:#fff;">SUORITA</h3>
+                    <p style="margin:0; font-size:0.85rem; color:var(--muted); line-height:1.4;">Tee tehtävä ohjeiden mukaan! Kysy tarvittaessa neuvoa Game Masterilta, sillä hän on tuomari.</p>
+                </div>
+            </div>
+
+            <div style="display:flex; align-items:flex-start;">
+                <span style="font-size:2rem; margin-right:15px; line-height:1; min-width:35px; text-align:center;">4️⃣</span>
+                <div>
+                    <h3 style="margin:0 0 5px 0; font-size:1rem; color:#fff;">KERÄÄ XP-PISTEITÄ</h3>
+                    <p style="margin:0; font-size:0.85rem; color:var(--muted); line-height:1.4;">Onnistumisesta saat <b>XP:tä</b>. Jos mokaat tai jänistät, saatat menettää pisteitä. Eniten XP:tä illan aikana kerännyt voittaa!</p>
+                </div>
+            </div>
+            
+            <button class="btn btn-primary" onclick="document.getElementById('instructionModal').style.display='none'" style="margin-top:30px; width:100%;">SELVÄ JUTTU!</button>
+        </div>
     </div>
 
     <div id="xpPopUp" class="xp-popup"></div>
