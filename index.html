@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="icon.png">
 
-    <link rel="stylesheet" href="style.css?v=26">
+    <link rel="stylesheet" href="style.css?v=27">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
 
@@ -245,64 +245,64 @@
     </div>
 
     <div id="instructionModal" class="winner-overlay" style="display:none; z-index: 6000; align-items: center; padding: 15px;">
-        <div class="card" style="max-width: 400px; text-align: left; padding: 25px; margin: auto; position: relative; background: var(--surface-light); border: 2px solid var(--accent); max-height: 90vh; overflow-y: auto;">
-            <button onclick="document.getElementById('instructionModal').style.display='none'" style="position:absolute; top:10px; right:15px; background:none; border:none; color:var(--muted); font-size:1.8rem; cursor:pointer; padding:5px;">&times;</button>
-            <h2 style="color:var(--accent); margin-top:0; font-size:1.4rem; text-align:center; margin-bottom:25px;">🎮 PELIN KULKU</h2>
+        <div class="card" style="max-width: 450px; text-align: left; padding: 25px; margin: auto; position: relative; background: var(--surface-light); border: 2px solid var(--accent); max-height: 90vh; overflow-y: auto;">
+            <button onclick="document.getElementById('instructionModal').style.display='none'" style="position:absolute; top:10px; right:15px; background:none; border:none; color:var(--muted); font-size:2rem; cursor:pointer; padding:5px;">&times;</button>
+            <h2 style="color:var(--accent); margin-top:0; font-size:1.6rem; text-align:center; margin-bottom:25px;">🎮 PELIN KULKU</h2>
             
             <div style="display:flex; align-items:flex-start; margin-bottom:20px;">
-                <span style="font-size:2rem; margin-right:15px; line-height:1; min-width:35px; text-align:center;">1️⃣</span>
+                <span style="font-size:2.2rem; margin-right:15px; line-height:1; min-width:40px; text-align:center;">1️⃣</span>
                 <div>
-                    <h3 style="margin:0 0 5px 0; font-size:1rem; color:#fff;">ILMOITTAUDU</h3>
-                    <p style="margin:0; font-size:0.85rem; color:var(--muted); line-height:1.4;">Lue uuden tehtävän kuvaus. Jos haluat mukaan, paina <b>"HALUAN ILMOITTAUTUA"</b> -nappia ennen kuin GM aloittaa arvonnan.</p>
+                    <h3 style="margin:0 0 5px 0; font-size:1.15rem; color:#fff;">ILMOITTAUDU</h3>
+                    <p style="margin:0; font-size:1rem; color:var(--muted); line-height:1.5;">Lue uuden tehtävän kuvaus. Jos haluat mukaan, paina <b>"HALUAN ILMOITTAUTUA"</b> -nappia ennen kuin GM aloittaa arvonnan.</p>
                 </div>
             </div>
             
             <div style="display:flex; align-items:flex-start; margin-bottom:20px;">
-                <span style="font-size:2rem; margin-right:15px; line-height:1; min-width:35px; text-align:center;">2️⃣</span>
+                <span style="font-size:2.2rem; margin-right:15px; line-height:1; min-width:40px; text-align:center;">2️⃣</span>
                 <div>
-                    <h3 style="margin:0 0 5px 0; font-size:1rem; color:#fff;">ODOTA ARVONTAA</h3>
-                    <p style="margin:0; font-size:0.85rem; color:var(--muted); line-height:1.4;">Game Master arpoo halukkaista suorittajat. Jos ruudulle välähtää iso <b>🎉 SINUT VALITTIIN</b> -ilmoitus, olet mukana!</p>
+                    <h3 style="margin:0 0 5px 0; font-size:1.15rem; color:#fff;">ODOTA ARVONTAA</h3>
+                    <p style="margin:0; font-size:1rem; color:var(--muted); line-height:1.5;">Game Master arpoo halukkaista suorittajat. Jos ruudulle välähtää iso <b>🎉 SINUT VALITTIIN</b> -ilmoitus, olet mukana!</p>
                 </div>
             </div>
 
             <div style="display:flex; align-items:flex-start; margin-bottom:20px;">
-                <span style="font-size:2rem; margin-right:15px; line-height:1; min-width:35px; text-align:center;">3️⃣</span>
+                <span style="font-size:2.2rem; margin-right:15px; line-height:1; min-width:40px; text-align:center;">3️⃣</span>
                 <div>
-                    <h3 style="margin:0 0 5px 0; font-size:1rem; color:#fff;">SUORITA</h3>
-                    <p style="margin:0; font-size:0.85rem; color:var(--muted); line-height:1.4;">Tee tehtävä ohjeiden mukaan! Kysy tarvittaessa neuvoa Game Masterilta, sillä hän on tuomari.</p>
+                    <h3 style="margin:0 0 5px 0; font-size:1.15rem; color:#fff;">SUORITA</h3>
+                    <p style="margin:0; font-size:1rem; color:var(--muted); line-height:1.5;">Tee tehtävä ohjeiden mukaan! Kysy tarvittaessa neuvoa Game Masterilta, sillä hän on tuomari.</p>
                 </div>
             </div>
 
             <div style="display:flex; align-items:flex-start; margin-bottom:20px;">
-                <span style="font-size:2rem; margin-right:15px; line-height:1; min-width:35px; text-align:center;">4️⃣</span>
+                <span style="font-size:2.2rem; margin-right:15px; line-height:1; min-width:40px; text-align:center;">4️⃣</span>
                 <div>
-                    <h3 style="margin:0 0 5px 0; font-size:1rem; color:#fff;">KERÄÄ XP-PISTEITÄ</h3>
-                    <p style="margin:0; font-size:0.85rem; color:var(--muted); line-height:1.4;">Onnistumisesta saat <b>XP:tä</b>. Eniten XP:tä illan aikana kerännyt voittaa!</p>
+                    <h3 style="margin:0 0 5px 0; font-size:1.15rem; color:#fff;">KERÄÄ XP-PISTEITÄ</h3>
+                    <p style="margin:0; font-size:1rem; color:var(--muted); line-height:1.5;">Onnistumisesta saat <b>XP:tä</b>. Eniten XP:tä illan aikana kerännyt voittaa!</p>
                 </div>
             </div>
 
-            <div style="margin-top: 10px; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-                <h3 style="margin:0 0 10px 0; font-size:0.85rem; color:var(--accent); text-transform: uppercase;">💡 KORTTIEN TIEDOT & SÄÄNNÖT</h3>
-                <div style="font-size:0.8rem; color:var(--muted); line-height:1.5;">
-                    <div style="margin-bottom:8px;">
+            <div style="margin-top: 15px; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                <h3 style="margin:0 0 10px 0; font-size:1rem; color:var(--accent); text-transform: uppercase;">💡 KORTTIEN TIEDOT & SÄÄNNÖT</h3>
+                <div style="font-size:0.95rem; color:var(--muted); line-height:1.5;">
+                    <div style="margin-bottom:10px;">
                         <b style="color:#fff;">XP-Pisteet:</b> Kertoo paljonko onnistumisesta saa pisteitä. Auttaa arvioimaan, kannattaako riski ottaa!
                     </div>
-                    <div style="margin-bottom:8px;">
+                    <div style="margin-bottom:10px;">
                         <b style="color:#fff;">Kategoriat:</b> Kertovat, millaiseen koitokseen olet ilmoittautumassa:
-                        <div style="margin-top:4px; padding-left:8px; border-left: 2px solid var(--accent); margin-bottom: 4px;">
-                            <div style="margin-bottom:2px;">🗣️ <b>Pokka:</b> Sosiaalista uskallusta ja heittäytymistä.</div>
-                            <div style="margin-bottom:2px;">🏃 <b>Toiminta:</b> Liikuntaa ja fyysisiä haasteita.</div>
-                            <div style="margin-bottom:2px;">🍻 <b>Juoma:</b> Juomien tilaamista, maistelua tai tarjoamista.</div>
+                        <div style="margin-top:6px; padding-left:10px; border-left: 2px solid var(--accent); margin-bottom: 6px;">
+                            <div style="margin-bottom:4px;">🗣️ <b>Pokka:</b> Sosiaalista uskallusta ja heittäytymistä.</div>
+                            <div style="margin-bottom:4px;">🏃 <b>Toiminta:</b> Liikuntaa ja fyysisiä haasteita.</div>
+                            <div style="margin-bottom:4px;">🍻 <b>Juoma:</b> Juomien tilaamista, maistelua tai tarjoamista.</div>
                             <div>⚔️ <b>Kilpailu:</b> Kisa toista pelaajaa vastaan. Vain voittaja palkitaan!</div>
                         </div>
                     </div>
-                    <div style="margin-bottom:8px;"><b style="color:#fff;">👥 Max suorittajaa:</b> Kertoo montako pelaajaa ilmoittautuneista arvotaan kyseiseen tehtävään.</div>
-                    <div style="margin-bottom:8px;"><b style="color:var(--danger);">⚠️ Miinus-uhka:</b> Jos otat tehtävän vastaan mutta epäonnistut tai jänistät, menetät pisteitä.</div>
+                    <div style="margin-bottom:10px;"><b style="color:#fff;">👥 Max suorittajaa:</b> Kertoo montako pelaajaa ilmoittautuneista arvotaan kyseiseen tehtävään.</div>
+                    <div style="margin-bottom:10px;"><b style="color:var(--danger);">⚠️ Miinus-uhka:</b> Jos otat tehtävän vastaan mutta epäonnistut tai jänistät, menetät pisteitä.</div>
                     <div><b style="color:#fff;">Jäähy (J):</b> Arvonnan voittaneet joutuvat yleensä lepovuoroon yhden kierroksen ajaksi, jotta kaikki pääsevät osallistumaan vuorollaan.</div>
                 </div>
             </div>
             
-            <button class="btn btn-primary" onclick="document.getElementById('instructionModal').style.display='none'" style="margin-top:20px; width:100%;">SELVÄ JUTTU!</button>
+            <button class="btn btn-primary" onclick="document.getElementById('instructionModal').style.display='none'" style="margin-top:20px; width:100%; font-size: 1rem; padding: 20px;">SELVÄ JUTTU!</button>
         </div>
     </div>
 
