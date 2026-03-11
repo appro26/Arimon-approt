@@ -60,6 +60,9 @@ let lastKnownTasks = {};
 let taskHistory = [];
 let wasInGame = false; 
 
+// KORJAUS 3: Pidetään sankarin ID muistissa
+let currentHeroId = null;
+
 let isPlayerCompactMode = false;
 let isGMCompactMode = false;
 window.localTaskCompactState = {}; 
@@ -269,7 +272,7 @@ window.resetGame = function() {
                 useCooldowns: true, strictVolunteer: false, excludeUsedTasks: true, bdayHero: null,
                 visibility: { title: true, points: true, category: true, drawCount: false, desc: false, minus: true, bday: true },
                 heroDraw: { include: true, weighted: false, interval: 4, drawCount: 0 },
-                disableHeroBonus: false, forceSinglePlayer: false, alwaysMinusOne: true // UUSI KYTKIN (Oletuksena päällä!)
+                disableHeroBonus: false, forceSinglePlayer: false, alwaysMinusOne: true 
             }
         }).then(() => { localStorage.clear(); location.reload(); });
     }
@@ -283,6 +286,10 @@ db.ref('gameState').on('value', (snap) => {
     if (!currentResetId) { currentResetId = data.resetId; localStorage.setItem('appro_reset_id', data.resetId); }
 
     allPlayers = data.players || [];
+    const config = data.config || {};
+    
+    // KORJAUS 3: Säilytetään heroId globaalina
+    currentHeroId = config.bdayHero !== undefined ? config.bdayHero : null;
     
     const me = allPlayers.find(p => p.name === myName);
     if (myName) {
@@ -313,14 +320,12 @@ db.ref('gameState').on('value', (snap) => {
     });
 
     taskHistory = Object.values(data.history || {}).reverse().slice(0, 10);
-    const config = data.config || {};
-    const heroId = config.bdayHero;
     const vis = config.visibility || { title: true, points: true, category: true, drawCount: false, desc: false, minus: true, bday: true };
     const heroDrawConfig = config.heroDraw || { include: true, weighted: false, interval: 4, drawCount: 0 };
     const totalCompleted = (data.usedTaskIds || []).length;
 
     updateIdentityUI();
-    renderLeaderboard(config.useCooldowns, heroId);
+    renderLeaderboard(config.useCooldowns, currentHeroId);
     updateManualTaskSelect();
     
     const historyTitle = document.getElementById('historyTitle');
@@ -346,15 +351,13 @@ db.ref('gameState').on('value', (snap) => {
 
         if(document.getElementById('disableHeroBonus')) document.getElementById('disableHeroBonus').checked = !!config.disableHeroBonus;
         if(document.getElementById('forceSinglePlayer')) document.getElementById('forceSinglePlayer').checked = !!config.forceSinglePlayer;
-        
-        // PÄIVITETÄÄN UUDEN KYTKIMEN UI (Jos puuttuu db:stä, oletetaan true)
         if(document.getElementById('alwaysMinusOne')) document.getElementById('alwaysMinusOne').checked = config.alwaysMinusOne !== false;
     }
 
     if(document.getElementById('adminPanel').style.display === 'block') {
         const activeTag = document.activeElement ? document.activeElement.tagName : '';
         if (activeTag !== 'INPUT' && activeTag !== 'TEXTAREA' && activeTag !== 'SELECT') {
-            renderAdminPlayerList(heroId);
+            renderAdminPlayerList();
             renderTaskLibrary();
         }
         renderEventLog(data.eventLog);
@@ -565,6 +568,7 @@ function renderActiveTasks(tasksObj, config) {
         } else {
             if (isHeroTask) { statusHtml += `<div class="task-status-tag" style="background: var(--hero-gold); color: black; font-weight: 900;">✨ SANKARITEHTÄVÄ ✨</div>`; } 
             else if (isLocked) { statusHtml += `<div class="task-status-tag ${isMePart ? '' : 'muted'}">${isMePart ? '🎉 SINUN TEHTÄVÄSI' : '👀 SEURAA MUIDEN SUORITUSTA'}</div>`; } 
+            else if (taskData.drawn) { statusHtml += `<div class="task-status-tag" style="background: var(--gm-accent); color: #fff;">⌛ ARVONTA SUORITETTU</div>`; } // KORJAUS 2
             else { statusHtml += `<h2>VAIHE: ILMOITTAUTUMINEN</h2>`; }
         }
 
@@ -606,11 +610,11 @@ function renderActiveTasks(tasksObj, config) {
                     compactNamesHtml = `<div class="compact-inner-text" style="color:var(--muted);">Ei suorittajia.</div>`;
                 }
             } else {
-                if (results.length > 0) {
-                    let names = results.map(r => r.name).join(', ');
+                let allVols = [...results.map(r => r.name), ...(taskData.lateVolunteers || [])];
+                if (allVols.length > 0) {
                     let label = taskData.drawn ? "ARVOTTU:" : "ILMOITTAUTUNEET:";
                     let color = taskData.drawn ? "var(--success)" : "var(--accent)";
-                    compactNamesHtml = `<div class="compact-inner-text"><span style="color:${color}; font-weight:bold;">${label}</span> <span style="color:#fff;">${names}</span></div>`;
+                    compactNamesHtml = `<div class="compact-inner-text"><span style="color:${color}; font-weight:bold;">${label}</span> <span style="color:#fff;">${allVols.join(', ')}</span></div>`;
                 } else {
                     compactNamesHtml = `<div class="compact-inner-text" style="color:var(--muted);">Ei ilmoittautuneita vielä.</div>`;
                 }
@@ -644,13 +648,17 @@ function renderActiveTasks(tasksObj, config) {
         let actionHtml = '';
         if (!isGM && !isLocked && !isHeroTask) {
             const isBannedFromThis = config.useCooldowns && taskData.bannedPlayers && taskData.bannedPlayers.includes(myName);
-            const amIIn = results.some(r => r.name === myName);
+            
+            // KORJAUS 2: Late volunteers katsotaan täältä
+            const amIIn = results.some(r => r.name === myName) || (taskData.lateVolunteers || []).includes(myName);
 
             actionHtml += `<div class="join-action-area" style="margin-top:15px;">`;
             if (isBannedFromThis && !amIIn) {
                 actionHtml += `<p style="color:var(--danger); font-weight:800; text-align:center;">OLET JÄÄHYLLÄ TÄSTÄ TEHTÄVÄSTÄ!</p>`;
             } else {
-                actionHtml += `<button class="btn ${amIIn ? 'btn-success' : 'btn-primary'}" onclick="volunteer('${taskId}')">${amIIn ? 'OSALLISTUT! ✓' : 'HALUAN OSALLISTUA'}</button>`;
+                let btnText = amIIn ? 'OSALLISTUT! ✓' : 'HALUAN OSALLISTUA';
+                if (!amIIn && taskData.drawn) btnText = 'OSALLISTU (MYÖHÄSSÄ)';
+                actionHtml += `<button class="btn ${amIIn ? 'btn-success' : 'btn-primary'}" onclick="volunteer('${taskId}')">${btnText}</button>`;
             }
             actionHtml += `</div>`;
         } else if (!isGM && isHeroTask) {
@@ -662,18 +670,18 @@ function renderActiveTasks(tasksObj, config) {
             gmHtml += `<div style="margin-top:15px; border-top:1px solid rgba(255,255,255,0.1); padding-top:12px;">`;
             
             if (!isHeroTask && !isLocked) {
-                const hasParticipants = results.length > 0;
+                const hasParticipants = results.length > 0 || (taskData.lateVolunteers && taskData.lateVolunteers.length > 0);
                 const isDrawn = taskData.drawn;
                 const drawOpacity = isDrawn ? '0.4' : '1';
-                const lockOpacity = (hasParticipants && isDrawn) ? '1' : '0.4';
-                const lockPulse = (hasParticipants && isDrawn) ? 'box-shadow: 0 0 15px var(--accent); transform: scale(1.02);' : '';
+                const lockOpacity = (results.length > 0 && isDrawn) ? '1' : '0.4';
+                const lockPulse = (results.length > 0 && isDrawn) ? 'box-shadow: 0 0 15px var(--accent); transform: scale(1.02);' : '';
 
                 gmHtml += `
                     <div class="volunteer-selector-grid" id="grid-${taskId}"></div>
                     <div class="admin-row-stack">
                         <div style="display:flex; gap:8px; flex:1; opacity:${drawOpacity}; transition:all 0.3s;">
                             <select id="drawCount-${taskId}" style="flex:1; margin:0;" onchange="updateTaskDrawCount('${taskId}', this.value)"></select>
-                            <button class="btn btn-arvo" style="flex:2; margin:0;" onclick="drawRandom('${taskId}')">ARVO PELAAJAT</button>
+                            <button class="btn btn-arvo" style="flex:2; margin:0;" onclick="drawRandom('${taskId}')">${isDrawn ? 'ARVO UUDELLEEN' : 'ARVO PELAAJAT'}</button>
                         </div>
                         <button class="btn btn-primary" style="margin:0; font-size:0.75rem; padding:12px; opacity:${lockOpacity}; ${lockPulse} transition:all 0.3s;" onclick="lockParticipants('${taskId}')">LUKITSE VALINNAT</button>
                     </div>
@@ -732,7 +740,7 @@ function drawAllTasks() {
 
         Object.keys(tasks).forEach(taskId => {
             const taskData = tasks[taskId];
-            if (!taskData.onHold && !taskData.locked && !taskData.isHero && (taskData.participants || []).length > 0 && !taskData.drawn) {
+            if (!taskData.onHold && !taskData.locked && !taskData.isHero && ((taskData.participants || []).length > 0 || (taskData.lateVolunteers || []).length > 0) && !taskData.drawn) {
                 updatesStart[`${taskId}/isLotteryRunning`] = true;
                 drawsTriggered++;
             }
@@ -751,12 +759,15 @@ function drawAllTasks() {
                     const taskData = tasks[taskId];
                     const sel = document.getElementById(`drawCount-${taskId}`);
                     const count = sel ? (parseInt(sel.value) || 1) : 1;
-                    let list = taskData.participants || [];
-                    let shuffled = [...list].sort(() => 0.5 - Math.random());
                     
-                    let winners = shuffled.slice(0, count).map(p => ({ ...p, win: true, reviewed: false }));
+                    let pool = (taskData.participants || []).map(p => p.name).concat(taskData.lateVolunteers || []);
+                    pool = [...new Set(pool)];
+
+                    let shuffled = [...pool].sort(() => 0.5 - Math.random());
+                    let winners = shuffled.slice(0, count).map(name => ({ name, win: true, reviewed: false }));
 
                     updatesFinish[`${taskId}/participants`] = winners;
+                    updatesFinish[`${taskId}/lateVolunteers`] = [];
                     updatesFinish[`${taskId}/isLotteryRunning`] = false;
                     updatesFinish[`${taskId}/drawn`] = true;
                 }
@@ -793,13 +804,21 @@ function finishAllTasks() {
         Object.keys(tasks).forEach(taskId => {
             const taskData = tasks[taskId];
             if (!taskData.onHold && (taskData.locked || taskData.isHero)) {
-                showScoring(taskId, true, config); 
-                finishTriggered++;
+                // Skannataan kilpailut massatoiminnossa. Jos on virhe (useampi voittaja), jätetään lukitsematta.
+                let canScore = true;
+                if (taskData.k === 'kilpailu') {
+                    const winnersCount = (taskData.participants || []).filter(r => r.win).length;
+                    if (winnersCount > 1) canScore = false;
+                }
+                if (canScore) {
+                    showScoring(taskId, true, config); 
+                    finishTriggered++;
+                }
             }
         });
         const adminName = myName || 'Tuntematon';
         if (finishTriggered > 0) logEvent(`Admin (${adminName}) / Massatoiminto: Merkitsi ${finishTriggered} tehtävää valmiiksi.`);
-        else alert("Ei valmiita tehtäviä odottamassa pisteytystä.");
+        else alert("Ei valmiita tehtäviä odottamassa pisteytystä (Tai kilpailuissa oli tuplavoittajia).");
     });
 }
 
@@ -817,16 +836,22 @@ function drawRandom(taskId, isMassAction = false) {
     
     db.ref(`gameState/activeTasks/${taskId}`).once('value', s => {
         const taskData = s.val();
-        let list = taskData.participants || [];
-        if(list.length === 0) return;
+        let pool = (taskData.participants || []).map(p => p.name).concat(taskData.lateVolunteers || []);
+        pool = [...new Set(pool)]; // Varmistetaan uniikit
+        if(pool.length === 0) return;
 
         db.ref(`gameState/activeTasks/${taskId}`).update({ isLotteryRunning: true });
         
         setTimeout(() => {
-            let shuffled = [...list].sort(() => 0.5 - Math.random());
-            let winners = shuffled.slice(0, count).map(p => ({ ...p, win: true, reviewed: false })); 
+            let shuffled = [...pool].sort(() => 0.5 - Math.random());
+            let winners = shuffled.slice(0, count).map(name => ({ name, win: true, reviewed: false })); 
             
-            db.ref(`gameState/activeTasks/${taskId}`).update({ participants: winners, isLotteryRunning: false, drawn: true });
+            db.ref(`gameState/activeTasks/${taskId}`).update({ 
+                participants: winners, 
+                lateVolunteers: [], 
+                isLotteryRunning: false, 
+                drawn: true 
+            });
             
             if (!isMassAction) {
                 const adminName = myName || 'Tuntematon';
@@ -851,12 +876,16 @@ function renderGMGrid(taskId, results, isLocked, isShuffling, showCD, taskData) 
     allPlayers.forEach((p, index) => {
         const btn = grid.children[index];
         const isInc = results.some(r => r.name === p.name);
-        
+        const isLate = (taskData.lateVolunteers || []).includes(p.name);
         const isBannedFromThis = showCD && taskData.bannedPlayers && taskData.bannedPlayers.includes(p.name);
         
-        btn.className = `btn ${isInc ? 'btn-primary selected-participant' : 'btn-secondary'} ${isBannedFromThis ? 'on-cooldown' : ''}`;
+        let btnClass = 'btn-secondary';
+        if (isInc) btnClass = 'btn-primary selected-participant';
+        else if (isLate) btnClass = 'btn-secondary late-volunteer'; // KORJAUS 2
+        
+        btn.className = `btn ${btnClass} ${isBannedFromThis ? 'on-cooldown' : ''}`;
         btn.disabled = isLocked || isShuffling; 
-        btn.innerHTML = `${p.name}${isBannedFromThis ? ' <small>(J)</small>' : ''}`;
+        btn.innerHTML = `${p.name}${isLate ? ' <small>(MYÖHÄSSÄ)</small>' : ''}${isBannedFromThis ? ' <small>(J)</small>' : ''}`;
         btn.onclick = () => toggleParticipant(taskId, p.name);
     });
 
@@ -865,7 +894,8 @@ function renderGMGrid(taskId, results, isLocked, isShuffling, showCD, taskData) 
         if (!window.rouletteTimers[taskId]) {
             window.rouletteTimers[taskId] = setInterval(() => {
                 Array.from(grid.children).forEach(b => b.classList.remove('roulette-focus'));
-                const validBtns = Array.from(grid.children).filter(b => b.className.includes('selected-participant'));
+                // Pyöritetään visuaalista rulettia kaikista mahdollisista pelaajista (sekä isInc että isLate)
+                const validBtns = Array.from(grid.children).filter(b => b.className.includes('selected-participant') || b.className.includes('late-volunteer'));
                 if(validBtns.length > 0) {
                     const randomBtn = validBtns[Math.floor(Math.random() * validBtns.length)];
                     randomBtn.classList.add('roulette-focus');
@@ -939,7 +969,9 @@ function volunteer(taskId) {
             let inOther = Object.keys(data.activeTasks).some(id => {
                 if (id === taskId) return false;
                 const t = data.activeTasks[id];
-                return !t.locked && (t.participants || []).some(r => r.name === myName);
+                const inPart = !t.locked && (t.participants || []).some(r => r.name === myName);
+                const inLate = !t.locked && (t.lateVolunteers || []).includes(myName);
+                return inPart || inLate;
             });
             if (inOther) {
                 alert("Jäähy: Olet jo ilmoittautunut toiseen avoimeen tehtävään!"); return;
@@ -949,21 +981,32 @@ function volunteer(taskId) {
         if(data.activeTasks[taskId].locked) return;
         
         const taskName = data.activeTasks[taskId].n;
-        let joined = false;
 
-        db.ref(`gameState/activeTasks/${taskId}/participants`).transaction(list => {
-            list = list || []; const idx = list.findIndex(r => r.name === myName);
-            if(idx > -1) {
-                list.splice(idx, 1);
-                joined = false;
+        // KORJAUS 2: Myöhäiset ilmoittautujat menevät omalle listalleen
+        db.ref(`gameState/activeTasks/${taskId}`).transaction(t => {
+            if (!t || t.locked) return t;
+            
+            t.participants = t.participants || [];
+            t.lateVolunteers = t.lateVolunteers || [];
+            
+            if (t.drawn) {
+                let inParts = t.participants.findIndex(r => r.name === myName);
+                if (inParts > -1) {
+                    t.participants.splice(inParts, 1); // Peru osallistuminen
+                } else {
+                    let lIdx = t.lateVolunteers.indexOf(myName);
+                    if (lIdx > -1) t.lateVolunteers.splice(lIdx, 1); // Peru myöhäinen
+                    else t.lateVolunteers.push(myName); // Lisää myöhäiseksi
+                }
             } else {
-                list.push({ name: myName, win: true, reviewed: false });
-                joined = true;
+                let pIdx = t.participants.findIndex(r => r.name === myName);
+                if (pIdx > -1) t.participants.splice(pIdx, 1);
+                else t.participants.push({name: myName, win: true, reviewed: false});
             }
-            return list;
+            return t;
         }).then((res) => {
             if(res.committed) {
-                logEvent(joined ? `${myName} ilmoittautui: ${taskName}` : `${myName} perui osallistumisen: ${taskName}`);
+                logEvent(`${myName} muutti osallistumistaan: ${taskName}`);
             }
         });
     });
@@ -971,21 +1014,28 @@ function volunteer(taskId) {
 
 function toggleParticipant(taskId, name) {
     const taskName = lastKnownTasks[taskId] ? lastKnownTasks[taskId].n : "Tehtävä";
-    let added = false;
-    db.ref(`gameState/activeTasks/${taskId}/participants`).transaction(list => {
-        list = list || []; const idx = list.findIndex(r => r.name === name);
-        if(idx > -1) {
-            list.splice(idx, 1);
-            added = false;
+    
+    db.ref(`gameState/activeTasks/${taskId}`).transaction(t => {
+        if(!t) return t;
+        t.participants = t.participants || [];
+        t.lateVolunteers = t.lateVolunteers || [];
+        
+        const pIdx = t.participants.findIndex(r => r.name === name);
+        const lIdx = t.lateVolunteers.indexOf(name);
+        
+        if (pIdx > -1) {
+            t.participants.splice(pIdx, 1); // Poista
+        } else if (lIdx > -1) {
+            t.lateVolunteers.splice(lIdx, 1); // Poista myöhäisistä ja siirrä
+            t.participants.push({ name: name, win: true, reviewed: false }); 
         } else {
-            list.push({ name: name, win: true, reviewed: false });
-            added = true;
+            t.participants.push({ name: name, win: true, reviewed: false }); // Lisää uutena
         }
-        return list;
+        return t;
     }).then((res) => {
         if(res.committed) {
             const adminName = myName || 'Tuntematon';
-            logEvent(added ? `Admin (${adminName}) lisäsi pelaajan ${name}: ${taskName}` : `Admin (${adminName}) poisti pelaajan ${name}: ${taskName}`);
+            logEvent(`Admin (${adminName}) muokkasi pelaajan ${name} tilaa: ${taskName}`);
         }
     });
 }
@@ -1014,16 +1064,25 @@ function lockParticipants(taskId, isMassAction = false) {
     });
 }
 
-// KORJAUS: UUSI PISTEYTYSLOGIIKKA "AINA -1" KYTKIMELLÄ
 function showScoring(taskId, isMassAction = false, extConfig = null) {
     db.ref('gameState').once('value', snap => {
         const d = snap.val();
         const config = extConfig || d.config || {}; 
         const disableBonus = !!config.disableHeroBonus; 
-        const alwaysMinusOne = config.alwaysMinusOne !== false; // Oletuksena true jos puuttuu
+        const alwaysMinusOne = config.alwaysMinusOne !== false; 
         
         const taskInstance = d.activeTasks[taskId];
         if(!taskInstance) return;
+        
+        // KORJAUS 4: KILPAILU VAROITUS (Jos valittu > 1 voittaja)
+        if (taskInstance.k === 'kilpailu' && !isMassAction) {
+            const winnersCount = (taskInstance.participants || []).filter(r => r.win).length;
+            if (winnersCount > 1) {
+                if (!confirm("HUOM! Kilpailutehtävässä on merkitty useampi voittaja.\nHaluatko varmasti jatkaa ja antaa kaikille plussaa?")) {
+                    return; // Pysäyttää toiminnon
+                }
+            }
+        }
         
         const res = taskInstance.participants || [];
         const heroId = config.bdayHero;
@@ -1079,20 +1138,24 @@ function showScoring(taskId, isMassAction = false, extConfig = null) {
     });
 }
 
-window.toggleHeroTaskWin = function(taskId) {
+// KORJAUS 1: Uudet pisteytysnapit - Logiikka
+window.setHeroResult = function(taskId, isWin) {
     db.ref(`gameState/activeTasks/${taskId}`).transaction(t => {
         if(t) {
-            if (!t.heroReviewed && t.heroWin !== false) {
-                t.heroReviewed = true;
-                t.heroWin = true;
-            } else if (t.heroReviewed && t.heroWin !== false) {
-                t.heroWin = false;
-            } else {
-                t.heroWin = true;
-                t.heroReviewed = true;
-            }
+            t.heroWin = isWin;
+            t.heroReviewed = true;
         }
         return t;
+    });
+};
+
+window.setParticipantResult = function(taskId, i, isWin) {
+    db.ref(`gameState/activeTasks/${taskId}/participants/${i}`).transaction(p => {
+        if(p) {
+            p.win = isWin;
+            p.reviewed = true;
+        }
+        return p;
     });
 };
 
@@ -1105,25 +1168,24 @@ function renderScoringArea(taskId, results, isHeroTask, heroWinState, heroReview
     const box = document.createElement('div');
     box.className = "scoring-box"; 
     
+    // KORJAUS 1: UI Rakennetaan uusilla napeilla
     if (isHeroTask) {
         box.innerHTML = `<p style="font-size:0.75rem; color:var(--hero-gold); margin:0 0 12px 0; text-align:center; font-weight:900; letter-spacing:1px;">⚠️ PISTEYTÄ SANKARIN SUORITUS ⚠️</p>`;
-        const isWin = heroWinState !== false; 
         
-        let btnClass = isWin ? 'score-btn-win' : 'score-btn-fail';
-        let btnText = isWin ? 'WIN' : 'FAIL';
-        
-        if (!heroReviewed && isWin) {
-            btnClass = 'score-btn-default';
-            btnText = 'WIN (Oletus)';
-        }
+        let isWin = heroWinState !== false;
+        let winClass = (heroReviewed && isWin) ? 'score-btn-win' : 'score-btn-default';
+        let winText = (heroReviewed && isWin) ? 'WIN' : 'WIN (Oletus)';
+        let failClass = (heroReviewed && !isWin) ? 'score-btn-fail' : 'score-btn-default';
 
         const row = document.createElement('div');
         row.className = 'player-row is-hero'; 
         row.style.padding = '8px';
         row.innerHTML = `
-            <span>🎂 SYNTTÄRISANKARI</span>
-            <button class="btn ${btnClass}" style="width:auto; min-width:105px; margin:0; padding:8px; font-size:0.7rem;" 
-                onclick='toggleHeroTaskWin("${taskId}")'>${btnText}</button>
+            <span style="flex:1;">🎂 SYNTTÄRISANKARI</span>
+            <div style="display:flex; gap:5px;">
+                <button class="btn ${winClass}" style="width:auto; padding:8px; margin:0; font-size:0.7rem;" onclick='setHeroResult("${taskId}", true)'>${winText}</button>
+                <button class="btn ${failClass}" style="width:auto; padding:8px; margin:0; font-size:0.7rem;" onclick='setHeroResult("${taskId}", false)'>FAIL</button>
+            </div>
         `;
         box.appendChild(row);
     } else {
@@ -1131,17 +1193,22 @@ function renderScoringArea(taskId, results, isHeroTask, heroWinState, heroReview
         if (results.length === 0) box.innerHTML += `<p style="font-size:0.6rem; color:var(--muted); text-align:center;">Ei suorittajia.</p>`;
         
         results.forEach((r, i) => {
-            let btnClass = r.win ? 'score-btn-win' : 'score-btn-fail';
-            let btnText = r.win ? 'WIN' : 'FAIL';
+            let isWin = r.win;
+            let isReviewed = r.reviewed;
             
-            if (!r.reviewed && r.win) {
-                btnClass = 'score-btn-default';
-                btnText = 'WIN (Oletus)';
-            }
+            let winClass = (isReviewed && isWin) ? 'score-btn-win' : 'score-btn-default';
+            let winText = (isReviewed && isWin) ? 'WIN' : 'WIN (Oletus)';
+            let failClass = (isReviewed && !isWin) ? 'score-btn-fail' : 'score-btn-default';
 
             const row = document.createElement('div');
             row.className = 'player-row'; row.style.padding = '8px';
-            row.innerHTML = `<span>${r.name}</span><button class="btn ${btnClass}" style="width:auto; min-width:105px; margin:0; padding:8px; font-size:0.7rem;" onclick='toggleWin("${taskId}", ${i})'>${btnText}</button>`;
+            row.innerHTML = `
+                <span style="flex:1;">${r.name}</span>
+                <div style="display:flex; gap:5px;">
+                    <button class="btn ${winClass}" style="width:auto; padding:8px; margin:0; font-size:0.7rem;" onclick='setParticipantResult("${taskId}", ${i}, true)'>${winText}</button>
+                    <button class="btn ${failClass}" style="width:auto; padding:8px; margin:0; font-size:0.7rem;" onclick='setParticipantResult("${taskId}", ${i}, false)'>FAIL</button>
+                </div>
+            `;
             box.appendChild(row);
         });
     }
@@ -1159,23 +1226,6 @@ function updateDrawCountSelect(taskId, task, forceSinglePlayer) {
         if(i === (task.r || 1)) opt.selected = true;
         sel.appendChild(opt);
     }
-}
-
-function toggleWin(taskId, i) { 
-    db.ref(`gameState/activeTasks/${taskId}/participants/${i}`).transaction(p => {
-        if(p) {
-            if (!p.reviewed && p.win) {
-                p.reviewed = true;
-                p.win = true;
-            } else if (p.reviewed && p.win) {
-                p.win = false;
-            } else {
-                p.win = true;
-                p.reviewed = true;
-            }
-        }
-        return p;
-    });
 }
 
 function confirmRandomize() {
@@ -1446,14 +1496,15 @@ function renderLeaderboard(showCD, heroId) {
     });
 }
 
-function renderAdminPlayerList(heroId) {
+// KORJAUS 3: Käytetään tallennettua heroId:tä renderöinnissä
+function renderAdminPlayerList() {
     const list = document.getElementById('adminPlayerList');
     if(!list) return; list.innerHTML = "";
     allPlayers.forEach((p, i) => {
         const div = document.createElement('div');
         div.className = 'player-row'; div.style.padding = '8px';
         
-        const isHero = i === heroId;
+        const isHero = i === currentHeroId; 
         const heroBg = isHero ? 'var(--hero-gold)' : 'transparent';
         const heroColor = isHero ? '#000' : 'inherit';
         const heroBorder = isHero ? 'var(--hero-gold)' : 'rgba(255,255,255,0.2)';
@@ -1525,5 +1576,5 @@ function updateIdentityUI() { document.getElementById('identityCard').style.disp
 
 function toggleAdminPanel() { 
     const p = document.getElementById('adminPanel'); const isOpening = p.style.display === 'none'; p.style.display = isOpening ? 'block' : 'none'; 
-    if(isOpening) { renderAdminPlayerList(null); renderTaskLibrary(); }
+    if(isOpening) { renderAdminPlayerList(); renderTaskLibrary(); }
 }
