@@ -839,9 +839,12 @@ if(gmBtn) {
     gmBtn.addEventListener('touchend', endPress);
 }
 
+// NIMEN PITUUDEN PAKOTUS JS-PUOLELLA
 function claimIdentity() {
-    const n = document.getElementById('playerNameInput').value.trim();
+    let n = document.getElementById('playerNameInput').value.trim();
     if(!n) return; 
+    if(n.length > 15) n = n.substring(0, 15); // JS varmistus pituusrajalle
+    
     myName = n; 
     localStorage.setItem('appro_name', n);
     updateIdentityUI(); 
@@ -1285,10 +1288,13 @@ function renderHistory() {
     });
 }
 
+// NIMEN PITUUDEN PAKOTUS JS-PUOLELLA (ADMIN TYÖKALU)
 function adminAddPlayer() {
     const input = document.getElementById('adminNewPlayerName');
-    const n = input.value.trim();
+    let n = input.value.trim();
     if(!n) return;
+    if(n.length > 15) n = n.substring(0, 15); // JS varmistus pituusrajalle
+    
     db.ref('gameState/players').once('value', snap => {
         let p = snap.val() || [];
         if(!p.find(x => x.name === n)) { 
