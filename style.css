@@ -136,7 +136,7 @@ body {
 .badge-pokka { color: #facc15; border-color: rgba(250, 204, 21, 0.4); background: rgba(250, 204, 21, 0.1); }
 .badge-liikunta { color: #60a5fa; border-color: rgba(96, 165, 250, 0.4); background: rgba(96, 165, 250, 0.1); }
 .badge-juoma { color: #f472b6; border-color: rgba(244, 114, 182, 0.4); background: rgba(244, 114, 182, 0.1); }
-.badge-kilpailu { color: #f97316; border-color: rgba(249, 115, 22, 0.4); background: rgba(249, 115, 22, 0.1); } /* Uusi kilpailu! */
+.badge-kilpailu { color: #f97316; border-color: rgba(249, 115, 22, 0.4); background: rgba(249, 115, 22, 0.1); } 
 
 .smooth-collapse {
     display: grid;
@@ -201,9 +201,10 @@ body {
     margin-top: 15px; margin-bottom: 20px;
 }
 
-.score-btn-default { background: rgba(31, 138, 98, 0.3) !important; border: 1px dashed rgba(255,255,255,0.5) !important; color: #ccc !important;}
-.score-btn-win { background: var(--success) !important; border: 2px solid #ffffff !important; color: #ffffff !important;}
-.score-btn-fail { background: var(--danger) !important; border: 2px solid #ffffff !important; color: #ffffff !important;}
+/* KORJAUS 1: Selkeämmät erilliset WIN/FAIL napit */
+.score-btn-default { background: rgba(255, 255, 255, 0.05) !important; border: 1px dashed rgba(255,255,255,0.3) !important; color: #8899ac !important; box-shadow: none !important;}
+.score-btn-win { background: var(--success) !important; border: 2px solid #ffffff !important; color: #ffffff !important; box-shadow: 0 0 15px var(--success) !important;}
+.score-btn-fail { background: var(--danger) !important; border: 2px solid #ffffff !important; color: #ffffff !important; box-shadow: 0 0 15px var(--danger) !important;}
 
 .player-row { 
     display: flex; justify-content: space-between; align-items: center; 
@@ -242,6 +243,10 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
 
 .btn.on-cooldown { border: 1px solid var(--danger) !important; color: var(--danger) !important; background: rgba(204, 59, 59, 0.1) !important; }
 .btn.selected-participant { background: var(--accent) !important; color: #ffffff !important; border: 1px solid rgba(255,255,255,0.4) !important; }
+
+/* KORJAUS 2: Myöhästynyt ilmoittautuja näkyy GM-ruudussa sinisenä (reunus) */
+.btn.late-volunteer { border: 2px solid var(--accent) !important; color: var(--accent) !important; background: rgba(37, 138, 163, 0.1) !important; }
+
 #adminPlayerList .btn { transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1); }
 #adminPlayerList .btn:active { transform: scale(0.85); }
 
@@ -250,9 +255,14 @@ input[type="checkbox"] { width: 24px; height: 24px; margin: 0; cursor: pointer; 
    ========================================== */
 .roulette-focus { background: #a36114 !important; color: #ffffff !important; transform: scale(1.08) !important; box-shadow: 0 0 20px #a36114; z-index: 10; }
 
+/* KORJAUS 5: Estetään XP-tekstin katkeaminen pienillä näytöillä */
 .xp-popup {
     position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    font-weight: 900; font-size: 6.5rem; z-index: 5000; pointer-events: none; display: none;
+    font-weight: 900; 
+    font-size: clamp(3.5rem, 15vw, 6.5rem) !important; /* Skaalautuu ruudun mukaan */
+    white-space: nowrap !important; /* Pakottaa yhdelle riville */
+    width: 100vw !important; /* Varmistaa oikean keskityksen */
+    z-index: 5000; pointer-events: none; display: none;
     text-align: center; letter-spacing: 2px;
     font-family: Impact, 'Arial Black', sans-serif !important;
     font-style: italic;
