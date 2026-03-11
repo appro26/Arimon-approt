@@ -283,7 +283,6 @@ window.resetGame = function() {
     }
 };
 
-// GLOBAALI TIETOKANTA-KUUNTELIJA PANSSAROITUNA
 db.ref('gameState').on('value', (snap) => {
     try {
         const data = snap.val();
@@ -993,7 +992,7 @@ function claimIdentity() {
 
     db.ref('gameState/players').transaction(p => {
         p = p || []; 
-        p = p.filter(x => x !== null); // Siivotaan nullit varalta
+        p = p.filter(x => x !== null);
         if(!p.find(x => x && x.name === n)) {
             p.push({ name: n, score: 0, cooldown: 0, suspended: false }); 
         }
@@ -1156,7 +1155,6 @@ function showScoring(taskId, isMassAction = false, extConfig = null) {
             let winnersNames = [];
             let taskCompletedBySomeone = res.some(r => r && r.win);
             
-            // Varmistetaan puhdas iterointi null-alkioiden varalta
             const cleanPlayers = (d.players || []).map((p) => p || {name: "Unknown", score: 0});
             
             const updatedPlayers = cleanPlayers.map((p, idx) => {
@@ -1261,11 +1259,164 @@ window.adminToggleSuspension = function(idx) {
     }).catch(e => console.error(e));
 };
 
+function renderScoringArea(taskId, results, isHeroTask, heroWinState, heroReviewed) {
+    const sArea = document.getElementById(`scoring-${taskId}`);
+    if(!sArea) return; 
+    
+    sArea.innerHTML = '';
+    
+    const box = document.createElement('div');
+    box.className = "scoring-box"; 
+    
+    if (isHeroTask) {
+        box.innerHTML = `<p style="font-size:0.75rem; color:var(--hero-gold); margin:0 0 12px 0; text-align:center; font-weight:900; letter-spacing:1px;">⚠️ PISTEYTÄ SANKARIN SUORITUS ⚠️</p>`;
+        
+        let isWin = heroWinState !== false;
+        let winClass = (heroReviewed && isWin) ? 'score-btn-win' : 'score-btn-default';
+        let winText = (heroReviewed && isWin) ? 'WIN' : 'WIN (Oletus)';
+        let failClass = (heroReviewed && !isWin) ? 'score-btn-fail' : 'score-btn-default';
+
+        const row = document.createElement('div');
+        row.className = 'player-row is-hero'; 
+        row.style.padding = '8px';
+        row.innerHTML = `
+            <span style="flex:1;">🎂 SYNTTÄRISANKARI</span>
+            <div style="display:flex; gap:5px;">
+                <button class="btn ${winClass}" style="width:auto; padding:8px; margin:0; font-size:0.7rem;" onclick='setHeroResult("${taskId}", true)'>${winText}</button>
+                <button class="btn ${failClass}" style="width:auto; padding:8px; margin:0; font-size:0.7rem;" onclick='setHeroResult("${taskId}", false)'>FAIL</button>
+            </div>
+        `;
+        box.appendChild(row);
+    } else {
+        box.innerHTML = `<p style="font-size:0.75rem; color:var(--hero-gold); margin:0 0 12px 0; text-align:center; font-weight:900; letter-spacing:1px;">⚠️ PISTEYTÄ SUORITUKSET ⚠️</p>`;
+        if (results.length === 0) box.innerHTML += `<p style="font-size:0.6rem; color:var(--muted); text-align:center;">Ei suorittajia.</p>`;
+        
+        results.forEach((r, i) => {
+            let isWin = r.win;
+            let isReviewed = r.reviewed;
+            
+            let winClass = (isReviewed && isWin) ? 'score-btn-win' : 'score-btn-default';
+            let winText = (isReviewed && isWin) ? 'WIN' : 'WIN (Oletus)';
+            let failClass = (isReviewed && !isWin) ? 'score-btn-fail' : 'score-btn-default';
+
+            const row = document.createElement('div');
+            row.className = 'player-row'; row.style.padding = '8px';
+            row.innerHTML = `
+                <span style="flex:1;">${r.name}</span>
+                <div style="display:flex; gap:5px;">
+                    <button class="btn ${winClass}" style="width:auto; padding:8px; margin:0; font-size:0.7rem;" onclick='setParticipantResult("${taskId}", ${i}, true)'>${winText}</button>
+                    <button class="btn ${failClass}" style="width:auto; padding:8px; margin:0; font-size:0.7rem;" onclick='setParticipantResult("${taskId}", ${i}, false)'>FAIL</button>
+                </div>
+            `;
+            box.appendChild(row);
+        });
+    }
+    sArea.appendChild(box);
+}
+
+// ---------------------------------------------------------
+// TÄSTÄ ALKAA AIEMMIN KADONNUT OSIO - KAIKKI ON NYT TÄÄLLÄ!
+// ---------------------------------------------------------
+
+function adjustScore(idx, amt) { 
+    db.ref('gameState/players/' + idx + '/score').transaction(s => Math.max(0, (s || 0) + amt)); 
+    const adminName = myName || 'Tuntematon';
+    logEvent(`Admin (${adminName}) muutti pelaajan ${allPlayers[idx].name} pisteitä: ${amt > 0 ? '+' : ''}${amt} XP`);
+}
+
+function removePlayer(idx) { 
+    if(confirm("Poista pelaaja?")) { 
+        const adminName = myName || 'Tuntematon';
+        logEvent(`Admin (${adminName}) poisti pelaajan: ${allPlayers[idx].name}`);
+        allPlayers.splice(idx, 1); 
+        db.ref('gameState/players').set(allPlayers); 
+    } 
+}
+
+function setBdayHero(idx) { 
+    db.ref('gameState/config/bdayHero').transaction(curr => {
+        const newVal = curr === idx ? null : idx;
+        const adminName = myName || 'Tuntematon';
+        if(newVal !== null) logEvent(`Admin (${adminName}) asetti synttärisankarin: ${allPlayers[newVal].name}`);
+        return newVal;
+    }); 
+}
+
+function adminToggleCooldown(idx) { 
+    const newState = allPlayers[idx].cooldown > 0 ? 0 : 1;
+    db.ref(`gameState/players/${idx}/cooldown`).set(newState); 
+}
+
+function updateConfig(key, val) { db.ref(`gameState/config/${key}`).set(val); }
+function updateVisConfig(key, val) { db.ref(`gameState/config/visibility/${key}`).set(val); }
+window.updateHeroConfig = function(key, val) { db.ref(`gameState/config/heroDraw/${key}`).set(val); };
+
+function updateTaskInLib(idx, field, val) { db.ref(`gameState/tasks/${idx}/${field}`).set(val); }
+function removeTask(idx) { if(confirm("Poista tehtävä kirjastosta?")) { taskLibrary.splice(idx, 1); db.ref('gameState/tasks').set(taskLibrary); } }
+
+window.toggleLibraryVisibility = function() {
+    const lib = document.getElementById('taskLibraryEditor');
+    lib.style.display = lib.style.display === 'none' ? 'block' : 'none';
+};
+
+function renderLeaderboard(showCD, heroId) {
+    const list = document.getElementById('playerList');
+    if(!list) return;
+    
+    let sortedPlayers = [...allPlayers].sort((a,b) => b.score - a.score);
+    const newScoresStr = sortedPlayers.map(p => p.name + p.score).join('|');
+    
+    if (newScoresStr !== leaderboardScoresStr) {
+        let currentRanks = {};
+        let currentRank = 1;
+        let prevScore = -1;
+        
+        sortedPlayers.forEach((p, index) => {
+            if (p.score !== prevScore) {
+                currentRank = index + 1; 
+                prevScore = p.score;
+            }
+            currentRanks[p.name] = currentRank;
+        });
+
+        sortedPlayers.forEach(p => {
+            if (leaderboardPrevRanks[p.name] !== undefined) {
+                if (currentRanks[p.name] < leaderboardPrevRanks[p.name]) leaderboardDirections[p.name] = 'up';
+                else if (currentRanks[p.name] > leaderboardPrevRanks[p.name]) leaderboardDirections[p.name] = 'down';
+                else leaderboardDirections[p.name] = 'same';
+            } else {
+                leaderboardDirections[p.name] = 'same';
+            }
+        });
+        
+        leaderboardPrevRanks = currentRanks;
+        leaderboardScoresStr = newScoresStr;
+    }
+
+    list.innerHTML = '';
+    sortedPlayers.forEach((p) => {
+        const pIdx = allPlayers.findIndex(x => x.name === p.name);
+        const isHero = heroId !== null && pIdx === heroId;
+        const div = document.createElement('div');
+        div.className = `player-row ${p.name === myName ? 'me' : ''} ${isHero ? 'is-hero' : ''}`;
+        
+        const cdText = (showCD && p.cooldown > 0) ? ' <small style="color:var(--danger); margin-left:5px;">[JÄÄHY]</small>' : '';
+        
+        let dirIcon = '';
+        if (leaderboardDirections[p.name] === 'up') dirIcon = ' <span style="color:var(--success); font-size:0.8rem; font-weight:900;">▲</span>';
+        else if (leaderboardDirections[p.name] === 'down') dirIcon = ' <span style="color:var(--danger); font-size:0.8rem; font-weight:900;">▼</span>';
+
+        const rankStr = `<span style="color:var(--muted); font-size:0.8rem; margin-right:12px; font-weight:900;">${leaderboardPrevRanks[p.name]}.</span>`;
+
+        div.innerHTML = `<div style="display:flex; align-items:center;">${rankStr}<span>${isHero?'🎂 ':''}${p.name}${cdText}${dirIcon}</span></div><span class="xp-badge">${p.score} XP</span>`;
+        list.appendChild(div);
+    });
+}
+
 function renderAdminPlayerList(config) {
     const list = document.getElementById('adminPlayerList');
     if(!list) return; list.innerHTML = "";
     
-    // Fallback config if not passed
     const conf = config || {useCooldowns: true};
     
     allPlayers.forEach((p, i) => {
@@ -1359,10 +1510,18 @@ function updateManualTaskSelect() {
     });
 }
 
-function updateIdentityUI() { document.getElementById('identityCard').style.display = myName ? 'none' : 'block'; document.getElementById('idTag').innerText = myName ? "PROFIILI: " + myName : "KIRJAUDU SISÄÄN"; }
+function updateIdentityUI() { 
+    const idCard = document.getElementById('identityCard');
+    const idTag = document.getElementById('idTag');
+    if(idCard) idCard.style.display = myName ? 'none' : 'block'; 
+    if(idTag) idTag.innerText = myName ? "PROFIILI: " + myName : "KIRJAUDU SISÄÄN"; 
+}
 
 function toggleAdminPanel() { 
-    const p = document.getElementById('adminPanel'); const isOpening = p.style.display === 'none'; p.style.display = isOpening ? 'block' : 'none'; 
+    const p = document.getElementById('adminPanel'); 
+    if(!p) return;
+    const isOpening = p.style.display === 'none'; 
+    p.style.display = isOpening ? 'block' : 'none'; 
     if(isOpening) { 
         db.ref('gameState/config').once('value', s => {
             renderAdminPlayerList(s.val() || {}); 
@@ -1484,60 +1643,6 @@ function selectManualTask(idx) {
     });
 }
 
-function renderEventLog(logData) {
-    const container = document.getElementById('adminEventLog');
-    if(!container) return;
-    container.innerHTML = "";
-    const logs = Object.values(logData || {}).reverse().slice(0, 30);
-    logs.forEach(l => {
-        if(!l) return;
-        const div = document.createElement('div');
-        div.className = 'log-entry';
-        div.innerHTML = `<span class="time">[${l.time}]</span> ${l.msg}`;
-        container.appendChild(div);
-    });
-}
-
-function renderHistory() {
-    const container = document.getElementById('taskHistoryList');
-    if(!container) return;
-    container.innerHTML = taskHistory.length === 0 ? '<p style="font-size:0.7rem; color:var(--muted);">Ei vielä historiaa...</p>' : "";
-    taskHistory.forEach(h => {
-        if(!h) return;
-        const div = document.createElement('div');
-        div.className = 'history-item';
-        div.innerHTML = `
-            <div>
-                <span class="task-name" style="display:block;">${h.taskName}</span>
-                <span style="font-size:0.65rem; color:var(--success); font-weight:700;">${(h.winners||[]).join(', ')}</span>
-            </div>
-            <span class="task-time">${h.timestamp}</span>
-        `;
-        container.appendChild(div);
-    });
-}
-
-function adminAddPlayer() {
-    const input = document.getElementById('adminNewPlayerName');
-    if(!input) return;
-    const n = input.value.trim();
-    if(!n) return;
-    db.ref('gameState/players').once('value', snap => {
-        try {
-            let p = snap.val() || [];
-            p = p.filter(x => x !== null); 
-            if(!p.find(x => x && x.name === n)) { 
-                p.push({ name: n, score: 0, cooldown: 0, suspended: false }); 
-                db.ref('gameState/players').set(p).then(() => {
-                    input.value = ''; 
-                    const adminName = myName || 'Tuntematon';
-                    logEvent(`Admin (${adminName}) lisäsi pelaajan: ${n}`);
-                });
-            } else { alert("Pelaaja on jo listalla!"); }
-        } catch(e) { console.error(e); }
-    });
-}
-
 function adminCreateTask() {
     const n = document.getElementById('newTaskName').value;
     const d = document.getElementById('newTaskDesc').value;
@@ -1554,11 +1659,11 @@ function adminCreateTask() {
         list = list || []; 
         list.push(newTask); 
         return list; 
+    }).then(() => {
+        document.getElementById('newTaskName').value = ''; 
+        document.getElementById('newTaskDesc').value = '';
+        document.getElementById('newTaskIsHero').checked = false;
+        const adminName = myName || 'Tuntematon';
+        logEvent(`Admin (${adminName}) loi uuden tehtävän kirjastoon: ${n}`);
     });
-    
-    document.getElementById('newTaskName').value = ''; 
-    document.getElementById('newTaskDesc').value = '';
-    document.getElementById('newTaskIsHero').checked = false;
-    const adminName = myName || 'Tuntematon';
-    logEvent(`Admin (${adminName}) loi uuden tehtävän kirjastoon: ${n}`);
 }
