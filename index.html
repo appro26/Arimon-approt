@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="icon.png">
 
-    <link rel="stylesheet" href="style.css?v=28">
+    <link rel="stylesheet" href="style.css?v=30">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
 
@@ -46,7 +46,7 @@
 
         <div id="identityCard" class="card" style="display:none;">
             <h2>Tunnistautuminen</h2>
-            <input type="text" id="playerNameInput" placeholder="Syötä nimesi...">
+            <input type="text" id="playerNameInput" placeholder="Syötä nimesi..." maxlength="15">
             <button class="btn btn-primary" onclick="claimIdentity()">ALOITA PELI</button>
         </div>
 
@@ -83,7 +83,7 @@
                 </p>
                 <div id="adminPlayerList"></div>
                 <div class="admin-row-stack" style="margin-top:15px; margin-bottom:15px;">
-                    <input type="text" id="adminNewPlayerName" placeholder="Pelaajan nimi...">
+                    <input type="text" id="adminNewPlayerName" placeholder="Pelaajan nimi..." maxlength="15">
                     <button class="btn btn-success" id="addPlayerBtn" onclick="adminAddPlayer()">LISÄÄ</button>
                 </div>
 
