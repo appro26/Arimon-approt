@@ -564,7 +564,6 @@ function renderActiveTasks(tasksObj, config) {
                 const lockOpacity = (results.length > 0 && isDrawn) ? '1' : '0.4';
                 const lockPulse = (results.length > 0 && isDrawn) ? 'box-shadow: 0 0 15px var(--accent); transform: scale(1.02);' : '';
 
-                // KORJAUS Z-INDEX LOKAALISTI: Pakotetaan ruudukko z-index tasolle 50 ERIKSEEN ja napit tasolle 5
                 gmHtml += `
                     <div class="volunteer-selector-grid" id="grid-${taskId}" style="position:relative; z-index:50;"></div>
                     <div class="admin-row-stack" style="position:relative; z-index:5;">
@@ -679,7 +678,6 @@ function lockAllTasks() {
         let count = 0;
         Object.keys(tasks).forEach(taskId => {
             const taskData = tasks[taskId];
-            // KORJAUS 2: Vain arvotut (drawn === true) lukitaan massana
             if (!taskData.onHold && !taskData.locked && !taskData.isHero && taskData.drawn && (taskData.participants || []).length > 0) {
                 lockParticipants(taskId, true);
                 count++;
@@ -839,11 +837,15 @@ if(gmBtn) {
     gmBtn.addEventListener('touchend', endPress);
 }
 
-// NIMEN PITUUDEN PAKOTUS JS-PUOLELLA
 function claimIdentity() {
     let n = document.getElementById('playerNameInput').value.trim();
     if(!n) return; 
-    if(n.length > 15) n = n.substring(0, 15); // JS varmistus pituusrajalle
+    
+    // JS pituustarkistus 15 merkkiä - antaa alertin ja keskeyttää
+    if(n.length > 15) {
+        alert("Nimi on liian pitkä! Maksimipituus on 15 merkkiä.");
+        return; 
+    }
     
     myName = n; 
     localStorage.setItem('appro_name', n);
@@ -1288,12 +1290,16 @@ function renderHistory() {
     });
 }
 
-// NIMEN PITUUDEN PAKOTUS JS-PUOLELLA (ADMIN TYÖKALU)
 function adminAddPlayer() {
     const input = document.getElementById('adminNewPlayerName');
     let n = input.value.trim();
     if(!n) return;
-    if(n.length > 15) n = n.substring(0, 15); // JS varmistus pituusrajalle
+    
+    // JS pituustarkistus 15 merkkiä - antaa alertin ja keskeyttää
+    if(n.length > 15) {
+        alert("Nimi on liian pitkä! Maksimipituus on 15 merkkiä.");
+        return; 
+    }
     
     db.ref('gameState/players').once('value', snap => {
         let p = snap.val() || [];
